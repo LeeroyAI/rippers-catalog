@@ -1,0 +1,12 @@
+{
+  "": {
+    "swift-dependencies": "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCorePackageTests.build/primary.swiftdeps"
+  },
+  "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCorePackageTests.derived/runner.swift": {
+    "dependencies": "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCorePackageTests.build/runner.d",
+    "object": "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCorePackageTests.build/runner.swift.o",
+    "swiftmodule": "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCorePackageTests.build/runner~partial.swiftmodule",
+    "swift-dependencies": "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCorePackageTests.build/runner.swiftdeps",
+    "diagnostics": "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCorePackageTests.build/runner.dia"
+  }
+}

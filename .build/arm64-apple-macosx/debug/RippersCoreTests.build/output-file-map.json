@@ -1,0 +1,26 @@
+{
+  "": {
+    "swift-dependencies": "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCoreTests.build/primary.swiftdeps"
+  },
+  "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Tests/BikeDataIntegrityAndGoldenQueryTests.swift": {
+    "dependencies": "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCoreTests.build/BikeDataIntegrityAndGoldenQueryTests.d",
+    "object": "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCoreTests.build/BikeDataIntegrityAndGoldenQueryTests.swift.o",
+    "swiftmodule": "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCoreTests.build/BikeDataIntegrityAndGoldenQueryTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCoreTests.build/BikeDataIntegrityAndGoldenQueryTests.swiftdeps",
+    "diagnostics": "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCoreTests.build/BikeDataIntegrityAndGoldenQueryTests.dia"
+  },
+  "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Tests/BikeFilterEngineTests.swift": {
+    "dependencies": "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCoreTests.build/BikeFilterEngineTests.d",
+    "object": "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCoreTests.build/BikeFilterEngineTests.swift.o",
+    "swiftmodule": "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCoreTests.build/BikeFilterEngineTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCoreTests.build/BikeFilterEngineTests.swiftdeps",
+    "diagnostics": "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCoreTests.build/BikeFilterEngineTests.dia"
+  },
+  "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Tests/LiveCatalogPipelineTests.swift": {
+    "dependencies": "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCoreTests.build/LiveCatalogPipelineTests.d",
+    "object": "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCoreTests.build/LiveCatalogPipelineTests.swift.o",
+    "swiftmodule": "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCoreTests.build/LiveCatalogPipelineTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCoreTests.build/LiveCatalogPipelineTests.swiftdeps",
+    "diagnostics": "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCoreTests.build/LiveCatalogPipelineTests.dia"
+  }
+}

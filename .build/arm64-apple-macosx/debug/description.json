@@ -1,0 +1,982 @@
+{
+  "builtTestProducts" : [
+    {
+      "binaryPath" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCorePackageTests.xctest/Contents/MacOS/RippersCorePackageTests",
+      "packagePath" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers",
+      "productName" : "RippersCorePackageTests"
+    }
+  ],
+  "copyCommands" : {
+
+  },
+  "explicitTargetDependencyImportCheckingMode" : {
+    "none" : {
+
+    }
+  },
+  "generatedSourceTargetSet" : [
+
+  ],
+  "pluginDescriptions" : [
+
+  ],
+  "swiftCommands" : {
+    "C.RippersCore-arm64-apple-macosx-debug.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/sources",
+      "importPath" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Catalog/BikeCatalogProvider.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Catalog/BikeCatalogRepository.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Catalog/CatalogFeatureFlags.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Catalog/CatalogModels.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Catalog/CatalogValidator.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Catalog/Providers/PublicJSONCatalogProvider.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Catalog/Providers/StaticCatalogProvider.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Data/BikeImages.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Data/Bikes.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Data/PublicCatalogSources.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Data/Quotes.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Data/Retailers.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Models/Bike.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Models/FilterState.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Models/Retailer.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Models/RiderProfile.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Models/WatchlistItem.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Search/BikeFilterEngine.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Shared/Formatting.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "RippersCore",
+      "moduleOutputPath" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/Modules/RippersCore.swiftmodule",
+      "objects" : [
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/BikeCatalogProvider.swift.o",
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/BikeCatalogRepository.swift.o",
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/CatalogFeatureFlags.swift.o",
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/CatalogModels.swift.o",
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/CatalogValidator.swift.o",
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/PublicJSONCatalogProvider.swift.o",
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/StaticCatalogProvider.swift.o",
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/BikeImages.swift.o",
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/Bikes.swift.o",
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/PublicCatalogSources.swift.o",
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/Quotes.swift.o",
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/Retailers.swift.o",
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/Bike.swift.o",
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/FilterState.swift.o",
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/Retailer.swift.o",
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/RiderProfile.swift.o",
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/WatchlistItem.swift.o",
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/BikeFilterEngine.swift.o",
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/Formatting.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx14.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-j8",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/include/RippersCore-Swift.h",
+        "-swift-version",
+        "5",
+        "-plugin-path",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "rippers"
+      ],
+      "outputFileMapPath" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/BikeCatalogProvider.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/BikeCatalogRepository.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/CatalogFeatureFlags.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/CatalogModels.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/CatalogValidator.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/PublicJSONCatalogProvider.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/StaticCatalogProvider.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/BikeImages.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/Bikes.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/PublicCatalogSources.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/Quotes.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/Retailers.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/Bike.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/FilterState.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/Retailer.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/RiderProfile.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/WatchlistItem.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/BikeFilterEngine.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/Formatting.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/Modules/RippersCore.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Catalog/BikeCatalogProvider.swift",
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Catalog/BikeCatalogRepository.swift",
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Catalog/CatalogFeatureFlags.swift",
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Catalog/CatalogModels.swift",
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Catalog/CatalogValidator.swift",
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Catalog/Providers/PublicJSONCatalogProvider.swift",
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Catalog/Providers/StaticCatalogProvider.swift",
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Data/BikeImages.swift",
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Data/Bikes.swift",
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Data/PublicCatalogSources.swift",
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Data/Quotes.swift",
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Data/Retailers.swift",
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Models/Bike.swift",
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Models/FilterState.swift",
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Models/Retailer.swift",
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Models/RiderProfile.swift",
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Models/WatchlistItem.swift",
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Search/BikeFilterEngine.swift",
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Shared/Formatting.swift"
+      ],
+      "tempsPath" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build",
+      "wholeModuleOptimization" : false
+    },
+    "C.RippersCorePackageTests-arm64-apple-macosx-debug.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCorePackageTests.build/sources",
+      "importPath" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCorePackageTests.derived/runner.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/Modules/RippersCoreTests.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCorePackageTests.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "RippersCorePackageTests",
+      "moduleOutputPath" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/Modules/RippersCorePackageTests.swiftmodule",
+      "objects" : [
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCorePackageTests.build/runner.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx14.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-Xfrontend",
+        "-enable-cross-import-overlays",
+        "-j8",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCorePackageTests.build/include/RippersCorePackageTests-Swift.h",
+        "-plugin-path",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "rippers"
+      ],
+      "outputFileMapPath" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCorePackageTests.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCorePackageTests.build/runner.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/Modules/RippersCorePackageTests.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCorePackageTests.derived/runner.swift"
+      ],
+      "tempsPath" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCorePackageTests.build",
+      "wholeModuleOptimization" : false
+    },
+    "C.RippersCoreTests-arm64-apple-macosx-debug.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCoreTests.build/sources",
+      "importPath" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Tests/BikeDataIntegrityAndGoldenQueryTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Tests/BikeFilterEngineTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Tests/LiveCatalogPipelineTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/Modules/RippersCore.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCoreTests.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "RippersCoreTests",
+      "moduleOutputPath" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/Modules/RippersCoreTests.swiftmodule",
+      "objects" : [
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCoreTests.build/BikeDataIntegrityAndGoldenQueryTests.swift.o",
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCoreTests.build/BikeFilterEngineTests.swift.o",
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCoreTests.build/LiveCatalogPipelineTests.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx14.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-Xfrontend",
+        "-enable-cross-import-overlays",
+        "-j8",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-swift-version",
+        "5",
+        "-plugin-path",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "rippers"
+      ],
+      "outputFileMapPath" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCoreTests.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCoreTests.build/BikeDataIntegrityAndGoldenQueryTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCoreTests.build/BikeFilterEngineTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCoreTests.build/LiveCatalogPipelineTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/Modules/RippersCoreTests.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Tests/BikeDataIntegrityAndGoldenQueryTests.swift",
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Tests/BikeFilterEngineTests.swift",
+        "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Tests/LiveCatalogPipelineTests.swift"
+      ],
+      "tempsPath" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCoreTests.build",
+      "wholeModuleOptimization" : false
+    }
+  },
+  "swiftFrontendCommands" : {
+
+  },
+  "swiftTargetScanArgs" : {
+    "RippersCore" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "RippersCore",
+      "-package-name",
+      "rippers",
+      "-c",
+      "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Catalog/BikeCatalogProvider.swift",
+      "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Catalog/BikeCatalogRepository.swift",
+      "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Catalog/CatalogFeatureFlags.swift",
+      "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Catalog/CatalogModels.swift",
+      "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Catalog/CatalogValidator.swift",
+      "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Catalog/Providers/PublicJSONCatalogProvider.swift",
+      "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Catalog/Providers/StaticCatalogProvider.swift",
+      "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Data/BikeImages.swift",
+      "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Data/Bikes.swift",
+      "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Data/PublicCatalogSources.swift",
+      "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Data/Quotes.swift",
+      "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Data/Retailers.swift",
+      "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Models/Bike.swift",
+      "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Models/FilterState.swift",
+      "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Models/Retailer.swift",
+      "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Models/RiderProfile.swift",
+      "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Models/WatchlistItem.swift",
+      "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Search/BikeFilterEngine.swift",
+      "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Shared/Formatting.swift",
+      "-I",
+      "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx14.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-j8",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/include/RippersCore-Swift.h",
+      "-swift-version",
+      "5",
+      "-plugin-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "rippers",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ],
+    "RippersCorePackageTests" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "RippersCorePackageTests",
+      "-package-name",
+      "rippers",
+      "-c",
+      "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCorePackageTests.derived/runner.swift",
+      "-I",
+      "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx14.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-Xfrontend",
+      "-enable-cross-import-overlays",
+      "-j8",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCorePackageTests.build/include/RippersCorePackageTests-Swift.h",
+      "-plugin-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "rippers",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ],
+    "RippersCoreTests" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "RippersCoreTests",
+      "-package-name",
+      "rippers",
+      "-c",
+      "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Tests/BikeDataIntegrityAndGoldenQueryTests.swift",
+      "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Tests/BikeFilterEngineTests.swift",
+      "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Tests/LiveCatalogPipelineTests.swift",
+      "-I",
+      "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx14.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-Xfrontend",
+      "-enable-cross-import-overlays",
+      "-j8",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-swift-version",
+      "5",
+      "-plugin-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "rippers",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ]
+  },
+  "targetDependencyMap" : {
+    "RippersCore" : [
+
+    ],
+    "RippersCorePackageTests" : [
+      "RippersCoreTests",
+      "RippersCore"
+    ],
+    "RippersCoreTests" : [
+      "RippersCore"
+    ]
+  },
+  "testDiscoveryCommands" : {
+
+  },
+  "testEntryPointCommands" : {
+    "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCorePackageTests.derived/runner.swift" : {
+      "inputs" : [
+
+      ],
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCorePackageTests.derived/runner.swift"
+        }
+      ]
+    }
+  },
+  "traitConfiguration" : {
+    "default" : {
+
+    }
+  },
+  "writeCommands" : {
+    "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Catalog/BikeCatalogProvider.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Catalog/BikeCatalogRepository.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Catalog/CatalogFeatureFlags.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Catalog/CatalogModels.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Catalog/CatalogValidator.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Catalog/Providers/PublicJSONCatalogProvider.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Catalog/Providers/StaticCatalogProvider.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Data/BikeImages.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Data/Bikes.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Data/PublicCatalogSources.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Data/Quotes.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Data/Retailers.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Models/Bike.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Models/FilterState.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Models/Retailer.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Models/RiderProfile.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Models/WatchlistItem.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Search/BikeFilterEngine.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Shared/Formatting.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/sources"
+    },
+    "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCorePackageTests.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCorePackageTests.derived/runner.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCorePackageTests.build/sources"
+    },
+    "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCorePackageTests.product/Objects.LinkFileList" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<link-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/Bike.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/BikeCatalogProvider.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/BikeCatalogRepository.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/BikeFilterEngine.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/BikeImages.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/Bikes.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/CatalogFeatureFlags.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/CatalogModels.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/CatalogValidator.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/FilterState.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/Formatting.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/PublicCatalogSources.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/PublicJSONCatalogProvider.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/Quotes.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/Retailer.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/Retailers.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/RiderProfile.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/StaticCatalogProvider.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCore.build/WatchlistItem.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCorePackageTests.build/runner.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCoreTests.build/BikeDataIntegrityAndGoldenQueryTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCoreTests.build/BikeFilterEngineTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCoreTests.build/LiveCatalogPipelineTests.swift.o"
+        }
+      ],
+      "outputFilePath" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCorePackageTests.product/Objects.LinkFileList"
+    },
+    "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCoreTests.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Tests/BikeDataIntegrityAndGoldenQueryTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Tests/BikeFilterEngineTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/Rippers/Tests/LiveCatalogPipelineTests.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/RippersCoreTests.build/sources"
+    },
+    "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt" : {
+      "alwaysOutOfDate" : true,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<swift-get-version>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+        }
+      ],
+      "outputFilePath" : "/Users/leeroy/Library/Mobile Documents/com~apple~CloudDocs/Claude/Rippers/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+    }
+  }
+}
