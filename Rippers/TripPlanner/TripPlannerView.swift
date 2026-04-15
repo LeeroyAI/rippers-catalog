@@ -24,6 +24,12 @@ struct TripPlannerView: View {
     @AppStorage("rippers.tripPlannerRecentSearches") private var recentSearchesData: String = "[]"
 
     var activeProfile: RiderProfile? { profiles.first(where: { $0.isActive }) }
+    private var activeProfileSummary: String {
+        guard let profile = activeProfile else { return "No active profile" }
+        let category = profile.preferredCategory == "Any" ? "Any category" : profile.preferredCategory
+        let budget = profile.budgetCap > 0 ? "Budget \(Formatting.currency(profile.budgetCap))" : "No budget cap"
+        return "\(profile.name) · \(profile.style) · \(category) · \(budget)"
+    }
     private var recentSearches: [String] {
         guard let data = recentSearchesData.data(using: .utf8),
               let decoded = try? JSONDecoder().decode([String].self, from: data) else {
@@ -34,6 +40,80 @@ struct TripPlannerView: View {
     private var showAutocomplete: Bool {
         !destination.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !searchCompleter.completions.isEmpty
     }
+    private var recommendationResult: (bikes: [Bike], usedProfileFallback: Bool) {
+        let inStockBikes = filterStore.catalog.filter { !$0.inStock.isEmpty }
+        var bikes = inStockBikes
+        var usedProfileFallback = false
+
+        // Location suitability first: only bikes that suit terrain around destination.
+        switch locationRideType {
+        case .gravity:
+            bikes = bikes.filter {
+                ($0.category == "Enduro" || $0.category == "Downhill" || $0.travelMM >= 160) &&
+                $0.suspension != "Hardtail"
+            }
+        case .crossCountry:
+            bikes = bikes.filter {
+                $0.category == "XC / Cross-Country" || ($0.suspension == "Hardtail" && $0.travelMM <= 130)
+            }
+        case .jump:
+            bikes = bikes.filter {
+                $0.suspension == "Hardtail" && ($0.wheel == "26\"" || $0.wheel == "27.5\"")
+            }
+        case .trail:
+            bikes = bikes.filter {
+                $0.category == "Trail" || $0.category == "All-Mountain" || $0.isEbike
+            }
+        case .other:
+            bikes = bikes.filter {
+                $0.category == "Trail" || $0.category == "All-Mountain" || $0.category == "XC / Cross-Country" || $0.isEbike
+            }
+        }
+
+        // Profile suitability second: prefer rider goals and budget,
+        // but keep a useful destination-based list if profile constraints are too restrictive.
+        if let profile = activeProfile {
+            let locationOnlyBikes = bikes
+            var profiledBikes = bikes
+
+            if profile.preferredCategory != "Any" {
+                profiledBikes = profiledBikes.filter { bike in
+                    bike.category == profile.preferredCategory ||
+                    (profile.preferredCategory == "Hardtail" && bike.suspension == "Hardtail")
+                }
+            }
+            if profile.budgetCap > 0 {
+                profiledBikes = profiledBikes.filter { ($0.bestPrice ?? .greatestFiniteMagnitude) <= profile.budgetCap }
+            }
+            let style = RidingDisciplineKind.from(profile.style)
+            if style == .gravity {
+                profiledBikes = profiledBikes.filter {
+                    $0.suspension != "Hardtail" &&
+                    ($0.category == "Enduro" || $0.travelMM >= 160)
+                }
+            } else if style == .crossCountry {
+                profiledBikes = profiledBikes.filter { $0.category == "XC / Cross-Country" || $0.suspension == "Hardtail" }
+            } else if style == .jump {
+                profiledBikes = profiledBikes.filter { $0.suspension == "Hardtail" || $0.wheel == "27.5\"" }
+            }
+
+            // Keep recommendations populated for the selected area:
+            // if strict profile filtering wipes out options, fall back to location-only bikes.
+            if profiledBikes.isEmpty, !locationOnlyBikes.isEmpty {
+                usedProfileFallback = true
+                bikes = locationOnlyBikes
+            } else {
+                bikes = profiledBikes
+            }
+        } else if bikes.isEmpty {
+            // No profile: prioritize trail-friendly bikes and keep list broad.
+            bikes = inStockBikes
+        }
+
+        let sorted = bikes.sorted { ($0.bestPrice ?? .greatestFiniteMagnitude) < ($1.bestPrice ?? .greatestFiniteMagnitude) }
+        return (sorted, usedProfileFallback)
+    }
+    private var recommendedBikes: [Bike] { recommendationResult.bikes }
     private var areaBikeStyles: [AreaBikeStyle] {
         switch locationRideType {
         case .gravity:
@@ -99,9 +179,18 @@ struct TripPlannerView: View {
                 VStack(spacing: 12) {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Trip Planner").font(.headline)
-                        Text(activeProfile == nil ? "Create/select a profile to tailor regional bike picks." : "Using profile: \(activeProfile?.name ?? "")")
+                        Text(activeProfile == nil ? "Create/select a profile to tailor regional bike picks." : "Using profile: \(activeProfileSummary)")
                             .font(.caption)
                             .foregroundStyle(.secondary)
+                        if let profile = activeProfile {
+                            HStack(spacing: 8) {
+                                Label(profile.style, systemImage: "person.fill")
+                                Label(profile.preferredCategory == "Any" ? "Any category" : profile.preferredCategory, systemImage: "line.3.horizontal.decrease.circle")
+                                Label(profile.budgetCap > 0 ? Formatting.currency(profile.budgetCap) : "No budget cap", systemImage: "dollarsign.circle")
+                            }
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(Color.rOrangeDark)
+                        }
                         HStack {
                             TextField("Destination", text: $destination)
                                 .textFieldStyle(.roundedBorder)
@@ -215,6 +304,11 @@ struct TripPlannerView: View {
                     }
 
                     sectionCard(title: "Recommended Bikes for \(regionHint)") {
+                        if recommendationResult.usedProfileFallback {
+                            Text("Showing area matches. Your active profile filters were too strict for this location.")
+                                .font(.caption)
+                                .foregroundStyle(Color.rOrangeDark)
+                        }
                         if recommendedBikes.isEmpty {
                             Text("No bikes match this area and your active profile settings yet. Try broadening budget or category filters.")
                                 .font(.caption)
@@ -256,60 +350,6 @@ struct TripPlannerView: View {
                 searchCompleter.updateQuery(newValue)
             }
         }
-    }
-
-    private var recommendedBikes: [Bike] {
-        var bikes = filterStore.catalog.filter { !$0.inStock.isEmpty }
-
-        // Location suitability first: only bikes that suit terrain around destination.
-        switch locationRideType {
-        case .gravity:
-            bikes = bikes.filter {
-                ($0.category == "Enduro" || $0.category == "Downhill" || $0.travelMM >= 160) &&
-                $0.suspension != "Hardtail"
-            }
-        case .crossCountry:
-            bikes = bikes.filter {
-                $0.category == "XC / Cross-Country" || ($0.suspension == "Hardtail" && $0.travelMM <= 130)
-            }
-        case .jump:
-            bikes = bikes.filter {
-                $0.suspension == "Hardtail" && ($0.wheel == "26\"" || $0.wheel == "27.5\"")
-            }
-        case .trail:
-            bikes = bikes.filter {
-                $0.category == "Trail" || $0.category == "All-Mountain" || $0.isEbike
-            }
-        case .other:
-            bikes = bikes.filter {
-                $0.category == "Trail" || $0.category == "All-Mountain" || $0.category == "XC / Cross-Country" || $0.isEbike
-            }
-        }
-
-        // Profile suitability second: tighten to rider goals and budget.
-        if let profile = activeProfile {
-            if profile.preferredCategory != "Any" {
-                bikes = bikes.filter { bike in
-                    bike.category == profile.preferredCategory ||
-                    (profile.preferredCategory == "Hardtail" && bike.suspension == "Hardtail")
-                }
-            }
-            if profile.budgetCap > 0 {
-                bikes = bikes.filter { ($0.bestPrice ?? .greatestFiniteMagnitude) <= profile.budgetCap }
-            }
-            let style = RidingDisciplineKind.from(profile.style)
-            if style == .gravity {
-                bikes = bikes.filter {
-                    $0.suspension != "Hardtail" &&
-                    ($0.category == "Enduro" || $0.travelMM >= 160)
-                }
-            } else if style == .crossCountry {
-                bikes = bikes.filter { $0.category == "XC / Cross-Country" || $0.suspension == "Hardtail" }
-            } else if style == .jump {
-                bikes = bikes.filter { $0.suspension == "Hardtail" || $0.wheel == "27.5\"" }
-            }
-        }
-        return bikes.sorted { ($0.bestPrice ?? .greatestFiniteMagnitude) < ($1.bestPrice ?? .greatestFiniteMagnitude) }
     }
 
     private func sectionCard<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
