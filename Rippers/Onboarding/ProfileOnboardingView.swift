@@ -34,8 +34,9 @@ struct ProfileOnboardingView: View {
 
     private var isValid: Bool {
         !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            && Int(heightText) != nil
-            && Int(weightText) != nil
+            && (100...220).contains(Int(heightText) ?? 0)
+            && (20...150).contains(Int(weightText) ?? 0)
+            && (ageText.isEmpty || (5...100).contains(Int(ageText) ?? 0))
     }
 
     private var selectedStyleSummary: String {

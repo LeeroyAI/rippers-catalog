@@ -122,17 +122,9 @@ Stateless enum in `Search/BikeFilterEngine.swift`. Entry points:
 - `matchScore(for:filters:) -> Int` — 0–100 score, base 40 + profile bonuses/penalties
 - `scoreBreakdown(for:filters:)` — returns `[MatchFactor]` for debug/UI explanations
 
-### `FilterState` — important: has more fields than its struct definition
+### `FilterState` — all fields present
 
-`BikeFilterEngine` uses fields that are **not yet declared** in `FilterState.swift`:
-- `tailorToProfile: Bool`
-- `activeEbikeFilter: Bool`
-- `activeEbikeBrandFilters: Set<String>`
-- `profileCategoryHint: String?`
-- `profileStyleHint: String?`
-- `profileBudgetCap: Double?`
-
-These must be added to the `FilterState` struct before the eBike filters and profile-tailored ranking will compile/work.
+All 14 fields are declared in `FilterState.swift` including `tailorToProfile`, `activeEbikeFilter`, `activeEbikeBrandFilters`, `profileCategoryHint`, `profileStyleHint`, and `profileBudgetCap`. The filter engine and profile-tailored ranking compile and work as-is.
 
 ### Persistence — SwiftData
 

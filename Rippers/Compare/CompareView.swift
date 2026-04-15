@@ -128,7 +128,11 @@ struct CompareView: View {
             AsyncImage(url: url) { phase in
                 switch phase {
                 case .empty:
-                    compareImagePlaceholder
+                    ZStack {
+                        compareImagePlaceholder
+                        ProgressView()
+                            .tint(.white)
+                    }
                 case .success(let image):
                     image
                         .resizable()

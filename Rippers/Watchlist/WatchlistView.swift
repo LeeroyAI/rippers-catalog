@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import Combine
 
 struct WatchlistView: View {
     @Query private var watchlistItems: [WatchlistItem]
@@ -155,6 +156,9 @@ struct WatchlistView: View {
                     Text("Remove this bike from your watchlist?")
                 }
             }
+            .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
+                snapshotAllPrices()
+            }
             .safeAreaInset(edge: .bottom) {
                 if let recentlyDeleted {
                     HStack {
@@ -234,6 +238,13 @@ struct WatchlistView: View {
             if item.priceHistory.count > 20 {
                 item.priceHistory = Array(item.priceHistory.suffix(20))
             }
+        }
+    }
+
+    private func snapshotAllPrices() {
+        for item in watchlistItems {
+            guard let bike = bike(for: item) else { continue }
+            snapshotCurrentPrice(for: item, bike: bike)
         }
     }
 
