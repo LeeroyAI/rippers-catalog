@@ -1,10 +1,13 @@
 import SwiftUI
 import MapKit
 import SwiftData
+import CoreLocation
 
 struct TripPlannerView: View {
     @EnvironmentObject private var filterStore: FilterStore
+    @Environment(\.openURL) private var openURL
     @Query private var profiles: [RiderProfile]
+    @StateObject private var searchCompleter = LocationSearchCompleter()
     @State private var destination = ""
     @State private var position: MapCameraPosition = .region(
         MKCoordinateRegion(
@@ -14,9 +17,75 @@ struct TripPlannerView: View {
     )
     @State private var searchStatus = "Find a riding destination to get profile-matched bike recommendations."
     @State private var regionHint: String = "Trail"
+    @State private var nearbyRidingAreas: [MKMapItem] = []
     @State private var nearbyShops: [MKMapItem] = []
+    @State private var lastSearchedDestination: MKMapItem?
+    @State private var destinationPlacemark: MKPlacemark?
+    @AppStorage("rippers.tripPlannerRecentSearches") private var recentSearchesData: String = "[]"
 
     var activeProfile: RiderProfile? { profiles.first(where: { $0.isActive }) }
+    private var recentSearches: [String] {
+        guard let data = recentSearchesData.data(using: .utf8),
+              let decoded = try? JSONDecoder().decode([String].self, from: data) else {
+            return []
+        }
+        return decoded
+    }
+    private var showAutocomplete: Bool {
+        !destination.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !searchCompleter.completions.isEmpty
+    }
+    private var areaBikeStyles: [AreaBikeStyle] {
+        switch locationRideType {
+        case .gravity:
+            return [
+                .init(name: "Enduro", reason: "Long travel and stable geometry for steep descents."),
+                .init(name: "Downhill", reason: "Maximum control and braking power for bike-park tracks."),
+                .init(name: "eMTB", reason: "Helpful on long elevation days and shuttle alternatives.")
+            ]
+        case .crossCountry:
+            return [
+                .init(name: "XC / Cross-Country", reason: "Efficient climbing and fast rolling for long loops."),
+                .init(name: "Trail Hardtail", reason: "Light and responsive for smoother singletrack.")
+            ]
+        case .trail:
+            return [
+                .init(name: "Trail", reason: "Balanced handling for mixed climbs, descents, and tech sections."),
+                .init(name: "All-Mountain", reason: "Extra travel and confidence for rougher descents."),
+                .init(name: "eMTB", reason: "Great for covering more distance in big trail networks.")
+            ]
+        case .jump:
+            return [
+                .init(name: "Hardtail", reason: "Responsive handling for pump tracks and jump lines."),
+                .init(name: "Dirt Jump", reason: "Stable and playful for airtime-focused riding.")
+            ]
+        }
+    }
+
+    private var locationRideType: RidingDisciplineKind {
+        if !nearbyRidingAreas.isEmpty {
+            let blob = nearbyRidingAreas
+                .compactMap { [$0.name, $0.placemark.title].compactMap { $0 }.joined(separator: " ") }
+                .joined(separator: " ")
+                .lowercased()
+            if blob.contains("downhill") || blob.contains("bike park") || blob.contains("enduro") || blob.contains("gravity") {
+                return .gravity
+            }
+            if blob.contains("cross country") || blob.contains("xc") || blob.contains("singletrack loop") {
+                return .crossCountry
+            }
+            if blob.contains("jump") || blob.contains("pump track") {
+                return .jump
+            }
+        }
+        let hint = regionHint.lowercased()
+        if hint.contains("gravity") || hint.contains("enduro") || hint.contains("downhill") {
+            return .gravity
+        }
+        if hint.contains("xc") || hint.contains("cross") {
+            return .crossCountry
+        }
+        return .trail
+    }
 
     var body: some View {
         NavigationStack {
@@ -36,6 +105,74 @@ struct TripPlannerView: View {
                             .buttonStyle(.borderedProminent)
                             .tint(Color.rOrange)
                         }
+                        if showAutocomplete {
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("Suggestions")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(.secondary)
+                                ForEach(Array(searchCompleter.completions.prefix(5))) { completion in
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(completion.title)
+                                            .font(.subheadline.weight(.semibold))
+                                        if !completion.subtitle.isEmpty {
+                                            Text(completion.subtitle)
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                        }
+                                    }
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .contentShape(Rectangle())
+                                    .onTapGesture {
+                                        Task {
+                                            await searchDestination(
+                                                query: completion.queryText,
+                                                displayName: completion.title,
+                                                expectedSubtitle: completion.subtitle
+                                            )
+                                        }
+                                    }
+                                    .padding(.vertical, 2)
+                                    Divider()
+                                }
+                            }
+                            .padding(10)
+                            .background(Color.rBackground.opacity(0.55))
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                            .zIndex(3)
+                        }
+                        if !recentSearches.isEmpty {
+                            VStack(alignment: .leading, spacing: 6) {
+                                HStack {
+                                    Text("Recent searches")
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundStyle(.secondary)
+                                    Spacer()
+                                    Button("Clear") {
+                                        persistRecentSearches([])
+                                    }
+                                    .font(.caption)
+                                }
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    HStack {
+                                        ForEach(recentSearches, id: \.self) { recent in
+                                            HStack(spacing: 6) {
+                                                Button(recent) {
+                                                    Task { await searchDestination(query: recent, displayName: recent) }
+                                                }
+                                                .buttonStyle(.bordered)
+                                                Button {
+                                                    removeRecentSearch(recent)
+                                                } label: {
+                                                    Image(systemName: "xmark.circle.fill")
+                                                        .foregroundStyle(.secondary)
+                                                }
+                                                .buttonStyle(.plain)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                         Text(searchStatus)
                             .font(.caption)
                             .foregroundStyle(.secondary)
@@ -45,46 +182,61 @@ struct TripPlannerView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 14))
 
                     Map(position: $position)
-                        .frame(height: 320)
+                        .frame(height: 300)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
 
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Recommended Bikes for \(regionHint)").font(.headline)
-                        ForEach(recommendedBikes.prefix(8)) { bike in
-                            HStack {
-                                VStack(alignment: .leading) {
-                                    Text("\(bike.brand) \(bike.model)")
-                                    Text("\(bike.category) · \(bike.travel)")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                Spacer()
-                                Text(Formatting.currency(bike.bestPrice))
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(Color.rGreen)
+                    if !nearbyRidingAreas.isEmpty {
+                        sectionCard(title: "Riding Areas Near \(destination)") {
+                            ForEach(nearbyRidingAreas.prefix(4), id: \.self) { area in
+                                locationRow(name: area.name ?? "Riding Area", subtitle: area.placemark.title ?? "")
                             }
                         }
                     }
-                    .padding()
-                    .background(Color.rCard)
-                    .clipShape(RoundedRectangle(cornerRadius: 14))
 
-                    if !nearbyShops.isEmpty {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Nearby Bike Shops").font(.headline)
-                            ForEach(nearbyShops.prefix(6), id: \.self) { shop in
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(shop.name ?? "Bike Shop")
-                                        .font(.subheadline.weight(.semibold))
-                                    Text(shop.placemark.title ?? "")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
+                    sectionCard(title: "Bike Styles for \(regionHint)") {
+                        ForEach(areaBikeStyles) { style in
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(style.name)
+                                    .font(.subheadline.weight(.semibold))
+                                Text(style.reason)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .padding(10)
+                            .background(Color.rBackground.opacity(0.55))
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                        }
+                    }
+
+                    sectionCard(title: "Recommended Bikes for \(regionHint)") {
+                        if recommendedBikes.isEmpty {
+                            Text("No bikes match this area and your active profile settings yet. Try broadening budget or category filters.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        } else {
+                            ForEach(recommendedBikes.prefix(6)) { bike in
+                                HStack {
+                                    VStack(alignment: .leading) {
+                                        Text("\(bike.brand) \(bike.model)")
+                                        Text("\(bike.category) · \(bike.travel)")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                    Text(Formatting.currency(bike.bestPrice))
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundStyle(Color.rGreen)
                                 }
                             }
                         }
-                        .padding()
-                        .background(Color.rCard)
-                        .clipShape(RoundedRectangle(cornerRadius: 14))
+                    }
+
+                    if !nearbyShops.isEmpty {
+                        sectionCard(title: "Nearby Bike Shops") {
+                            ForEach(nearbyShops.prefix(6), id: \.self) { shop in
+                                shopCard(shop)
+                            }
+                        }
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .topLeading)
@@ -92,15 +244,45 @@ struct TripPlannerView: View {
                 .padding(.vertical, 8)
             }
             .background(Color.rBackground.ignoresSafeArea())
-            .rippersBrandedTitle("Trip Planner")
+            .navigationTitle("Trip Planner")
+            .navigationBarTitleDisplayMode(.inline)
+            .onChange(of: destination) { _, newValue in
+                searchCompleter.updateQuery(newValue)
+            }
         }
     }
 
     private var recommendedBikes: [Bike] {
-        var bikes = filterStore.catalog
+        var bikes = filterStore.catalog.filter { !$0.inStock.isEmpty }
+
+        // Location suitability first: only bikes that suit terrain around destination.
+        switch locationRideType {
+        case .gravity:
+            bikes = bikes.filter {
+                ($0.category == "Enduro" || $0.category == "Downhill" || $0.travelMM >= 160) &&
+                $0.suspension != "Hardtail"
+            }
+        case .crossCountry:
+            bikes = bikes.filter {
+                $0.category == "XC / Cross-Country" || ($0.suspension == "Hardtail" && $0.travelMM <= 130)
+            }
+        case .jump:
+            bikes = bikes.filter {
+                $0.suspension == "Hardtail" && ($0.wheel == "26\"" || $0.wheel == "27.5\"")
+            }
+        case .trail:
+            bikes = bikes.filter {
+                $0.category == "Trail" || $0.category == "All-Mountain" || $0.isEbike
+            }
+        }
+
+        // Profile suitability second: tighten to rider goals and budget.
         if let profile = activeProfile {
             if profile.preferredCategory != "Any" {
-                bikes = bikes.filter { $0.category == profile.preferredCategory }
+                bikes = bikes.filter { bike in
+                    bike.category == profile.preferredCategory ||
+                    (profile.preferredCategory == "Hardtail" && bike.suspension == "Hardtail")
+                }
             }
             if profile.budgetCap > 0 {
                 bikes = bikes.filter { ($0.bestPrice ?? .greatestFiniteMagnitude) <= profile.budgetCap }
@@ -117,32 +299,62 @@ struct TripPlannerView: View {
                 bikes = bikes.filter { $0.suspension == "Hardtail" || $0.wheel == "27.5\"" }
             }
         }
-
-        let hint = regionHint.lowercased()
-        if hint.contains("enduro") || hint.contains("downhill") {
-            bikes = bikes.filter { $0.category == "Enduro" || $0.travel.contains("170") }
-        } else if hint.contains("xc") || hint.contains("cross") {
-            bikes = bikes.filter { $0.category == "XC / Cross-Country" || $0.suspension == "Hardtail" }
-        } else {
-            bikes = bikes.filter { $0.category == "Trail" || $0.category == "eBike" }
-        }
         return bikes.sorted { ($0.bestPrice ?? .greatestFiniteMagnitude) < ($1.bestPrice ?? .greatestFiniteMagnitude) }
     }
 
-    private func searchDestination() async {
-        guard !destination.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+    private func sectionCard<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.headline)
+            content()
+        }
+        .padding()
+        .background(Color.rCard)
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+    }
+
+    private func locationRow(name: String, subtitle: String) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(name)
+                .font(.subheadline.weight(.semibold))
+            if !subtitle.isEmpty {
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+            }
+        }
+        .padding(10)
+        .background(Color.rBackground.opacity(0.55))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+    }
+
+    private func searchDestination(query: String? = nil, displayName: String? = nil, expectedSubtitle: String? = nil) async {
+        let searchText = (query ?? destination).trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !searchText.isEmpty else { return }
         let request = MKLocalSearch.Request()
-        request.naturalLanguageQuery = destination
+        request.naturalLanguageQuery = searchText
         request.resultTypes = .address
         do {
             let response = try await MKLocalSearch(request: request).start()
-            if let item = response.mapItems.first {
+            let selectedItem = selectBestDestination(
+                from: response.mapItems,
+                displayName: displayName,
+                expectedSubtitle: expectedSubtitle
+            )
+            if let item = selectedItem {
                 let coordinate = item.placemark.coordinate
+                lastSearchedDestination = item
+                destinationPlacemark = item.placemark
+                destination = displayName ?? item.name ?? searchText
+                searchCompleter.clear()
+                addRecentSearch(destination)
                 position = .region(
                     MKCoordinateRegion(center: coordinate, span: MKCoordinateSpan(latitudeDelta: 0.22, longitudeDelta: 0.22))
                 )
                 searchStatus = "Destination found: \(item.name ?? destination)"
                 inferRegionHint(from: destination)
+                await searchNearbyRidingAreas(around: coordinate)
                 await searchNearbyShops(around: coordinate)
             } else {
                 searchStatus = "No destination match found."
@@ -166,11 +378,274 @@ struct TripPlannerView: View {
     private func searchNearbyShops(around coordinate: CLLocationCoordinate2D) async {
         let request = MKLocalSearch.Request()
         request.naturalLanguageQuery = "bike shop"
+        request.resultTypes = .pointOfInterest
         request.region = MKCoordinateRegion(center: coordinate, span: MKCoordinateSpan(latitudeDelta: 0.15, longitudeDelta: 0.15))
         do {
-            nearbyShops = try await MKLocalSearch(request: request).start().mapItems
+            let raw = try await MKLocalSearch(request: request).start().mapItems
+            nearbyShops = sanitizeNearbyResults(
+                raw,
+                around: coordinate,
+                maxDistanceKM: 60
+            )
         } catch {
             nearbyShops = []
+        }
+    }
+
+    private func searchNearbyRidingAreas(around coordinate: CLLocationCoordinate2D) async {
+        let request = MKLocalSearch.Request()
+        let hint = regionHint.lowercased()
+        if hint.contains("gravity") || hint.contains("enduro") {
+            request.naturalLanguageQuery = "bike park"
+        } else if hint.contains("xc") || hint.contains("cross") {
+            request.naturalLanguageQuery = "mountain bike trail"
+        } else {
+            request.naturalLanguageQuery = "trail network"
+        }
+        request.resultTypes = .pointOfInterest
+        request.region = MKCoordinateRegion(center: coordinate, span: MKCoordinateSpan(latitudeDelta: 0.22, longitudeDelta: 0.22))
+        do {
+            let raw = try await MKLocalSearch(request: request).start().mapItems
+            nearbyRidingAreas = sanitizeNearbyResults(
+                raw,
+                around: coordinate,
+                maxDistanceKM: 120
+            )
+        } catch {
+            nearbyRidingAreas = []
+        }
+    }
+
+    private func shopCard(_ shop: MKMapItem) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(shop.name ?? "Bike Shop")
+                        .font(.subheadline.weight(.semibold))
+                    if let address = shop.placemark.title, !address.isEmpty {
+                        Text(address)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                Spacer()
+                Image(systemName: "mappin.and.ellipse")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.rOrange)
+            }
+
+            if let phone = shop.phoneNumber, !phone.isEmpty {
+                contactRow(icon: "phone.fill", text: phone)
+            }
+            if let url = shop.url {
+                contactRow(icon: "globe", text: url.host() ?? url.absoluteString)
+            }
+
+            ViewThatFits {
+                HStack(spacing: 8) {
+                    if let phone = shop.phoneNumber, let phoneURL = phoneCallURL(from: phone) {
+                        Button("Call") { openURL(phoneURL) }
+                            .buttonStyle(.bordered)
+                    }
+                    if let website = shop.url {
+                        Button("Website") { openURL(website) }
+                            .buttonStyle(.bordered)
+                    }
+                    Button("Directions") { openDirections(to: shop) }
+                        .buttonStyle(.borderedProminent)
+                        .tint(Color.rOrange)
+                }
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: 8) {
+                        if let phone = shop.phoneNumber, let phoneURL = phoneCallURL(from: phone) {
+                            Button("Call") { openURL(phoneURL) }
+                                .buttonStyle(.bordered)
+                        }
+                        if let website = shop.url {
+                            Button("Website") { openURL(website) }
+                                .buttonStyle(.bordered)
+                        }
+                    }
+                    Button("Directions") { openDirections(to: shop) }
+                        .buttonStyle(.borderedProminent)
+                        .tint(Color.rOrange)
+                }
+            }
+        }
+        .padding(10)
+        .background(Color.rBackground.opacity(0.55))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+    }
+
+    private func contactRow(icon: String, text: String) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: icon)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(Color.rOrangeDark)
+            Text(text)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+        }
+    }
+
+    private func phoneCallURL(from phone: String) -> URL? {
+        let digits = phone.filter(\.isNumber)
+        guard !digits.isEmpty else { return nil }
+        return URL(string: "tel://\(digits)")
+    }
+
+    private func openDirections(to shop: MKMapItem) {
+        let source = MKMapItem.forCurrentLocation()
+        let launchOptions: [String: Any] = [
+            MKLaunchOptionsDirectionsModeKey: MKLaunchOptionsDirectionsModeDriving
+        ]
+        let opened = MKMapItem.openMaps(
+            with: [source, shop],
+            launchOptions: launchOptions
+        )
+
+        if !opened {
+            let destination = "\(shop.placemark.coordinate.latitude),\(shop.placemark.coordinate.longitude)"
+            let encodedName = (shop.name ?? "Bike Shop")
+                .addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "Bike%20Shop"
+            if let fallback = URL(string: "http://maps.apple.com/?saddr=Current%20Location&daddr=\(destination)&q=\(encodedName)") {
+                openURL(fallback)
+            }
+        }
+    }
+
+    private func addRecentSearch(_ query: String) {
+        let clean = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !clean.isEmpty else { return }
+        var updated = recentSearches.filter { $0.caseInsensitiveCompare(clean) != .orderedSame }
+        updated.insert(clean, at: 0)
+        persistRecentSearches(Array(updated.prefix(8)))
+    }
+
+    private func removeRecentSearch(_ query: String) {
+        persistRecentSearches(recentSearches.filter { $0 != query })
+    }
+
+    private func persistRecentSearches(_ items: [String]) {
+        guard let data = try? JSONEncoder().encode(items),
+              let text = String(data: data, encoding: .utf8) else { return }
+        recentSearchesData = text
+    }
+
+    private func selectBestDestination(from items: [MKMapItem], displayName: String?, expectedSubtitle: String?) -> MKMapItem? {
+        guard !items.isEmpty else { return nil }
+        guard let expectedSubtitle, !expectedSubtitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return items.first
+        }
+
+        let hint = expectedSubtitle.lowercased()
+        let subtitleMatch = items.first { item in
+            let title = item.placemark.title?.lowercased() ?? ""
+            let locality = item.placemark.locality?.lowercased() ?? ""
+            let admin = item.placemark.administrativeArea?.lowercased() ?? ""
+            let country = item.placemark.country?.lowercased() ?? ""
+            return title.contains(hint) || hint.contains(locality) || hint.contains(admin) || hint.contains(country)
+        }
+        return subtitleMatch ?? items.first
+    }
+
+    private func sanitizeNearbyResults(_ items: [MKMapItem], around coordinate: CLLocationCoordinate2D, maxDistanceKM: Double) -> [MKMapItem] {
+        let centerLocation = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
+        let filtered = items.filter { isRelevant($0, around: coordinate, maxDistanceKM: maxDistanceKM) }
+        let deduped = Dictionary(
+            filtered.map {
+                (
+                    key: "\(($0.name ?? "").lowercased())-\($0.placemark.coordinate.latitude.rounded(toPlaces: 4))-\($0.placemark.coordinate.longitude.rounded(toPlaces: 4))",
+                    value: $0
+                )
+            },
+            uniquingKeysWith: { first, _ in first }
+        ).values
+
+        return deduped.sorted {
+            let lhs = CLLocation(latitude: $0.placemark.coordinate.latitude, longitude: $0.placemark.coordinate.longitude)
+            let rhs = CLLocation(latitude: $1.placemark.coordinate.latitude, longitude: $1.placemark.coordinate.longitude)
+            return lhs.distance(from: centerLocation) < rhs.distance(from: centerLocation)
+        }
+    }
+
+    private func isRelevant(_ item: MKMapItem, around coordinate: CLLocationCoordinate2D, maxDistanceKM: Double) -> Bool {
+        let center = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
+        let candidate = CLLocation(latitude: item.placemark.coordinate.latitude, longitude: item.placemark.coordinate.longitude)
+        let distanceKM = center.distance(from: candidate) / 1000.0
+        guard distanceKM <= maxDistanceKM else { return false }
+
+        if let destinationPlacemark {
+            let destinationCountryCode = destinationPlacemark.isoCountryCode?.lowercased()
+            let itemCountryCode = item.placemark.isoCountryCode?.lowercased()
+            if let destinationCountryCode, let itemCountryCode, destinationCountryCode != itemCountryCode {
+                return false
+            }
+        }
+
+        return true
+    }
+}
+
+private extension Double {
+    func rounded(toPlaces places: Int) -> Double {
+        let factor = pow(10.0, Double(places))
+        return (self * factor).rounded() / factor
+    }
+}
+
+private struct AreaBikeStyle: Identifiable {
+    let id = UUID()
+    let name: String
+    let reason: String
+}
+
+private struct LocationSuggestion: Identifiable, Hashable {
+    let id: String
+    let title: String
+    let subtitle: String
+
+    var queryText: String {
+        subtitle.isEmpty ? title : "\(title), \(subtitle)"
+    }
+}
+
+private final class LocationSearchCompleter: NSObject, ObservableObject, MKLocalSearchCompleterDelegate {
+    @Published var completions: [LocationSuggestion] = []
+    private let completer = MKLocalSearchCompleter()
+
+    override init() {
+        super.init()
+        completer.delegate = self
+        completer.resultTypes = .address
+    }
+
+    func updateQuery(_ query: String) {
+        completer.queryFragment = query
+    }
+
+    func clear() {
+        completer.queryFragment = ""
+        completions = []
+    }
+
+    func completerDidUpdateResults(_ completer: MKLocalSearchCompleter) {
+        let mapped = completer.results.enumerated().map { index, result in
+            LocationSuggestion(
+                id: "\(result.title)|\(result.subtitle)|\(index)",
+                title: result.title,
+                subtitle: result.subtitle
+            )
+        }
+        DispatchQueue.main.async {
+            self.completions = mapped
+        }
+    }
+
+    func completer(_ completer: MKLocalSearchCompleter, didFailWithError error: Error) {
+        DispatchQueue.main.async {
+            self.completions = []
         }
     }
 }

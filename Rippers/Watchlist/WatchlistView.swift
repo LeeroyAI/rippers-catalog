@@ -109,7 +109,8 @@ struct WatchlistView: View {
                 }
             }
             .listStyle(.plain)
-            .rippersBrandedTitle("Watchlist")
+            .navigationTitle("Watchlist")
+            .navigationBarTitleDisplayMode(.inline)
             .sheet(item: $editingItem) { editing in
                 NavigationStack {
                     VStack(alignment: .leading, spacing: 12) {

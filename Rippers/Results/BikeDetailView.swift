@@ -71,7 +71,8 @@ struct BikeDetailView: View {
                 .padding()
             }
             .background(Color.rBackground.ignoresSafeArea())
-            .rippersBrandedTitle("Bike Details")
+            .navigationTitle("Bike Details")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") { dismiss() }

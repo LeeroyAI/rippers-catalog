@@ -184,7 +184,8 @@ struct BudgetView: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
             .background(Color.rBackground.ignoresSafeArea())
-            .rippersBrandedTitle("Budget")
+            .navigationTitle("Budget")
+            .navigationBarTitleDisplayMode(.inline)
             .onAppear {
                 if selectedBikeId == 0 {
                     selectedBikeId = filterStore.catalog.first?.id ?? 0

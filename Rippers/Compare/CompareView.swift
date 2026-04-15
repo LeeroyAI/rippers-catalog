@@ -55,7 +55,8 @@ struct CompareView: View {
             }
         }
         .background(Color.rBackground.ignoresSafeArea())
-        .rippersBrandedTitle("Compare")
+        .navigationTitle("Compare")
+        .navigationBarTitleDisplayMode(.inline)
     }
 
     private var bikeHeroRow: some View {

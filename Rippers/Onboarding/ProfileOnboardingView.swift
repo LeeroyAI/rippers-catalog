@@ -70,7 +70,6 @@ struct ProfileOnboardingView: View {
                 .padding()
             }
             .background(Color.rBackground.ignoresSafeArea())
-            .rippersBrandedTitle("Welcome")
             .toolbar {
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()

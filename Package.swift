@@ -14,30 +14,6 @@ let package = Package(
         )
     ],
     targets: [
-        .target(
-            name: "RippersCore",
-            path: "Rippers",
-            exclude: [
-                "Tests",
-                "Budget",
-                "Compare",
-                "Sizing",
-                "TripPlanner",
-                "Watchlist",
-                "Results",
-                "Search/SearchView.swift",
-                "Shared/AppState.swift",
-                "Shared/BikeCardView.swift",
-                "Shared/BrandSystem.swift",
-                "Shared/BrandComponents.swift",
-                "Shared/SplashView.swift",
-                "Shared/Theme.swift",
-                "Onboarding",
-                "ContentView.swift",
-                "RippersApp.swift",
-                "Assets.xcassets",
-                "catalog.json"
-            ]
-        )
+        .target(name: "RippersCore")
     ]
 )

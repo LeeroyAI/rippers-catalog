@@ -42,7 +42,8 @@ struct SizingView: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
             .background(Color.rBackground.ignoresSafeArea())
-            .rippersBrandedTitle("Sizing")
+            .navigationTitle("Sizing")
+            .navigationBarTitleDisplayMode(.inline)
         }
     }
 

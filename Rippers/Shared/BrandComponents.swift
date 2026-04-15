@@ -70,29 +70,29 @@ struct RippersFilterChip: View {
     }
 }
 
-struct AppIconBadge: View {
-    var size: CGFloat = 22
-
+private struct AppIconBadge: View {
     var body: some View {
         Group {
-            if let appIcon = UIImage.appIconImage {
-                Image(uiImage: appIcon)
+            if let icon = UIImage.appIconImage {
+                Image(uiImage: icon)
                     .resizable()
+                    .interpolation(.high)
                     .scaledToFill()
             } else {
-                Image(systemName: "mountain.2.fill")
-                    .resizable()
-                    .scaledToFit()
-                    .padding(4)
-                    .foregroundStyle(Color.rOrange)
-                    .background(Color.rOrangeLight)
+                RoundedRectangle(cornerRadius: 7)
+                    .fill(Color.rOrangeLight)
+                    .overlay(
+                        Image(systemName: "mountain.2.fill")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(Color.rOrange)
+                    )
             }
         }
-        .frame(width: size, height: size)
-        .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+        .frame(width: 22, height: 22)
+        .clipShape(RoundedRectangle(cornerRadius: 7))
         .overlay(
-            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .stroke(Color.rBorder, lineWidth: 1)
+            RoundedRectangle(cornerRadius: 7)
+                .stroke(Color.rBorder, lineWidth: 0.5)
         )
     }
 }
@@ -102,15 +102,12 @@ private struct BrandedNavigationTitleModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .navigationTitle(title)
-            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     HStack(spacing: 8) {
                         AppIconBadge()
                         Text(title)
-                            .font(.headline)
-                            .lineLimit(1)
+                            .font(.headline.weight(.semibold))
                     }
                 }
             }
@@ -125,14 +122,12 @@ extension View {
 
 private extension UIImage {
     static var appIconImage: UIImage? {
-        guard
-            let icons = Bundle.main.infoDictionary?["CFBundleIcons"] as? [String: Any],
-            let primary = icons["CFBundlePrimaryIcon"] as? [String: Any],
-            let files = primary["CFBundleIconFiles"] as? [String],
-            let lastIcon = files.last
-        else {
+        guard let icons = Bundle.main.infoDictionary?["CFBundleIcons"] as? [String: Any],
+              let primary = icons["CFBundlePrimaryIcon"] as? [String: Any],
+              let files = primary["CFBundleIconFiles"] as? [String],
+              let iconName = files.last else {
             return nil
         }
-        return UIImage(named: lastIcon)
+        return UIImage(named: iconName)
     }
 }
