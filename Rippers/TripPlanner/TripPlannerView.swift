@@ -58,6 +58,12 @@ struct TripPlannerView: View {
                 .init(name: "Hardtail", reason: "Responsive handling for pump tracks and jump lines."),
                 .init(name: "Dirt Jump", reason: "Stable and playful for airtime-focused riding.")
             ]
+        case .other:
+            return [
+                .init(name: "Trail", reason: "Balanced setup for mixed terrain when destination style is unclear."),
+                .init(name: "All-Mountain", reason: "Good all-rounder for varied climbs and descents."),
+                .init(name: "eMTB", reason: "Useful for covering more ground while scouting a new area.")
+            ]
         }
     }
 
@@ -273,6 +279,10 @@ struct TripPlannerView: View {
         case .trail:
             bikes = bikes.filter {
                 $0.category == "Trail" || $0.category == "All-Mountain" || $0.isEbike
+            }
+        case .other:
+            bikes = bikes.filter {
+                $0.category == "Trail" || $0.category == "All-Mountain" || $0.category == "XC / Cross-Country" || $0.isEbike
             }
         }
 
