@@ -1,0 +1,214 @@
+import SwiftUI
+import SwiftData
+
+struct WatchlistView: View {
+    @Query private var watchlistItems: [WatchlistItem]
+    @EnvironmentObject private var filterStore: FilterStore
+    @Environment(\.modelContext) private var modelContext
+    @State private var editingItem: EditingTarget?
+    @State private var targetPriceText: String = ""
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section("Watch Alerts") {
+                    if alertItems.isEmpty {
+                        Text("No active alerts yet. Set target prices to get notified when bikes drop below your target.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        ForEach(alertItems, id: \.persistentModelID) { item in
+                            if let bike = bike(for: item) {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text("\(bike.brand) \(bike.model)")
+                                            .font(.subheadline.weight(.semibold))
+                                        Text("Best \(Formatting.currency(bike.bestPrice)) · Target \(Formatting.currency(item.targetPrice))")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                    Image(systemName: "bell.badge.fill")
+                                        .foregroundStyle(Color.rOrange)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Section("All Watched Bikes") {
+                    if watchlistItems.isEmpty {
+                        Text("No bikes in your watchlist yet. Tap \"Watch\" on any result.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        ForEach(sortedItems, id: \.persistentModelID) { item in
+                            if let bike = bike(for: item) {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    HStack(alignment: .top) {
+                                        VStack(alignment: .leading, spacing: 3) {
+                                            Text("\(bike.brand) \(bike.model)")
+                                                .font(.headline)
+                                            Text("Best: \(Formatting.currency(bike.bestPrice))")
+                                                .font(.subheadline.weight(.semibold))
+                                                .foregroundStyle(Color.rGreen)
+                                            Text("Target: \(Formatting.currency(item.targetPrice))")
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                        }
+                                        Spacer()
+                                        Button {
+                                            item.isFavourite.toggle()
+                                        } label: {
+                                            Image(systemName: item.isFavourite ? "heart.fill" : "heart")
+                                                .foregroundStyle(Color.rOrange)
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
+
+                                    if !item.priceHistory.isEmpty {
+                                        HStack(alignment: .lastTextBaseline, spacing: 8) {
+                                            Text("History")
+                                                .font(.caption.weight(.semibold))
+                                                .foregroundStyle(.secondary)
+                                            sparkline(values: item.priceHistory)
+                                            Spacer()
+                                            Text(historyDeltaLabel(for: item.priceHistory))
+                                                .font(.caption2.weight(.semibold))
+                                                .foregroundStyle(historyDeltaColor(for: item.priceHistory))
+                                        }
+                                    }
+
+                                    HStack {
+                                        Button("Update Target") {
+                                            editingItem = EditingTarget(id: item.persistentModelID)
+                                            targetPriceText = String(Int(item.targetPrice))
+                                        }
+                                        .buttonStyle(.bordered)
+
+                                        Button("Snapshot Price") {
+                                            snapshotCurrentPrice(for: item, bike: bike)
+                                        }
+                                        .buttonStyle(.bordered)
+
+                                        Spacer()
+
+                                        Button(role: .destructive) {
+                                            modelContext.delete(item)
+                                        } label: {
+                                            Text("Remove")
+                                        }
+                                        .buttonStyle(.borderless)
+                                    }
+                                }
+                                .padding(.vertical, 4)
+                            }
+                        }
+                        .onDelete(perform: deleteItems)
+                    }
+                }
+            }
+            .listStyle(.plain)
+            .rippersBrandedTitle("Watchlist")
+            .sheet(item: $editingItem) { editing in
+                NavigationStack {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Update Target Price")
+                            .font(.headline)
+                        TextField("Target price (AUD)", text: $targetPriceText)
+                            .textFieldStyle(.roundedBorder)
+                            .keyboardType(.numberPad)
+                            .onChange(of: targetPriceText) { _, newValue in
+                                let digits = newValue.filter(\.isNumber)
+                                if digits != newValue { targetPriceText = digits }
+                            }
+                        Button("Save") {
+                            updateTargetPrice(for: editing.id)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(Color.rOrange)
+                        Spacer()
+                    }
+                    .padding()
+                    .navigationTitle("Target")
+                }
+            }
+        }
+    }
+
+    private var sortedItems: [WatchlistItem] {
+        watchlistItems.sorted { lhs, rhs in
+            if lhs.isFavourite == rhs.isFavourite {
+                return lhs.addedAt > rhs.addedAt
+            }
+            return lhs.isFavourite && !rhs.isFavourite
+        }
+    }
+
+    private var alertItems: [WatchlistItem] {
+        sortedItems.filter { item in
+            guard let current = bike(for: item)?.bestPrice else { return false }
+            return current <= item.targetPrice
+        }
+    }
+
+    private func bike(for item: WatchlistItem) -> Bike? {
+        filterStore.catalog.first(where: { $0.id == item.bikeId })
+    }
+
+    private func deleteItems(at offsets: IndexSet) {
+        let items = offsets.map { sortedItems[$0] }
+        items.forEach(modelContext.delete)
+    }
+
+    private func snapshotCurrentPrice(for item: WatchlistItem, bike: Bike) {
+        if let best = bike.bestPrice {
+            item.priceHistory.append(best)
+            if item.priceHistory.count > 20 {
+                item.priceHistory = Array(item.priceHistory.suffix(20))
+            }
+        }
+    }
+
+    private func updateTargetPrice(for id: PersistentIdentifier) {
+        guard let item = watchlistItems.first(where: { $0.persistentModelID == id }),
+              let target = Double(targetPriceText) else { return }
+        item.targetPrice = target
+        editingItem = nil
+    }
+
+    private func historyDeltaLabel(for values: [Double]) -> String {
+        guard let first = values.first, let last = values.last else { return "No change" }
+        let delta = last - first
+        let sign = delta > 0 ? "+" : ""
+        return "\(sign)\(Int(delta))"
+    }
+
+    private func historyDeltaColor(for values: [Double]) -> Color {
+        guard let first = values.first, let last = values.last else { return .secondary }
+        if last < first { return Color.rGreen }
+        if last > first { return Color.rRed }
+        return .secondary
+    }
+
+    @ViewBuilder
+    private func sparkline(values: [Double]) -> some View {
+        let trimmed = Array(values.suffix(12))
+        let maxValue = trimmed.max() ?? 1
+        let minValue = trimmed.min() ?? 0
+        let range = max(1, maxValue - minValue)
+        HStack(alignment: .bottom, spacing: 2) {
+            ForEach(Array(trimmed.enumerated()), id: \.offset) { _, value in
+                let normalized = (value - minValue) / range
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(Color.rBlue)
+                    .frame(width: 5, height: max(6, 22 * normalized))
+            }
+        }
+        .frame(height: 24)
+    }
+
+    private struct EditingTarget: Identifiable {
+        let id: PersistentIdentifier
+    }
+}
