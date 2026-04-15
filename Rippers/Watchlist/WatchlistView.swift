@@ -7,6 +7,8 @@ struct WatchlistView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var editingItem: EditingTarget?
     @State private var targetPriceText: String = ""
+    @State private var pendingDeletion: WatchlistItem?
+    @State private var recentlyDeleted: DeletedWatchlistSnapshot?
 
     var body: some View {
         NavigationStack {
@@ -94,7 +96,7 @@ struct WatchlistView: View {
                                         Spacer()
 
                                         Button(role: .destructive) {
-                                            modelContext.delete(item)
+                                            pendingDeletion = item
                                         } label: {
                                             Text("Remove")
                                         }
@@ -134,6 +136,45 @@ struct WatchlistView: View {
                     .navigationTitle("Target")
                 }
             }
+            .alert(
+                "Remove bike from watchlist?",
+                isPresented: Binding(
+                    get: { pendingDeletion != nil },
+                    set: { if !$0 { pendingDeletion = nil } }
+                ),
+                presenting: pendingDeletion
+            ) { item in
+                Button("Cancel", role: .cancel) {}
+                Button("Remove", role: .destructive) {
+                    removeItem(item)
+                }
+            } message: { item in
+                if let bike = bike(for: item) {
+                    Text("Remove \(bike.brand) \(bike.model) from your watchlist?")
+                } else {
+                    Text("Remove this bike from your watchlist?")
+                }
+            }
+            .safeAreaInset(edge: .bottom) {
+                if let recentlyDeleted {
+                    HStack {
+                        Text("Removed from watchlist")
+                            .font(.caption.weight(.semibold))
+                        Spacer()
+                        Button("Undo") {
+                            restoreDeletedItem(recentlyDeleted)
+                            self.recentlyDeleted = nil
+                        }
+                        .font(.caption.weight(.semibold))
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .background(.thinMaterial)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 8)
+                }
+            }
         }
     }
 
@@ -159,7 +200,32 @@ struct WatchlistView: View {
 
     private func deleteItems(at offsets: IndexSet) {
         let items = offsets.map { sortedItems[$0] }
-        items.forEach(modelContext.delete)
+        for item in items {
+            removeItem(item)
+        }
+    }
+
+    private func removeItem(_ item: WatchlistItem) {
+        recentlyDeleted = DeletedWatchlistSnapshot(
+            bikeId: item.bikeId,
+            addedAt: item.addedAt,
+            targetPrice: item.targetPrice,
+            priceHistory: item.priceHistory,
+            isFavourite: item.isFavourite
+        )
+        modelContext.delete(item)
+        pendingDeletion = nil
+    }
+
+    private func restoreDeletedItem(_ snapshot: DeletedWatchlistSnapshot) {
+        let restored = WatchlistItem(
+            bikeId: snapshot.bikeId,
+            targetPrice: snapshot.targetPrice,
+            priceHistory: snapshot.priceHistory,
+            isFavourite: snapshot.isFavourite
+        )
+        restored.addedAt = snapshot.addedAt
+        modelContext.insert(restored)
     }
 
     private func snapshotCurrentPrice(for item: WatchlistItem, bike: Bike) {
@@ -211,5 +277,13 @@ struct WatchlistView: View {
 
     private struct EditingTarget: Identifiable {
         let id: PersistentIdentifier
+    }
+
+    private struct DeletedWatchlistSnapshot {
+        let bikeId: Int
+        let addedAt: Date
+        let targetPrice: Double
+        let priceHistory: [Double]
+        let isFavourite: Bool
     }
 }

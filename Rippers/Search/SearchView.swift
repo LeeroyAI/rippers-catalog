@@ -24,6 +24,8 @@ struct SearchView: View {
     @State private var photoUploadStatus: String?
     @State private var showAdvancedFilters: Bool = false
     @State private var lastSearchFingerprint: String = ""
+    @State private var showClearProfileConfirmation = false
+    @State private var profilePendingDeletion: RiderProfile?
     @FocusState private var focusedField: Field?
     @AppStorage("rippers.savedSearches") private var savedSearchesData: String = "[]"
 
@@ -114,6 +116,7 @@ struct SearchView: View {
             ScrollView {
                 VStack(spacing: 14) {
                     welcomeHero
+                    catalogStatusBanner
                     statsRow
 
                     sectionCard("Rider Profile") {
@@ -134,7 +137,7 @@ struct SearchView: View {
                             .padding(.bottom, 4)
 
                             Button(role: .destructive) {
-                                clearCurrentProfile()
+                                showClearProfileConfirmation = true
                             } label: {
                                 Text("Clear Current Profile")
                             }
@@ -156,7 +159,7 @@ struct SearchView: View {
                                 }
                                 .buttonStyle(.bordered)
                                 Button(role: .destructive) {
-                                    modelContext.delete(profile)
+                                    profilePendingDeletion = profile
                                 } label: { Text("Delete") }
                                 .buttonStyle(.borderless)
                             }
@@ -290,6 +293,7 @@ struct SearchView: View {
                                                 } label: {
                                                     Image(systemName: "xmark.circle.fill")
                                                 }
+                                                .accessibilityLabel("Delete saved search \(saved.name)")
                                                 .foregroundStyle(.secondary)
                                             }
                                         }
@@ -432,7 +436,6 @@ struct SearchView: View {
                                 Task {
                                     _ = await catalogStore.refresh(requireLiveResult: true)
                                     lastSearchFingerprint = currentSearchFingerprint
-                                    appState.shouldPresentAIChatAfterSearch = true
                                     appState.activeTab = .results
                                 }
                             }
@@ -557,6 +560,30 @@ struct SearchView: View {
                         }
                     }
                 }
+            }
+            .alert("Clear current profile?", isPresented: $showClearProfileConfirmation) {
+                Button("Cancel", role: .cancel) {}
+                Button("Clear", role: .destructive) {
+                    clearCurrentProfile()
+                }
+            } message: {
+                Text("This removes your active profile and profile-based defaults from search.")
+            }
+            .alert(
+                "Delete profile?",
+                isPresented: Binding(
+                    get: { profilePendingDeletion != nil },
+                    set: { if !$0 { profilePendingDeletion = nil } }
+                ),
+                presenting: profilePendingDeletion
+            ) { profile in
+                Button("Cancel", role: .cancel) {}
+                Button("Delete", role: .destructive) {
+                    modelContext.delete(profile)
+                    profilePendingDeletion = nil
+                }
+            } message: { profile in
+                Text("Delete \(profile.name)? This cannot be undone.")
             }
         }
     }
@@ -834,6 +861,27 @@ struct SearchView: View {
                 }
             }
         }
+    }
+
+    private var catalogStatusBanner: some View {
+        HStack(spacing: 8) {
+            Circle()
+                .fill(catalogStore.sourceStatus == "Live source" ? Color.rGreen : Color.rOrange)
+                .frame(width: 8, height: 8)
+            Text(catalogStore.sourceStatus)
+                .font(.caption.weight(.semibold))
+            if let fallbackReason = catalogStore.fallbackReason, !fallbackReason.isEmpty {
+                Text("· \(fallbackReason)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.rCard)
+        .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 
     private var welcomeHero: some View {

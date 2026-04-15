@@ -3,6 +3,7 @@ import SwiftUI
 struct ResultsView: View {
     @EnvironmentObject private var filterStore: FilterStore
     @EnvironmentObject private var appState: AppState
+    @EnvironmentObject private var catalogStore: CatalogStore
     @State private var selectedBike: Bike?
     @State private var showAIChat = false
     private var displayRows: [(bike: Bike, score: Int?, reasons: [String], factors: [MatchFactor])] {
@@ -22,6 +23,9 @@ struct ResultsView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
+                catalogStatusBanner
+                    .padding(.horizontal, 12)
+                    .padding(.top, 8)
                 if !filterStore.activeFilterTokens.isEmpty {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack {
@@ -76,6 +80,9 @@ struct ResultsView: View {
                         }
                     }
                 }
+                Button("Ask AI") {
+                    showAIChat = true
+                }
             }
             .overlay(alignment: .bottom) {
                 if !appState.compareSet.isEmpty {
@@ -98,13 +105,28 @@ struct ResultsView: View {
                     activeFilterLabels: filterStore.activeFilterTokens.map(\.label)
                 )
             }
-            .onAppear {
-                if appState.shouldPresentAIChatAfterSearch {
-                    showAIChat = true
-                    appState.shouldPresentAIChatAfterSearch = false
-                }
+        }
+    }
+
+    private var catalogStatusBanner: some View {
+        HStack(spacing: 8) {
+            Circle()
+                .fill(catalogStore.sourceStatus == "Live source" ? Color.rGreen : Color.rOrange)
+                .frame(width: 8, height: 8)
+            Text(catalogStore.sourceStatus)
+                .font(.caption.weight(.semibold))
+            if let fallbackReason = catalogStore.fallbackReason, !fallbackReason.isEmpty {
+                Text("· \(fallbackReason)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
             }
         }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.rCard)
+        .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 }
 

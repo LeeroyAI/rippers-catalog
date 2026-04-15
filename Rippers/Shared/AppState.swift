@@ -15,7 +15,6 @@ public enum AppTab: Hashable {
 public final class AppState: ObservableObject {
     @Published public var activeTab: AppTab = .search
     @Published public var compareSet: Set<Int> = []
-    @Published public var shouldPresentAIChatAfterSearch: Bool = false
 
     public init() {}
 

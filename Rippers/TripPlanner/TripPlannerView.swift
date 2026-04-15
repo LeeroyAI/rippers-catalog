@@ -206,18 +206,7 @@ struct TripPlannerView: View {
                                     .font(.caption.weight(.semibold))
                                     .foregroundStyle(.secondary)
                                 ForEach(Array(searchCompleter.completions.prefix(5))) { completion in
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(completion.title)
-                                            .font(.subheadline.weight(.semibold))
-                                        if !completion.subtitle.isEmpty {
-                                            Text(completion.subtitle)
-                                                .font(.caption)
-                                                .foregroundStyle(.secondary)
-                                        }
-                                    }
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .contentShape(Rectangle())
-                                    .onTapGesture {
+                                    Button {
                                         Task {
                                             await searchDestination(
                                                 query: completion.queryText,
@@ -225,7 +214,20 @@ struct TripPlannerView: View {
                                                 expectedSubtitle: completion.subtitle
                                             )
                                         }
+                                    } label: {
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(completion.title)
+                                                .font(.subheadline.weight(.semibold))
+                                            if !completion.subtitle.isEmpty {
+                                                Text(completion.subtitle)
+                                                    .font(.caption)
+                                                    .foregroundStyle(.secondary)
+                                            }
+                                        }
+                                        .frame(maxWidth: .infinity, alignment: .leading)
                                     }
+                                    .buttonStyle(.plain)
+                                    .accessibilityLabel("Suggestion \(completion.title), \(completion.subtitle)")
                                     .padding(.vertical, 2)
                                     Divider()
                                 }
@@ -246,6 +248,7 @@ struct TripPlannerView: View {
                                         persistRecentSearches([])
                                     }
                                     .font(.caption)
+                                    .accessibilityLabel("Clear recent searches")
                                 }
                                 ScrollView(.horizontal, showsIndicators: false) {
                                     HStack {
@@ -262,6 +265,7 @@ struct TripPlannerView: View {
                                                         .foregroundStyle(.secondary)
                                                 }
                                                 .buttonStyle(.plain)
+                                                .accessibilityLabel("Remove recent search \(recent)")
                                             }
                                         }
                                     }
