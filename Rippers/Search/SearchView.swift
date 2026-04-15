@@ -25,6 +25,7 @@ struct SearchView: View {
     @State private var showAdvancedFilters: Bool = false
     @State private var lastSearchFingerprint: String = ""
     @State private var showClearProfileConfirmation = false
+    @State private var savedSearchFlash = false
     @State private var profilePendingDeletion: RiderProfile?
     @FocusState private var focusedField: Field?
     @AppStorage("rippers.savedSearches") private var savedSearchesData: String = "[]"
@@ -46,8 +47,9 @@ struct SearchView: View {
     private var activeProfile: RiderProfile? { profiles.first(where: { $0.isActive }) }
     private var profileFormIsValid: Bool {
         !profileName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            && Int(profileHeightText) != nil
-            && Int(profileWeightText) != nil
+            && (100...220).contains(Int(profileHeightText) ?? 0)
+            && (20...150).contains(Int(profileWeightText) ?? 0)
+            && (profileAgeText.isEmpty || (5...100).contains(Int(profileAgeText) ?? 0))
     }
 
     private enum Field: Hashable {
@@ -445,18 +447,25 @@ struct SearchView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
 
                             HStack {
-                                Button("Save Search") { saveCurrentSearch() }
+                                Button(savedSearchFlash ? "Saved!" : "Save Search") {
+                                    saveCurrentSearch()
+                                    savedSearchFlash = true
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                                        savedSearchFlash = false
+                                    }
+                                }
                                     .buttonStyle(.plain)
                                     .font(.caption.weight(.semibold))
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(savedSearchFlash ? Color.rGreen : .secondary)
                                     .padding(.horizontal, 12)
                                     .padding(.vertical, 8)
                                     .background(Color.rBackground.opacity(0.75))
                                     .overlay(
                                         RoundedRectangle(cornerRadius: 10)
-                                            .stroke(Color.rBorder, lineWidth: 1)
+                                            .stroke(savedSearchFlash ? Color.rGreen : Color.rBorder, lineWidth: 1)
                                     )
                                     .clipShape(RoundedRectangle(cornerRadius: 10))
+                                    .animation(.easeInOut(duration: 0.2), value: savedSearchFlash)
                                 Button("Reset Filters") {
                                     filterStore.state = .init()
                                     maxBudgetText = ""
