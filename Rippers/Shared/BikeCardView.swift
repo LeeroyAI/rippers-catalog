@@ -15,6 +15,7 @@ struct BikeCardView: View {
 
     var isInCompare: Bool { appState.compareSet.contains(bike.id) }
     var watchlistItem: WatchlistItem? { watchlistItems.first(where: { $0.bikeId == bike.id }) }
+    var isWatched: Bool { watchlistItem != nil }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -43,11 +44,12 @@ struct BikeCardView: View {
                         .clipShape(Capsule())
                 }
                 Button {
-                    toggleFavourite()
+                    toggleWatch()
                 } label: {
-                    Image(systemName: watchlistItem?.isFavourite == true ? "heart.fill" : "heart")
-                        .foregroundStyle(Color.rOrange)
+                    Image(systemName: isWatched ? "bell.fill" : "bell")
+                        .foregroundStyle(isWatched ? Color.rOrange : .secondary)
                 }
+                .accessibilityLabel(isWatched ? "Remove from watchlist" : "Add to watchlist")
             }
 
             Text("\(bike.category) · \(bike.wheel) · \(bike.travel)")
@@ -119,11 +121,20 @@ struct BikeCardView: View {
                 }
                 .buttonStyle(.bordered)
 
-                Button("Watch") {
-                    upsertWatch()
+                Spacer()
+
+                if let bestRow = sortedRetailerPrices.first,
+                   let dealURL = bestRow.retailer.searchURL(for: "\(bike.brand) \(bike.model)") {
+                    Link(destination: dealURL) {
+                        HStack(spacing: 4) {
+                            Text("Best Deal")
+                            Image(systemName: "arrow.up.right")
+                                .font(.caption.weight(.bold))
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(Color.rOrange)
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(Color.rOrange)
             }
         }
         .padding()
@@ -266,29 +277,15 @@ struct BikeCardView: View {
             .sorted(by: { $0.price < $1.price })
     }
 
-    private func upsertWatch() {
-        if watchlistItem == nil {
-            modelContext.insert(
-                WatchlistItem(
-                    bikeId: bike.id,
-                    targetPrice: bike.bestPrice ?? 0,
-                    priceHistory: [bike.bestPrice ?? 0]
-                )
-            )
-        }
-    }
-
-    private func toggleFavourite() {
-        if let item = watchlistItem {
-            item.isFavourite.toggle()
+    private func toggleWatch() {
+        if let existing = watchlistItem {
+            modelContext.delete(existing)
         } else {
-            let newItem = WatchlistItem(
+            modelContext.insert(WatchlistItem(
                 bikeId: bike.id,
                 targetPrice: bike.bestPrice ?? 0,
-                priceHistory: [bike.bestPrice ?? 0],
-                isFavourite: true
-            )
-            modelContext.insert(newItem)
+                priceHistory: [bike.bestPrice ?? 0]
+            ))
         }
     }
 }

@@ -6,6 +6,7 @@ struct ContentView: View {
     @EnvironmentObject private var filterStore: FilterStore
     @EnvironmentObject private var catalogStore: CatalogStore
     @Query private var profiles: [RiderProfile]
+    @Query private var watchlistItems: [WatchlistItem]
     @State private var showSplash = true
 
     var body: some View {
@@ -23,6 +24,7 @@ struct ContentView: View {
                 WatchlistView()
                     .tabItem { Label("Watchlist", systemImage: "bell") }
                     .tag(AppTab.watchlist)
+                    .badge(watchlistAlertCount > 0 ? watchlistAlertCount : 0)
                 HelpView()
                     .tabItem { Label("Help", systemImage: "questionmark.circle") }
                     .tag(AppTab.help)
@@ -60,6 +62,13 @@ struct ContentView: View {
                 appState.activeTab = .search
             }
         }
+    }
+
+    private var watchlistAlertCount: Int {
+        watchlistItems.filter { item in
+            guard let price = filterStore.catalog.first(where: { $0.id == item.bikeId })?.bestPrice else { return false }
+            return item.targetPrice > 0 && price <= item.targetPrice
+        }.count
     }
 
     private var onboardingRequiredBinding: Binding<Bool> {

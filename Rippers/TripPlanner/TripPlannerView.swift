@@ -5,6 +5,7 @@ import CoreLocation
 
 struct TripPlannerView: View {
     @EnvironmentObject private var filterStore: FilterStore
+    @EnvironmentObject private var appState: AppState
     @Environment(\.openURL) private var openURL
     @Query private var profiles: [RiderProfile]
     @StateObject private var searchCompleter = LocationSearchCompleter()
@@ -22,6 +23,7 @@ struct TripPlannerView: View {
     @State private var lastSearchedDestination: MKMapItem?
     @State private var destinationPlacemark: MKPlacemark?
     @AppStorage("rippers.tripPlannerRecentSearches") private var recentSearchesData: String = "[]"
+    @State private var selectedTripBike: Bike?
 
     var activeProfile: RiderProfile? { profiles.first(where: { $0.isActive }) }
     private var activeProfileSummary: String {
@@ -319,19 +321,45 @@ struct TripPlannerView: View {
                                 .foregroundStyle(.secondary)
                         } else {
                             ForEach(recommendedBikes.prefix(6)) { bike in
-                                HStack {
-                                    VStack(alignment: .leading) {
-                                        Text("\(bike.brand) \(bike.model)")
-                                        Text("\(bike.category) · \(bike.travel)")
-                                            .font(.caption)
+                                Button {
+                                    selectedTripBike = bike
+                                } label: {
+                                    HStack {
+                                        VStack(alignment: .leading) {
+                                            Text("\(bike.brand) \(bike.model)")
+                                                .font(.subheadline.weight(.semibold))
+                                                .foregroundStyle(.primary)
+                                            Text("\(bike.category) · \(bike.travel)")
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                        }
+                                        Spacer()
+                                        Text(Formatting.currency(bike.bestPrice))
+                                            .font(.caption.weight(.semibold))
+                                            .foregroundStyle(Color.rGreen)
+                                        Image(systemName: "chevron.right")
+                                            .font(.caption.weight(.semibold))
                                             .foregroundStyle(.secondary)
                                     }
-                                    Spacer()
-                                    Text(Formatting.currency(bike.bestPrice))
-                                        .font(.caption.weight(.semibold))
-                                        .foregroundStyle(Color.rGreen)
+                                    .padding(10)
+                                    .background(Color.rBackground.opacity(0.55))
+                                    .clipShape(RoundedRectangle(cornerRadius: 10))
                                 }
+                                .buttonStyle(.plain)
                             }
+
+                            Button {
+                                applyAreaFiltersAndSearch()
+                            } label: {
+                                HStack {
+                                    Image(systemName: "magnifyingglass")
+                                    Text("Search all bikes for \(regionHint)")
+                                }
+                                .frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(Color.rOrange)
+                            .padding(.top, 4)
                         }
                     }
 
@@ -353,7 +381,32 @@ struct TripPlannerView: View {
             .onChange(of: destination) { _, newValue in
                 searchCompleter.updateQuery(newValue)
             }
+            .sheet(item: $selectedTripBike) { bike in
+                BikeDetailView(bike: bike)
+            }
         }
+    }
+
+    private func applyAreaFiltersAndSearch() {
+        filterStore.state.tailorToProfile = false
+        switch locationRideType {
+        case .gravity:
+            filterStore.state.category = "Enduro"
+            filterStore.state.activeTravelRanges = ["150-160mm", "160-180mm"]
+        case .crossCountry:
+            filterStore.state.category = "XC / Cross-Country"
+            filterStore.state.activeTravelRanges = ["100-120mm", "130-140mm"]
+        case .jump:
+            filterStore.state.category = "Hardtail"
+            filterStore.state.activeTravelRanges = ["Hardtail"]
+        case .trail:
+            filterStore.state.category = "Trail"
+            filterStore.state.activeTravelRanges = ["130-140mm", "150-160mm"]
+        case .other:
+            filterStore.state.category = "Any"
+            filterStore.state.activeTravelRanges = []
+        }
+        appState.activeTab = .results
     }
 
     private func sectionCard<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {

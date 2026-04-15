@@ -1,9 +1,17 @@
 import SwiftUI
+import SwiftData
 
 struct BikeDetailView: View {
     let bike: Bike
     @Environment(\.openURL) private var openURL
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject private var appState: AppState
+    @Query private var watchlistItems: [WatchlistItem]
+
+    private var watchlistItem: WatchlistItem? { watchlistItems.first { $0.bikeId == bike.id } }
+    private var isWatched: Bool { watchlistItem != nil }
+    private var isInCompare: Bool { appState.compareSet.contains(bike.id) }
 
     var body: some View {
         NavigationStack {
@@ -74,8 +82,25 @@ struct BikeDetailView: View {
             .navigationTitle("Bike Details")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .topBarLeading) {
                     Button("Done") { dismiss() }
+                }
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    Button {
+                        appState.toggleCompare(bike.id)
+                    } label: {
+                        Image(systemName: isInCompare ? "arrow.left.arrow.right.circle.fill" : "arrow.left.arrow.right.circle")
+                    }
+                    .tint(isInCompare ? Color.rOrange : .primary)
+                    .accessibilityLabel(isInCompare ? "Remove from compare" : "Add to compare")
+
+                    Button {
+                        toggleWatch()
+                    } label: {
+                        Image(systemName: isWatched ? "bell.fill" : "bell")
+                    }
+                    .tint(isWatched ? Color.rOrange : .primary)
+                    .accessibilityLabel(isWatched ? "Remove from watchlist" : "Add to watchlist")
                 }
             }
         }
@@ -114,6 +139,18 @@ struct BikeDetailView: View {
                 Text("\(bike.brand) \(bike.model)")
                     .font(.headline)
             }
+        }
+    }
+
+    private func toggleWatch() {
+        if let existing = watchlistItem {
+            modelContext.delete(existing)
+        } else {
+            modelContext.insert(WatchlistItem(
+                bikeId: bike.id,
+                targetPrice: bike.bestPrice ?? 0,
+                priceHistory: [bike.bestPrice ?? 0]
+            ))
         }
     }
 
