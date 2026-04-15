@@ -119,10 +119,16 @@ public enum BikeFilterEngine {
     static func matchesProfileHints(_ bike: Bike, filters: FilterState) -> Bool {
         guard filters.tailorToProfile else { return true }
 
-        if let riderHeight = filters.profileHeightCm, riderHeight >= 165 {
-            if bike.wheel == "24\"" { return false }
-            if let ageRange = bike.ageRange?.lowercased(),
-               ageRange.contains("kid") || ageRange.contains("youth") || ageRange.contains("child") {
+        // When profile tailoring is enabled, default to adult-oriented bike suggestions.
+        // This avoids youth/kids bikes leaking into normal rider searches.
+        if bike.wheel == "24\"" { return false }
+        if let ageRange = bike.ageRange?.lowercased() {
+            if ageRange.contains("kid")
+                || ageRange.contains("kids")
+                || ageRange.contains("youth")
+                || ageRange.contains("child")
+                || ageRange.contains("junior")
+                || ageRange.contains("jr") {
                 return false
             }
         }
