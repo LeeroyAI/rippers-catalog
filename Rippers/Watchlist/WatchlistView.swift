@@ -10,6 +10,7 @@ struct WatchlistView: View {
     @State private var targetPriceText: String = ""
     @State private var pendingDeletion: WatchlistItem?
     @State private var recentlyDeleted: DeletedWatchlistSnapshot?
+    @State private var selectedBike: Bike?
 
     var body: some View {
         NavigationStack {
@@ -22,18 +23,24 @@ struct WatchlistView: View {
                     } else {
                         ForEach(alertItems, id: \.persistentModelID) { item in
                             if let bike = bike(for: item) {
-                                HStack {
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text("\(bike.brand) \(bike.model)")
-                                            .font(.subheadline.weight(.semibold))
-                                        Text("Best \(Formatting.currency(bike.bestPrice)) · Target \(Formatting.currency(item.targetPrice))")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
+                                Button {
+                                    selectedBike = bike
+                                } label: {
+                                    HStack {
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text("\(bike.brand) \(bike.model)")
+                                                .font(.subheadline.weight(.semibold))
+                                                .foregroundStyle(.primary)
+                                            Text("Best \(Formatting.currency(bike.bestPrice)) · Target \(Formatting.currency(item.targetPrice))")
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                        }
+                                        Spacer()
+                                        Image(systemName: "bell.badge.fill")
+                                            .foregroundStyle(Color.rOrange)
                                     }
-                                    Spacer()
-                                    Image(systemName: "bell.badge.fill")
-                                        .foregroundStyle(Color.rOrange)
                                 }
+                                .buttonStyle(.plain)
                             }
                         }
                     }
@@ -41,33 +48,35 @@ struct WatchlistView: View {
 
                 Section("All Watched Bikes") {
                     if watchlistItems.isEmpty {
-                        Text("No bikes in your watchlist yet. Tap \"Watch\" on any result.")
+                        Text("No bikes in your watchlist yet. Tap the bell icon on any result to start tracking.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     } else {
                         ForEach(sortedItems, id: \.persistentModelID) { item in
                             if let bike = bike(for: item) {
                                 VStack(alignment: .leading, spacing: 8) {
-                                    HStack(alignment: .top) {
-                                        VStack(alignment: .leading, spacing: 3) {
-                                            Text("\(bike.brand) \(bike.model)")
-                                                .font(.headline)
-                                            Text("Best: \(Formatting.currency(bike.bestPrice))")
-                                                .font(.subheadline.weight(.semibold))
-                                                .foregroundStyle(Color.rGreen)
-                                            Text("Target: \(Formatting.currency(item.targetPrice))")
-                                                .font(.caption)
+                                    Button {
+                                        selectedBike = bike
+                                    } label: {
+                                        HStack(alignment: .top) {
+                                            VStack(alignment: .leading, spacing: 3) {
+                                                Text("\(bike.brand) \(bike.model)")
+                                                    .font(.headline)
+                                                    .foregroundStyle(.primary)
+                                                Text("Best: \(Formatting.currency(bike.bestPrice))")
+                                                    .font(.subheadline.weight(.semibold))
+                                                    .foregroundStyle(Color.rGreen)
+                                                Text("Target: \(Formatting.currency(item.targetPrice))")
+                                                    .font(.caption)
+                                                    .foregroundStyle(.secondary)
+                                            }
+                                            Spacer()
+                                            Image(systemName: "chevron.right")
+                                                .font(.caption.weight(.semibold))
                                                 .foregroundStyle(.secondary)
                                         }
-                                        Spacer()
-                                        Button {
-                                            item.isFavourite.toggle()
-                                        } label: {
-                                            Image(systemName: item.isFavourite ? "heart.fill" : "heart")
-                                                .foregroundStyle(Color.rOrange)
-                                        }
-                                        .buttonStyle(.plain)
                                     }
+                                    .buttonStyle(.plain)
 
                                     if !item.priceHistory.isEmpty {
                                         HStack(alignment: .lastTextBaseline, spacing: 8) {
@@ -155,6 +164,9 @@ struct WatchlistView: View {
                 } else {
                     Text("Remove this bike from your watchlist?")
                 }
+            }
+            .sheet(item: $selectedBike) { bike in
+                BikeDetailView(bike: bike)
             }
             .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
                 snapshotAllPrices()
