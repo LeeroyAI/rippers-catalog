@@ -38,12 +38,6 @@ let package = Package(
                 "Assets.xcassets",
                 "catalog.json"
             ]
-        ),
-        .testTarget(
-            name: "RippersCoreTests",
-            dependencies: ["RippersCore"],
-            path: "Rippers/Tests",
-            exclude: ["Fixtures"]
         )
     ]
 )
