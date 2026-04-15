@@ -31,6 +31,12 @@ struct BudgetView: View {
     private var hiddenCostsTotal: Double {
         hiddenCosts.reduce(0) { $0 + ($1.requiredFor.contains(ridingDiscipline) ? $1.cost : 0) }
     }
+    private var suggestedBikeId: Int? { smartDefaultBikeId() }
+    private var sortedInStockBikes: [Bike] {
+        filterStore.catalog
+            .filter { !$0.inStock.isEmpty }
+            .sorted { ($0.bestPrice ?? .greatestFiniteMagnitude) < ($1.bestPrice ?? .greatestFiniteMagnitude) }
+    }
 
     var body: some View {
         NavigationStack {
@@ -87,6 +93,11 @@ struct BudgetView: View {
                             Text("Bike selected: \(bike.brand) \(bike.model)")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
+                            if activeProfile != nil, bike.id == suggestedBikeId {
+                                Text("Suggested bike based on active profile")
+                                    .font(.caption2.weight(.semibold))
+                                    .foregroundStyle(Color.rOrangeDark)
+                            }
                             Text("Grand total: \(Formatting.currency(totalCost))")
                                 .font(.headline)
                                 .foregroundStyle(totalCost <= profileBudgetCap || profileBudgetCap == 0 ? Color.rGreen : Color.rRed)
@@ -187,11 +198,80 @@ struct BudgetView: View {
             .navigationTitle("Budget")
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
-                if selectedBikeId == 0 {
-                    selectedBikeId = filterStore.catalog.first?.id ?? 0
-                }
+                applySmartDefaultBikeIfNeeded()
+            }
+            .onChange(of: activeProfile?.id) { _, _ in
+                applySmartDefaultBikeIfNeeded()
+            }
+            .onChange(of: filterStore.catalog.map(\.id)) { _, _ in
+                applySmartDefaultBikeIfNeeded()
             }
         }
+    }
+
+    private func applySmartDefaultBikeIfNeeded() {
+        let currentIsValid = filterStore.catalog.contains(where: { $0.id == selectedBikeId })
+        if selectedBikeId != 0 && currentIsValid {
+            return
+        }
+        selectedBikeId = smartDefaultBikeId() ?? 0
+    }
+
+    private func smartDefaultBikeId() -> Int? {
+        let candidates = sortedInStockBikes
+        guard !candidates.isEmpty else { return filterStore.catalog.first?.id }
+        guard let activeProfile else { return candidates.first?.id }
+
+        let preferredCategory = activeProfile.preferredCategory
+        let profileStyle = RidingDiscipline.from(activeProfile.style)
+        let budgetCap = activeProfile.budgetCap
+
+        func matchesCategory(_ bike: Bike) -> Bool {
+            guard preferredCategory != "Any" else { return true }
+            return bike.category == preferredCategory ||
+                (preferredCategory == "Hardtail" && bike.suspension == "Hardtail")
+        }
+
+        func matchesStyle(_ bike: Bike) -> Bool {
+            switch profileStyle {
+            case .downhill, .freeride:
+                return bike.category == "Downhill" || bike.category == "Enduro" || bike.travelMM >= 160
+            case .enduro:
+                return bike.category == "Enduro" || bike.travelMM >= 150
+            case .crossCountry:
+                return bike.category == "XC / Cross-Country" || (bike.suspension == "Hardtail" && bike.travelMM <= 130)
+            case .dirtJump:
+                return bike.suspension == "Hardtail" && (bike.wheel == "26\"" || bike.wheel == "27.5\"")
+            case .allMountain:
+                return bike.category == "All-Mountain" || bike.category == "Trail" || bike.isEbike
+            case .trail:
+                return bike.category == "Trail" || bike.category == "All-Mountain" || bike.isEbike
+            }
+        }
+
+        let styleAndCategoryMatches = candidates.filter { matchesStyle($0) && matchesCategory($0) }
+        if budgetCap > 0 {
+            if let withinBudget = styleAndCategoryMatches.first(where: { ($0.bestPrice ?? .greatestFiniteMagnitude) <= budgetCap }) {
+                return withinBudget.id
+            }
+        } else if let firstStrongMatch = styleAndCategoryMatches.first {
+            return firstStrongMatch.id
+        }
+
+        let categoryMatches = candidates.filter(matchesCategory)
+        if budgetCap > 0 {
+            if let withinBudgetCategory = categoryMatches.first(where: { ($0.bestPrice ?? .greatestFiniteMagnitude) <= budgetCap }) {
+                return withinBudgetCategory.id
+            }
+            if let cheapestCategory = categoryMatches.first {
+                return cheapestCategory.id
+            }
+            if let cheapestWithinBudget = candidates.first(where: { ($0.bestPrice ?? .greatestFiniteMagnitude) <= budgetCap }) {
+                return cheapestWithinBudget.id
+            }
+        }
+
+        return candidates.first?.id
     }
 
     @ViewBuilder
