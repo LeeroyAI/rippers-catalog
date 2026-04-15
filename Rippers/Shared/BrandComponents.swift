@@ -1,6 +1,75 @@
 import SwiftUI
 import UIKit
 
+struct RippersCard<Content: View>: View {
+    let content: Content
+
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+
+    var body: some View {
+        content
+            .padding(BrandSpacing.md)
+            .background(BrandColor.surface)
+            .clipShape(RoundedRectangle(cornerRadius: BrandRadius.md))
+            .overlay(
+                RoundedRectangle(cornerRadius: BrandRadius.md)
+                    .stroke(BrandColor.border, lineWidth: 1)
+            )
+    }
+}
+
+struct RippersButton: View {
+    let title: String
+    var prominent: Bool = true
+    var action: () -> Void
+
+    var body: some View {
+        Button(title, action: action)
+            .buttonStyle(.plain)
+            .padding(.horizontal, BrandSpacing.md)
+            .padding(.vertical, BrandSpacing.sm)
+            .background(prominent ? BrandColor.primary : BrandColor.surfaceElevated)
+            .foregroundStyle(prominent ? Color.white : BrandColor.text)
+            .clipShape(Capsule())
+    }
+}
+
+struct RippersBadge: View {
+    let title: String
+    var tone: Color = BrandColor.success
+
+    var body: some View {
+        Text(title)
+            .font(.caption.weight(.semibold))
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(tone.opacity(0.18))
+            .foregroundStyle(tone)
+            .clipShape(Capsule())
+    }
+}
+
+struct RippersFilterChip: View {
+    let title: String
+    let isActive: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .padding(.horizontal, 10)
+                .padding(.vertical, 7)
+                .foregroundStyle(isActive ? Color.white : BrandColor.textMuted)
+                .background(isActive ? BrandColor.primary : BrandColor.surfaceElevated)
+                .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
+    }
+}
+
 struct AppIconBadge: View {
     var size: CGFloat = 22
 
