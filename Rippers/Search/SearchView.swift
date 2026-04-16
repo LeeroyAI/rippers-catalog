@@ -27,6 +27,7 @@ struct SearchView: View {
     @State private var showClearProfileConfirmation = false
     @State private var savedSearchFlash = false
     @State private var profilePendingDeletion: RiderProfile?
+    @State private var selectedForYouBike: Bike?
     @FocusState private var focusedField: Field?
     @AppStorage("rippers.savedSearches") private var savedSearchesData: String = "[]"
 
@@ -77,6 +78,17 @@ struct SearchView: View {
         }
         return decoded
     }
+    private var forYouTopPicks: [(bike: Bike, score: Int)] {
+        guard let profile = activeProfile else { return [] }
+        var s = FilterState()
+        s.tailorToProfile = true
+        s.profileCategoryHint = profile.preferredCategory == "Any" ? nil : profile.preferredCategory
+        s.profileStyleHint = profile.style
+        s.profileBudgetCap = profile.budgetCap > 0 ? profile.budgetCap : nil
+        let inStock = filterStore.catalog.filter { !$0.inStock.isEmpty }
+        return Array(BikeFilterEngine.rank(bikes: inStock, filters: s).prefix(5))
+    }
+
     private var isProfileTailoringLocked: Bool {
         filterStore.state.tailorToProfile && activeProfile != nil
     }
@@ -594,6 +606,9 @@ struct SearchView: View {
             } message: { profile in
                 Text("Delete \(profile.name)? This cannot be undone.")
             }
+            .sheet(item: $selectedForYouBike) { bike in
+                BikeDetailView(bike: bike)
+            }
         }
     }
 
@@ -893,36 +908,145 @@ struct SearchView: View {
         .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 
+    @ViewBuilder
     private var welcomeHero: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Welcome to Rippers")
-                        .font(.title3.weight(.bold))
-                    Text("Find your best mountain bike match using your rider profile, ride style, budget, and destination.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-                Image(systemName: "mountain.2.fill")
-                    .font(.title2.weight(.bold))
+        if let profile = activeProfile, !forYouTopPicks.isEmpty {
+            // "For You" personalised showcase
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Hey \(profile.name.components(separatedBy: " ").first ?? profile.name)!")
+                            .font(.title3.weight(.bold))
+                        Text("Your top picks · \(profile.style)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Button {
+                        appState.activeTab = .results
+                    } label: {
+                        Text("See all")
+                            .font(.caption.weight(.semibold))
+                        Image(systemName: "chevron.right")
+                            .font(.caption2.weight(.semibold))
+                    }
                     .foregroundStyle(Color.rOrange)
-            }
+                }
 
-        }
-        .padding(14)
-        .background(
-            LinearGradient(
-                colors: [Color.rCard, Color.rOrangeLight],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 10) {
+                        ForEach(forYouTopPicks, id: \.bike.id) { row in
+                            Button {
+                                selectedForYouBike = row.bike
+                            } label: {
+                                forYouBikeCard(bike: row.bike, score: row.score)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.vertical, 2)
+                }
+            }
+            .padding(14)
+            .background(
+                LinearGradient(
+                    colors: [Color.rCard, Color.rOrangeLight],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
             )
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.rBorder, lineWidth: 1)
-        )
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.rBorder, lineWidth: 1))
+        } else {
+            // No profile yet — call to action
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Find your perfect mountain bike")
+                            .font(.title3.weight(.bold))
+                        Text("Build your profile to get matched picks, sizing, budget planning, and trip advice.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Image(systemName: "mountain.2.fill")
+                        .font(.title2.weight(.bold))
+                        .foregroundStyle(Color.rOrange)
+                }
+            }
+            .padding(14)
+            .background(
+                LinearGradient(
+                    colors: [Color.rCard, Color.rOrangeLight],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.rBorder, lineWidth: 1))
+        }
+    }
+
+    private func forYouBikeCard(bike: Bike, score: Int) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Image
+            Group {
+                if let urlString = BIKE_IMAGES[bike.id], let url = URL(string: urlString) {
+                    AsyncImage(url: url) { phase in
+                        switch phase {
+                        case .success(let img):
+                            img.resizable().scaledToFill()
+                        default:
+                            bikePlaceholder
+                        }
+                    }
+                } else {
+                    bikePlaceholder
+                }
+            }
+            .frame(width: 130, height: 90)
+            .clipped()
+            .background(Color.rCard)
+
+            // Info
+            VStack(alignment: .leading, spacing: 3) {
+                Text(bike.brand.uppercased())
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                Text(bike.model)
+                    .font(.caption.weight(.semibold))
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                HStack(spacing: 4) {
+                    Text(Formatting.currency(bike.bestPrice))
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(Color.rGreen)
+                    Spacer()
+                    Text("\(score)%")
+                        .font(.system(size: 9, weight: .bold))
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 2)
+                        .background(Color.rOrangeLight)
+                        .foregroundStyle(Color.rOrangeDark)
+                        .clipShape(Capsule())
+                }
+            }
+            .padding(8)
+        }
+        .frame(width: 130)
+        .background(Color.rCard)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.rBorder, lineWidth: 1))
+    }
+
+    private var bikePlaceholder: some View {
+        ZStack {
+            Color.rOrangeLight
+            Image(systemName: "bicycle")
+                .font(.title2)
+                .foregroundStyle(Color.rOrange.opacity(0.6))
+        }
     }
 
     private func statCard(_ title: String, _ value: String, action: @escaping () -> Void) -> some View {
@@ -1001,11 +1125,11 @@ private struct FlowPills: View {
                 HStack {
                     Text(token.label)
                         .font(.caption)
-                        .foregroundStyle(Color.dynamic(light: Color.rOrangeDark, dark: .white))
+                        .foregroundStyle(Color.rChipForeground)
                     Spacer()
                     Button("✕") { remove(token) }
                         .font(.caption)
-                        .foregroundStyle(Color.dynamic(light: Color.rOrangeDark, dark: .white))
+                        .foregroundStyle(Color.rChipForeground)
                 }
                 .padding(8)
                 .background(Color.rOrangeLight)
@@ -1026,7 +1150,7 @@ private struct ChipButton: View {
             .padding(.horizontal, 10)
             .padding(.vertical, 7)
             .background(isActive ? Color.rOrangeLight : Color.rCard)
-            .foregroundStyle(isActive ? Color.dynamic(light: Color.rOrangeDark, dark: .white) : Color.primary)
+            .foregroundStyle(isActive ? Color.rChipForeground : Color.primary)
             .overlay(
                 Capsule().stroke(isActive ? Color.rOrange : Color.rBorder, lineWidth: 1)
             )

@@ -17,6 +17,10 @@ public extension Color {
     static let rYellowBg = Color.dynamic(light: Color(hex: "#FFF8E1"), dark: Color(hex: "#3D3520"))
     static let rBlue = Color(hex: "#2563EB")
     static let rBlueBg = Color.dynamic(light: Color(hex: "#EFF6FF"), dark: Color(hex: "#1A2E46"))
+
+    // Pre-computed adaptive colors for repeated use in list rows — avoids per-render ICC profile evaluation
+    static let rChipForeground = Color.dynamic(light: .rOrangeDark, dark: .white)
+    static let rBadgeForeground = Color.dynamic(light: .rBlue, dark: .white)
 }
 
 public extension Color {

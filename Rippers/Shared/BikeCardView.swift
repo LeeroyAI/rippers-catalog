@@ -37,7 +37,7 @@ struct BikeCardView: View {
                 if let matchScore {
                     Text("Match \(matchScore)%")
                         .font(.caption2.weight(.bold))
-                        .foregroundStyle(Color.dynamic(light: Color.rBlue, dark: .white))
+                        .foregroundStyle(Color.rBadgeForeground)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
                         .background(Color.rBlueBg)
@@ -97,7 +97,7 @@ struct BikeCardView: View {
                         if !row.retailer.isAustralian {
                             Text("INTL")
                                 .font(.caption2.weight(.semibold))
-                                .foregroundStyle(Color.dynamic(light: Color.rBlue, dark: .white))
+                                .foregroundStyle(Color.rBadgeForeground)
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
                                 .background(Color.rBlueBg)

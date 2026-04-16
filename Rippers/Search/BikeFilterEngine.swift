@@ -151,6 +151,14 @@ public enum BikeFilterEngine {
 
     static func sortComparator(for option: BikeSortOption) -> (Bike, Bike) -> Bool {
         switch option {
+        case .bestMatch:
+            // Falls back to price when used outside of ranked context
+            return { lhs, rhs in
+                let l = lhs.bestPrice ?? .greatestFiniteMagnitude
+                let r = rhs.bestPrice ?? .greatestFiniteMagnitude
+                if l == r { return lhs.id < rhs.id }
+                return l < r
+            }
         case .priceLowToHigh:
             return { lhs, rhs in
                 let l = lhs.bestPrice ?? .greatestFiniteMagnitude

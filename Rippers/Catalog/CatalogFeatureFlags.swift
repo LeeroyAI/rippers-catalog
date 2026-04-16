@@ -10,7 +10,7 @@ public struct CatalogFeatureFlags: Sendable {
     }
 
     public static let current = CatalogFeatureFlags(
-        useLiveCatalog: true,
+        useLiveCatalog: false, // flip to true once rippers-catalog GitHub repo is live
         useBrandedUIV2: false
     )
 }

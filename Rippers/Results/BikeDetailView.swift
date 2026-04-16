@@ -18,7 +18,7 @@ struct BikeDetailView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
                     detailImage
-                        .frame(height: 180)
+                        .frame(maxHeight: 280)
                         .frame(maxWidth: .infinity)
                         .background(Color.rCard)
                         .clipShape(RoundedRectangle(cornerRadius: 16))
@@ -117,8 +117,6 @@ struct BikeDetailView: View {
                     image
                         .resizable()
                         .scaledToFit()
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 6)
                 case .failure:
                     placeholder
                 @unknown default:

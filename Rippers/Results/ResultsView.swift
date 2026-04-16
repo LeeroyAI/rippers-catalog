@@ -6,9 +6,18 @@ struct ResultsView: View {
     @EnvironmentObject private var catalogStore: CatalogStore
     @State private var selectedBike: Bike?
     @State private var showAIChat = false
+    @State private var randomQuote: String = ""
     private var displayRows: [(bike: Bike, score: Int?, reasons: [String], factors: [MatchFactor])] {
         if filterStore.state.tailorToProfile {
-            return filterStore.rankedBikes.map { row in
+            let ranked = filterStore.rankedBikes
+            let sort = filterStore.state.sort
+            let ordered: [(bike: Bike, score: Int)]
+            if sort == .bestMatch {
+                ordered = ranked
+            } else {
+                ordered = ranked.sorted { BikeFilterEngine.sortComparator(for: sort)($0.bike, $1.bike) }
+            }
+            return ordered.map { row in
                 (
                     row.bike,
                     Optional(row.score),
@@ -17,7 +26,8 @@ struct ResultsView: View {
                 )
             }
         }
-        return filterStore.filteredBikes.map { ($0, nil, [], []) }
+        let sorted = filterStore.filteredBikes.sorted(by: BikeFilterEngine.sortComparator(for: filterStore.state.sort))
+        return sorted.map { ($0, nil, [], []) }
     }
 
     var body: some View {
@@ -33,10 +43,10 @@ struct ResultsView: View {
                                 HStack(spacing: 4) {
                                     Text(token.label)
                                         .font(.caption)
-                                        .foregroundStyle(Color.dynamic(light: Color.rOrangeDark, dark: .white))
+                                        .foregroundStyle(Color.rChipForeground)
                                     Button("✕") { filterStore.removeToken(token) }
                                         .font(.caption2)
-                                        .foregroundStyle(Color.dynamic(light: Color.rOrangeDark, dark: .white))
+                                        .foregroundStyle(Color.rChipForeground)
                                 }
                                 .padding(.horizontal, 9)
                                 .padding(.vertical, 6)
@@ -57,6 +67,15 @@ struct ResultsView: View {
                     )
                     .padding(.top, 80)
                 } else {
+                    if !randomQuote.isEmpty {
+                        Text("\"\(randomQuote)\"")
+                            .font(.caption.italic())
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 24)
+                            .padding(.top, 8)
+                            .padding(.bottom, 2)
+                    }
                     LazyVStack(spacing: 12) {
                         ForEach(displayRows, id: \.bike.id) { row in
                             BikeCardView(bike: row.bike, matchScore: row.score, matchReasons: row.reasons, matchFactors: row.factors) {
@@ -70,15 +89,30 @@ struct ResultsView: View {
                 }
             }
             .background(Color.rBackground.ignoresSafeArea())
+            .onAppear {
+                if randomQuote.isEmpty {
+                    randomQuote = MTB_QUOTES.randomElement() ?? ""
+                }
+            }
             .navigationTitle("Results (\(displayRows.count))")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                Menu("Sort") {
+                Menu {
                     ForEach(BikeSortOption.allCases, id: \.self) { option in
-                        Button(option.rawValue) {
-                            filterStore.state.sort = option
+                        if option == .bestMatch && !filterStore.state.tailorToProfile { EmptyView() } else {
+                            Button {
+                                filterStore.state.sort = option
+                            } label: {
+                                if filterStore.state.sort == option {
+                                    Label(option.label, systemImage: "checkmark")
+                                } else {
+                                    Text(option.label)
+                                }
+                            }
                         }
                     }
+                } label: {
+                    Label("Sort", systemImage: "arrow.up.arrow.down")
                 }
                 Button("Ask AI") {
                     showAIChat = true

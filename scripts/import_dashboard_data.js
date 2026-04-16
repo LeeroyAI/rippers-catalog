@@ -23,6 +23,7 @@ const args = process.argv.slice(2);
 const sourceFlag = args.indexOf('--source');
 const dashboardPath = sourceFlag !== -1 ? args[sourceFlag + 1] : 'dashboard.html';
 const dataDir = path.join(__dirname, '..', 'Rippers', 'Data');
+const bundleJsonPath = path.join(__dirname, '..', 'Rippers', 'catalog.json');
 
 if (!fs.existsSync(dashboardPath)) {
   console.error(`Error: dashboard.html not found at: ${dashboardPath}`);
@@ -146,6 +147,44 @@ ${entries.join(',\n')}
 }
 
 // ---------------------------------------------------------------------------
+// catalog.json (BikeRecord-compatible JSON for live feed + bundled fallback)
+// ---------------------------------------------------------------------------
+
+function generateCatalogJson(bikes) {
+  // Normalise fields to match BikeRecord Codable keys expected by the Swift app.
+  // Optional fields must be null (not undefined) so JSONDecoder does not reject the payload.
+  const records = bikes.map(b => ({
+    id:          b.id,
+    brand:       b.brand       ?? '',
+    model:       b.model       ?? '',
+    year:        b.year        ?? 2024,
+    category:    b.category    ?? '',
+    wheel:       b.wheel       ?? '',
+    travel:      b.travel      ?? '',
+    suspension:  b.suspension  ?? '',
+    frame:       b.frame       ?? '',
+    drivetrain:  b.drivetrain  ?? '',
+    fork:        b.fork        ?? '',
+    shock:       b.shock       ?? '',
+    weight:      b.weight      ?? '',
+    brakes:      b.brakes      ?? '',
+    description: b.description ?? '',
+    sizes:       b.sizes       ?? [],
+    prices:      b.prices      ?? {},
+    wasPrice:    b.wasPrice    ?? null,
+    inStock:     b.inStock     ?? [],
+    sourceUrl:   b.sourceUrl   ?? '',
+    isEbike:     !!b.isEbike,
+    motorBrand:  b.motorBrand  ?? null,
+    motor:       b.motor       ?? null,
+    battery:     b.battery     ?? null,
+    range:       b.range       ?? null,
+    ageRange:    b.ageRange    ?? null,
+  }));
+  return JSON.stringify(records, null, 2);
+}
+
+// ---------------------------------------------------------------------------
 // Quotes
 // ---------------------------------------------------------------------------
 
@@ -205,9 +244,18 @@ if (quotes) {
   console.warn('⚠ No MTB_QUOTES array found — Quotes.swift not updated');
 }
 
+// Always write catalog.json from the bikes data (bundled fallback + live feed source)
+if (bikes) {
+  fs.writeFileSync(bundleJsonPath, generateCatalogJson(bikes));
+  console.log(`✓ catalog.json — ${bikes.length} bikes (bundle + publish source)`);
+  written++;
+}
+
 if (written === 0) {
   console.error('\nNo data extracted. Make sure dashboard.html exposes BIKES, RETAILERS, BIKE_IMAGES, or MTB_QUOTES as JS variables.');
   process.exit(1);
 } else {
-  console.log(`\nDone. ${written}/4 files updated. Run 'ruby scripts/generate_xcodeproj.rb' if you added new bikes.`);
+  console.log(`\nDone. ${written} files updated.`);
+  console.log('To publish live catalog: run scripts/publish_catalog.sh');
+  console.log("Then flip useLiveCatalog: true in CatalogFeatureFlags.swift once the remote URL is live.");
 }

@@ -24,6 +24,8 @@ struct TripPlannerView: View {
     @State private var destinationPlacemark: MKPlacemark?
     @AppStorage("rippers.tripPlannerRecentSearches") private var recentSearchesData: String = "[]"
     @State private var selectedTripBike: Bike?
+    @AppStorage("rippers.ownedGearIds") private var ownedGearIdsData: String = "[]"
+    @Query private var watchlistItems: [WatchlistItem]
 
     var activeProfile: RiderProfile? { profiles.first(where: { $0.isActive }) }
     private var activeProfileSummary: String {
@@ -41,6 +43,53 @@ struct TripPlannerView: View {
     }
     private var showAutocomplete: Bool {
         !destination.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !searchCompleter.completions.isEmpty
+    }
+    private var ownedGearIds: Set<String> {
+        guard let data = ownedGearIdsData.data(using: .utf8),
+              let decoded = try? JSONDecoder().decode([String].self, from: data) else { return [] }
+        return Set(decoded)
+    }
+    private var terrainGearItems: [TripGearItem] {
+        switch locationRideType {
+        case .gravity:
+            return [
+                TripGearItem(id: "fullface", name: "Full-Face Helmet", icon: "shield.lefthalf.filled", why: "High-speed bike park runs need maximum head protection.", essential: true),
+                TripGearItem(id: "bodyarmor", name: "Body Armour", icon: "figure.fall", why: "Gravity terrain demands torso protection on big crashes.", essential: true),
+                TripGearItem(id: "knees", name: "Knee / Shin Guards", icon: "figure.walk", why: "Essential on steep, rocky, exposed terrain.", essential: true),
+                TripGearItem(id: "elbows", name: "Elbow Pads", icon: "bandage", why: "Required for enduro stages and bike park tracks.", essential: true),
+                TripGearItem(id: "gloves", name: "Gloves", icon: "hand.raised.fill", why: "Grip and abrasion protection on every run.", essential: true),
+                TripGearItem(id: "hydration", name: "Hydration Pack", icon: "drop.fill", why: "Carry water, layers, and tools on long bike park days.", essential: false),
+            ]
+        case .crossCountry:
+            return [
+                TripGearItem(id: "helmet", name: "Helmet", icon: "shield.lefthalf.filled", why: "Non-negotiable on every ride.", essential: true),
+                TripGearItem(id: "gloves", name: "Gloves", icon: "hand.raised.fill", why: "Comfort and protection on long XC loops.", essential: true),
+                TripGearItem(id: "hydration", name: "Hydration Pack", icon: "drop.fill", why: "XC loops can be long — carry plenty of water.", essential: true),
+                TripGearItem(id: "tools", name: "Trail Tool Kit", icon: "wrench.and.screwdriver", why: "Pump, multitool, and tube for remote trails.", essential: true),
+                TripGearItem(id: "knees", name: "Knee Pads", icon: "figure.walk", why: "Recommended even on XC terrain.", essential: false),
+            ]
+        case .jump:
+            return [
+                TripGearItem(id: "helmet", name: "Helmet", icon: "shield.lefthalf.filled", why: "Crash protection is non-optional on jump lines.", essential: true),
+                TripGearItem(id: "knees", name: "Knee Pads", icon: "figure.walk", why: "Hard landings make knee protection worth it.", essential: true),
+                TripGearItem(id: "gloves", name: "Gloves", icon: "hand.raised.fill", why: "Saves your palms on bail-outs.", essential: true),
+                TripGearItem(id: "elbows", name: "Elbow Pads", icon: "bandage", why: "Jump riding means frequent arm impact.", essential: false),
+            ]
+        case .trail, .other:
+            return [
+                TripGearItem(id: "helmet", name: "Helmet", icon: "shield.lefthalf.filled", why: "Mandatory on every trail ride.", essential: true),
+                TripGearItem(id: "knees", name: "Knee Pads", icon: "figure.walk", why: "Highly recommended on technical singletrack.", essential: true),
+                TripGearItem(id: "gloves", name: "Gloves", icon: "hand.raised.fill", why: "Grip and crash protection.", essential: true),
+                TripGearItem(id: "hydration", name: "Hydration Pack", icon: "drop.fill", why: "Trail networks can be remote — stay hydrated.", essential: true),
+                TripGearItem(id: "tools", name: "Trail Tool Kit", icon: "wrench.and.screwdriver", why: "Always carry a pump, multitool, and tube.", essential: true),
+            ]
+        }
+    }
+    private var allEssentialGearOwned: Bool {
+        terrainGearItems.filter(\.essential).allSatisfy { ownedGearIds.contains($0.id) }
+    }
+    private var watchlistBikes: [Bike] {
+        watchlistItems.compactMap { item in filterStore.catalog.first { $0.id == item.bikeId } }
     }
     private var recommendationResult: (bikes: [Bike], usedProfileFallback: Bool) {
         let inStockBikes = filterStore.catalog.filter { !$0.inStock.isEmpty }
@@ -309,6 +358,10 @@ struct TripPlannerView: View {
                         }
                     }
 
+                    if lastSearchedDestination != nil {
+                        rideReadinessCard
+                    }
+
                     sectionCard(title: "Recommended Bikes for \(regionHint)") {
                         if recommendationResult.usedProfileFallback {
                             Text("Showing area matches. Your active profile filters were too strict for this location.")
@@ -367,6 +420,38 @@ struct TripPlannerView: View {
                         sectionCard(title: "Nearby Bike Shops") {
                             ForEach(nearbyShops.prefix(6), id: \.self) { shop in
                                 shopCard(shop)
+                            }
+                        }
+                    }
+
+                    if !watchlistBikes.isEmpty {
+                        sectionCard(title: "Your Saved Bikes") {
+                            Text("Show this list to any local shop — ask about ordering, demos, or second-hand options.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            ForEach(watchlistBikes) { bike in
+                                Button {
+                                    selectedTripBike = bike
+                                } label: {
+                                    HStack {
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text("\(bike.brand) \(bike.model)")
+                                                .font(.subheadline.weight(.semibold))
+                                                .foregroundStyle(.primary)
+                                            Text("\(bike.category) · \(Formatting.currency(bike.bestPrice))")
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                        }
+                                        Spacer()
+                                        Image(systemName: "chevron.right")
+                                            .font(.caption.weight(.semibold))
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    .padding(10)
+                                    .background(Color.rBackground.opacity(0.55))
+                                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                                }
+                                .buttonStyle(.plain)
                             }
                         }
                     }
@@ -434,6 +519,90 @@ struct TripPlannerView: View {
         .padding(10)
         .background(Color.rBackground.opacity(0.55))
         .clipShape(RoundedRectangle(cornerRadius: 10))
+    }
+
+    @ViewBuilder
+    private var rideReadinessCard: some View {
+        sectionCard(title: "Ride Readiness — \(regionHint)") {
+            let essential = terrainGearItems.filter(\.essential)
+            let remaining = essential.filter { !ownedGearIds.contains($0.id) }.count
+            if allEssentialGearOwned {
+                HStack(spacing: 8) {
+                    Image(systemName: "checkmark.seal.fill")
+                        .foregroundStyle(Color.rGreen)
+                    Text("You're ready to ride!")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.rGreen)
+                }
+                .padding(10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.rGreen.opacity(0.12))
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+            } else {
+                HStack(spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(Color.rOrange)
+                    Text("\(remaining) essential item\(remaining == 1 ? "" : "s") still needed")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.rOrange)
+                }
+                .padding(10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.rOrangeLight)
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+            }
+            Text("Tap each item you already own:")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            if !essential.isEmpty {
+                Text("Essential")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                ForEach(essential) { item in gearCheckRow(item) }
+            }
+            let recommended = terrainGearItems.filter { !$0.essential }
+            if !recommended.isEmpty {
+                Text("Recommended")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 4)
+                ForEach(recommended) { item in gearCheckRow(item) }
+            }
+        }
+    }
+
+    private func gearCheckRow(_ item: TripGearItem) -> some View {
+        let owned = ownedGearIds.contains(item.id)
+        return Button {
+            toggleOwnedGear(item.id)
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: owned ? "checkmark.circle.fill" : "circle")
+                    .font(.title3)
+                    .foregroundStyle(owned ? Color.rGreen : Color.secondary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(item.name)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(owned ? Color.rGreen : Color.primary)
+                    Text(item.why)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+            }
+            .padding(10)
+            .background(owned ? Color.rGreen.opacity(0.08) : Color.rBackground.opacity(0.55))
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func toggleOwnedGear(_ id: String) {
+        var ids = ownedGearIds
+        if ids.contains(id) { ids.remove(id) } else { ids.insert(id) }
+        guard let data = try? JSONEncoder().encode(Array(ids)),
+              let text = String(data: data, encoding: .utf8) else { return }
+        ownedGearIdsData = text
     }
 
     private func searchDestination(query: String? = nil, displayName: String? = nil, expectedSubtitle: String? = nil) async {
@@ -706,6 +875,14 @@ private struct AreaBikeStyle: Identifiable {
     let id = UUID()
     let name: String
     let reason: String
+}
+
+private struct TripGearItem: Identifiable {
+    let id: String
+    let name: String
+    let icon: String
+    let why: String
+    let essential: Bool
 }
 
 private struct LocationSuggestion: Identifiable, Hashable {
