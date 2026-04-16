@@ -15,12 +15,7 @@ final class LiveSearchService {
 
     // Set this to your Vercel deployment URL after running `vercel deploy`.
     // Example: "https://rippers-abc123.vercel.app/api/search"
-    static let baseURL = "https://rippers.vercel.app/api/search"
-
-    static var isConfigured: Bool {
-        !baseURL.isEmpty && baseURL != "https://rippers.vercel.app/api/search"
-            || baseURL == "https://rippers.vercel.app/api/search" // treat placeholder as configured for now
-    }
+    static let baseURL = "https://rippers-pied.vercel.app/api/search"
 
     func search(criteria: LiveSearchCriteria) async throws -> LiveSearchResult {
         var components = URLComponents(string: Self.baseURL)!
