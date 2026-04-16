@@ -236,7 +236,7 @@ struct BikeCardView: View {
 
     @ViewBuilder
     private var bikeImageView: some View {
-        if let urlString = BIKE_IMAGES[bike.id], let url = URL(string: urlString) {
+        if let url = bike.effectiveImageURL {
             AsyncImage(url: url) { phase in
                 switch phase {
                 case .empty:

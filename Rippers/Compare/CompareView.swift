@@ -124,7 +124,7 @@ struct CompareView: View {
 
     @ViewBuilder
     private func compareBikeImage(_ bike: Bike) -> some View {
-        if let urlString = BIKE_IMAGES[bike.id], let url = URL(string: urlString) {
+        if let url = bike.effectiveImageURL {
             AsyncImage(url: url) { phase in
                 switch phase {
                 case .empty:

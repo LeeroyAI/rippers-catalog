@@ -1007,7 +1007,7 @@ struct SearchView: View {
         VStack(alignment: .leading, spacing: 0) {
             // Image
             Group {
-                if let urlString = BIKE_IMAGES[bike.id], let url = URL(string: urlString) {
+                if let url = bike.effectiveImageURL {
                     AsyncImage(url: url) { phase in
                         switch phase {
                         case .success(let img):

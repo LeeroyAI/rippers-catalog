@@ -180,6 +180,7 @@ async function searchAll(queries, country, cursor) {
         url: item.url,
         title: item.title,
         description: item.description || "",
+        imageUrl: item.thumbnail?.original || item.thumbnail?.src || "",
       });
     }
   }
@@ -224,7 +225,7 @@ async function extractBikes(snippets, criteria) {
   const snippetText = snippets
     .map(
       (s, i) =>
-        `[${i + 1}] ${s.title}\nURL: ${s.url}\n${s.description}`.trim()
+        `[${i + 1}] ${s.title}\nURL: ${s.url}${s.imageUrl ? `\nImage: ${s.imageUrl}` : ""}\n${s.description}`.trim()
     )
     .join("\n\n");
 
@@ -280,7 +281,8 @@ Extract every distinct mountain bike product you can identify. For each bike ret
   "motor": <null or "Performance CX 85Nm" etc>,
   "battery": <null or "500Wh" etc>,
   "range": <null or "80km" etc>,
-  "ageRange": <null or "Kids 8-12" for youth bikes>
+  "ageRange": <null or "Kids 8-12" for youth bikes>,
+  "imageUrl": "<product image URL from the Image: line of the matching snippet, or empty string>"
 }
 
 Rules:

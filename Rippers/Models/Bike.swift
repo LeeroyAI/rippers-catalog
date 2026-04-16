@@ -27,6 +27,7 @@ public struct Bike: Identifiable, Hashable, Sendable {
     public let battery: String?
     public let range: String?
     public let ageRange: String?
+    public let imageUrl: String?
 
     public init(
         id: Int,
@@ -54,7 +55,8 @@ public struct Bike: Identifiable, Hashable, Sendable {
         motor: String? = nil,
         battery: String? = nil,
         range: String? = nil,
-        ageRange: String? = nil
+        ageRange: String? = nil,
+        imageUrl: String? = nil
     ) {
         self.id = id
         self.brand = brand
@@ -82,6 +84,14 @@ public struct Bike: Identifiable, Hashable, Sendable {
         self.battery = battery
         self.range = range
         self.ageRange = ageRange
+        self.imageUrl = imageUrl
+    }
+
+    /// The best available image URL: static catalog map first, then live search URL.
+    public var effectiveImageURL: URL? {
+        if let s = BIKE_IMAGES[id], let u = URL(string: s) { return u }
+        if let s = imageUrl, !s.isEmpty, let u = URL(string: s) { return u }
+        return nil
     }
 
     public var bestPrice: Double? { prices.values.min() }
@@ -170,6 +180,7 @@ public struct BikeRecord: Codable, Sendable {
     public let battery: String?
     public let range: String?
     public let ageRange: String?
+    public let imageUrl: String?
 
     public init(_ bike: Bike) {
         id = bike.id
@@ -198,6 +209,7 @@ public struct BikeRecord: Codable, Sendable {
         battery = bike.battery
         range = bike.range
         ageRange = bike.ageRange
+        imageUrl = bike.imageUrl
     }
 
     public var bike: Bike {
@@ -227,7 +239,8 @@ public struct BikeRecord: Codable, Sendable {
             motor: motor,
             battery: battery,
             range: range,
-            ageRange: ageRange
+            ageRange: ageRange,
+            imageUrl: imageUrl
         )
     }
 }
