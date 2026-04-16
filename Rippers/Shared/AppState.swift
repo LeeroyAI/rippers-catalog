@@ -31,6 +31,10 @@ public final class AppState: ObservableObject {
 public final class FilterStore: ObservableObject {
     @Published public var state: FilterState = .init()
     @Published public var catalog: [Bike] = BIKES
+    @Published public var liveResults: [Bike]? = nil
+    @Published public var isLiveSearching: Bool = false
+    @Published public var liveSearchError: String? = nil
+    @Published public var liveResultSource: String? = nil
 
     public init() {}
 
@@ -40,12 +44,33 @@ public final class FilterStore: ObservableObject {
         public let remove: (inout FilterState) -> Void
     }
 
+    /// The active bike pool: live search results if available, otherwise the static/live catalog.
+    private var activeBikePool: [Bike] { liveResults ?? catalog }
+
     public var filteredBikes: [Bike] {
-        BikeFilterEngine.apply(bikes: catalog, filters: state)
+        // When live results are loaded, still apply local text/ebike filters
+        // but skip catalog-level filters that the API already handled.
+        if liveResults != nil {
+            var localState = state
+            localState.category = "Any"
+            localState.wheel = "Any"
+            localState.maxBudget = nil
+            localState.activeBrands = []
+            localState.activeTravelRanges = []
+            localState.activeEbikeFilter = false
+            return BikeFilterEngine.apply(bikes: activeBikePool, filters: localState)
+        }
+        return BikeFilterEngine.apply(bikes: catalog, filters: state)
     }
 
     public var rankedBikes: [(bike: Bike, score: Int)] {
         BikeFilterEngine.rank(bikes: filteredBikes, filters: state)
+    }
+
+    public func clearLiveResults() {
+        liveResults = nil
+        liveResultSource = nil
+        liveSearchError = nil
     }
 
     public var activeFilterTokens: [ActiveFilterToken] {

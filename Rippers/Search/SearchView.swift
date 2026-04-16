@@ -446,16 +446,12 @@ struct SearchView: View {
                                 .font(.caption.weight(.semibold))
                                 .foregroundStyle(.secondary)
 
-                            Button(catalogStore.isRefreshing ? "Searching..." : "Search Bikes") {
-                                Task {
-                                    _ = await catalogStore.refresh(requireLiveResult: true)
-                                    lastSearchFingerprint = currentSearchFingerprint
-                                    appState.activeTab = .results
-                                }
+                            Button(filterStore.isLiveSearching ? "Searching..." : "Search Bikes Live") {
+                                Task { await performLiveSearch() }
                             }
                             .buttonStyle(.borderedProminent)
                             .tint(Color.rOrange)
-                            .disabled(catalogStore.isRefreshing)
+                            .disabled(filterStore.isLiveSearching)
                             .frame(maxWidth: .infinity, alignment: .leading)
 
                             HStack {
@@ -609,6 +605,26 @@ struct SearchView: View {
             .sheet(item: $selectedForYouBike) { bike in
                 BikeDetailView(bike: bike)
             }
+        }
+    }
+
+    private func performLiveSearch() async {
+        filterStore.isLiveSearching = true
+        filterStore.liveSearchError = nil
+        defer { filterStore.isLiveSearching = false }
+
+        let criteria = LiveSearchCriteria.from(filterStore.state)
+        do {
+            let result = try await LiveSearchService.shared.search(criteria: criteria)
+            filterStore.liveResults = result.bikes
+            filterStore.liveResultSource = "Live · \(result.count) bikes from web"
+            lastSearchFingerprint = currentSearchFingerprint
+            appState.activeTab = .results
+        } catch {
+            filterStore.liveSearchError = error.localizedDescription
+            // Fall through to show existing results
+            lastSearchFingerprint = currentSearchFingerprint
+            appState.activeTab = .results
         }
     }
 

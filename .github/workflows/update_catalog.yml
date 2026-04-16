@@ -1,0 +1,43 @@
+name: Refresh Live Catalog
+
+on:
+  schedule:
+    # Run daily at 2am AEST (4pm UTC)
+    - cron: "0 16 * * *"
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Fetch live catalog
+        env:
+          BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: node scripts/fetch_live_catalog.js
+
+      - name: Commit updated catalog
+        run: |
+          git config user.name "Rippers Bot"
+          git config user.email "bot@rippers.app"
+          git add Rippers/catalog.json
+          if git diff --cached --quiet; then
+            echo "No catalog changes to commit."
+          else
+            git commit -m "Update catalog — $(date -u '+%Y-%m-%d %H:%M UTC')"
+            git push
+          fi

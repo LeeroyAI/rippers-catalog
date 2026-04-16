@@ -130,6 +130,27 @@ struct ResultsView: View {
                     .background(.thinMaterial)
                 }
             }
+            .overlay {
+                if filterStore.isLiveSearching {
+                    ZStack {
+                        Color.black.opacity(0.3).ignoresSafeArea()
+                        VStack(spacing: 14) {
+                            ProgressView()
+                                .tint(.white)
+                                .scaleEffect(1.4)
+                            Text("Searching the web for bikes...")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.white)
+                            Text("Checking AU retailers · Powered by AI")
+                                .font(.caption)
+                                .foregroundStyle(.white.opacity(0.75))
+                        }
+                        .padding(24)
+                        .background(.ultraThinMaterial)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                    }
+                }
+            }
             .fullScreenCover(item: $selectedBike) { bike in
                 BikeDetailView(bike: bike)
             }
@@ -143,24 +164,68 @@ struct ResultsView: View {
     }
 
     private var catalogStatusBanner: some View {
-        HStack(spacing: 8) {
-            Circle()
-                .fill(catalogStore.sourceStatus == "Live source" ? Color.rGreen : Color.rOrange)
-                .frame(width: 8, height: 8)
-            Text(catalogStore.sourceStatus)
-                .font(.caption.weight(.semibold))
-            if let fallbackReason = catalogStore.fallbackReason, !fallbackReason.isEmpty {
-                Text("· \(fallbackReason)")
-                    .font(.caption)
+        VStack(alignment: .leading, spacing: 6) {
+            // Live search result banner (shown when live results are loaded)
+            if let liveSource = filterStore.liveResultSource {
+                HStack(spacing: 8) {
+                    Circle()
+                        .fill(Color.rGreen)
+                        .frame(width: 8, height: 8)
+                    Image(systemName: "wifi")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(Color.rGreen)
+                    Text(liveSource)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.rGreen)
+                    Spacer()
+                    Button("Clear") {
+                        filterStore.clearLiveResults()
+                    }
+                    .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
-                    .lineLimit(2)
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 8)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.rGreen.opacity(0.12))
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+            } else if let error = filterStore.liveSearchError {
+                HStack(spacing: 8) {
+                    Circle()
+                        .fill(Color.red)
+                        .frame(width: 8, height: 8)
+                    Text("Live search unavailable · \(error)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 8)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.rCard)
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+            } else {
+                // Static/cached catalog banner
+                HStack(spacing: 8) {
+                    Circle()
+                        .fill(catalogStore.sourceStatus == "Live source" ? Color.rGreen : Color.rOrange)
+                        .frame(width: 8, height: 8)
+                    Text(catalogStore.sourceStatus)
+                        .font(.caption.weight(.semibold))
+                    if let fallbackReason = catalogStore.fallbackReason, !fallbackReason.isEmpty {
+                        Text("· \(fallbackReason)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(2)
+                    }
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 8)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.rCard)
+                .clipShape(RoundedRectangle(cornerRadius: 10))
             }
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.rCard)
-        .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 }
 

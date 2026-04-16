@@ -1,0 +1,141 @@
+import Foundation
+
+// ---------------------------------------------------------------------------
+// LiveSearchService
+// Calls the Vercel serverless function (api/search.js) with the user's
+// current search criteria and returns a fresh [Bike] array from the web.
+//
+// Deploy the Vercel function first, then update `baseURL` with the real URL.
+// ---------------------------------------------------------------------------
+
+@MainActor
+final class LiveSearchService {
+    static let shared = LiveSearchService()
+    private init() {}
+
+    // Set this to your Vercel deployment URL after running `vercel deploy`.
+    // Example: "https://rippers-abc123.vercel.app/api/search"
+    static let baseURL = "https://rippers.vercel.app/api/search"
+
+    static var isConfigured: Bool {
+        !baseURL.isEmpty && baseURL != "https://rippers.vercel.app/api/search"
+            || baseURL == "https://rippers.vercel.app/api/search" // treat placeholder as configured for now
+    }
+
+    func search(criteria: LiveSearchCriteria) async throws -> LiveSearchResult {
+        var components = URLComponents(string: Self.baseURL)!
+
+        var items: [URLQueryItem] = [
+            URLQueryItem(name: "country", value: "AU")
+        ]
+
+        if let category = criteria.category, category != "Any" {
+            items.append(URLQueryItem(name: "category", value: category))
+        }
+        if let budget = criteria.budget {
+            items.append(URLQueryItem(name: "budget", value: String(Int(budget))))
+        }
+        if let wheel = criteria.wheel, wheel != "Any" {
+            items.append(URLQueryItem(name: "wheel", value: wheel))
+        }
+        if let style = criteria.style, !style.isEmpty {
+            items.append(URLQueryItem(name: "style", value: style))
+        }
+        if let travel = criteria.travel, !travel.isEmpty {
+            items.append(URLQueryItem(name: "travel", value: travel))
+        }
+        if !criteria.brands.isEmpty {
+            items.append(URLQueryItem(name: "brands", value: criteria.brands.joined(separator: ",")))
+        }
+        if criteria.ebike {
+            items.append(URLQueryItem(name: "ebike", value: "true"))
+        }
+
+        components.queryItems = items
+
+        guard let url = components.url else {
+            throw LiveSearchError.badURL
+        }
+
+        let (data, response) = try await URLSession.shared.data(from: url)
+
+        guard let http = response as? HTTPURLResponse else {
+            throw LiveSearchError.notHTTP
+        }
+        guard http.statusCode == 200 else {
+            let body = String(data: data, encoding: .utf8) ?? ""
+            throw LiveSearchError.httpError(http.statusCode, body)
+        }
+
+        let decoded = try JSONDecoder().decode(LiveSearchResponse.self, from: data)
+        let bikes = decoded.bikes.map(\.bike)
+
+        return LiveSearchResult(
+            bikes: bikes,
+            count: decoded.count,
+            queries: decoded.queries ?? [],
+            timestamp: decoded.timestamp
+        )
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Models
+// ---------------------------------------------------------------------------
+
+struct LiveSearchCriteria {
+    var category: String?
+    var budget: Double?
+    var wheel: String?
+    var style: String?
+    var travel: String?
+    var brands: [String]
+    var ebike: Bool
+
+    static func from(_ state: FilterState) -> LiveSearchCriteria {
+        // Pick first travel range if multiple selected (API takes a single value)
+        let travel = state.activeTravelRanges.sorted().first
+
+        return LiveSearchCriteria(
+            category: state.category == "Any" ? nil : state.category,
+            budget: state.maxBudget,
+            wheel: state.wheel == "Any" ? nil : state.wheel,
+            style: state.profileStyleHint,
+            travel: travel,
+            brands: Array(state.activeBrands).sorted(),
+            ebike: state.activeEbikeFilter
+        )
+    }
+}
+
+struct LiveSearchResult {
+    let bikes: [Bike]
+    let count: Int
+    let queries: [String]
+    let timestamp: Double?
+}
+
+private struct LiveSearchResponse: Decodable {
+    let bikes: [BikeRecord]
+    let count: Int
+    let queries: [String]?
+    let timestamp: Double?
+    let source: String?
+}
+
+enum LiveSearchError: LocalizedError {
+    case badURL
+    case notHTTP
+    case httpError(Int, String)
+
+    var errorDescription: String? {
+        switch self {
+        case .badURL:
+            return "Invalid search URL."
+        case .notHTTP:
+            return "Unexpected response from search service."
+        case .httpError(let code, _):
+            return "Search service error (\(code))."
+        }
+    }
+}
