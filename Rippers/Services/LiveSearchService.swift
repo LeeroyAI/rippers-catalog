@@ -63,7 +63,7 @@ final class LiveSearchService {
         }
 
         let decoded = try JSONDecoder().decode(LiveSearchResponse.self, from: data)
-        let bikes = decoded.bikes.map(\.bike)
+        let bikes = decoded.bikes.map(\.bike).map { enrich($0, from: BIKES) }
 
         return LiveSearchResult(
             bikes: bikes,
@@ -116,6 +116,57 @@ private struct LiveSearchResponse: Decodable {
     let queries: [String]?
     let timestamp: Double?
     let source: String?
+}
+
+// ---------------------------------------------------------------------------
+// Catalog enrichment
+// When a live result matches a static catalog bike (brand + model),
+// fill any blank fields with the known-accurate static data.
+// Live prices, stock, imageUrl, and sourceUrl are always kept as-is.
+// ---------------------------------------------------------------------------
+
+private func enrich(_ live: Bike, from catalog: [Bike]) -> Bike {
+    guard let known = catalog.first(where: {
+        $0.brand.lowercased() == live.brand.lowercased() &&
+        $0.model.lowercased() == live.model.lowercased()
+    }) else { return live }
+
+    func pick(_ liveVal: String, _ knownVal: String) -> String {
+        liveVal.isEmpty ? knownVal : liveVal
+    }
+    func pickOpt(_ liveVal: String?, _ knownVal: String?) -> String? {
+        (liveVal == nil || liveVal!.isEmpty) ? knownVal : liveVal
+    }
+
+    return Bike(
+        id:          live.id,
+        brand:       live.brand,
+        model:       live.model,
+        year:        live.year != 0 ? live.year : known.year,
+        category:    pick(live.category,    known.category),
+        wheel:       pick(live.wheel,       known.wheel),
+        travel:      pick(live.travel,      known.travel),
+        suspension:  pick(live.suspension,  known.suspension),
+        frame:       pick(live.frame,       known.frame),
+        drivetrain:  pick(live.drivetrain,  known.drivetrain),
+        fork:        pick(live.fork,        known.fork),
+        shock:       pick(live.shock,       known.shock),
+        weight:      pick(live.weight,      known.weight),
+        brakes:      pick(live.brakes,      known.brakes),
+        description: pick(live.description, known.description),
+        sizes:       live.sizes.isEmpty     ? known.sizes    : live.sizes,
+        prices:      live.prices.isEmpty    ? known.prices   : live.prices,
+        wasPrice:    live.wasPrice          ?? known.wasPrice,
+        inStock:     live.inStock.isEmpty   ? known.inStock  : live.inStock,
+        sourceUrl:   pick(live.sourceUrl,   known.sourceUrl),
+        isEbike:     live.isEbike,
+        motorBrand:  pickOpt(live.motorBrand, known.motorBrand),
+        motor:       pickOpt(live.motor,      known.motor),
+        battery:     pickOpt(live.battery,    known.battery),
+        range:       pickOpt(live.range,      known.range),
+        ageRange:    pickOpt(live.ageRange,   known.ageRange),
+        imageUrl:    live.imageUrl ?? known.imageUrl
+    )
 }
 
 enum LiveSearchError: LocalizedError {

@@ -253,45 +253,50 @@ ${criteriaDesc || "General mountain bikes"}
 Web search results:
 ${snippetText}
 
-Extract every distinct mountain bike product you can identify. For each bike return a JSON object with EXACTLY these fields (use empty string "" for unknown strings, null for unknown optional values, and sensible defaults):
+Extract every distinct mountain bike product you can identify. For each bike return a JSON object with EXACTLY these fields:
 
 {
-  "id": <stable integer — use Math.abs(hash of brand+model), must be unique>,
+  "id": <stable integer — use Math.abs(hash of brand+model+year), must be unique>,
   "brand": "<manufacturer brand name, e.g. Specialized, Trek, Canyon>",
   "model": "<model name including trim level, e.g. Stumpjumper Comp Carbon>",
-  "year": <model year as integer, e.g. 2024 — use current year if unknown>,
+  "year": <model year as integer, e.g. 2025 — use current year if unknown>,
   "category": "<one of: Trail, Enduro, XC / Cross-Country, Downhill, All-Mountain, Hardtail, eBike>",
   "wheel": "<one of: 27.5\\", 29\\", Mullet (29/27.5), 26\\">",
-  "travel": "<e.g. 140mm or Hardtail>",
+  "travel": "<front travel, e.g. 140mm — use Hardtail if no rear suspension>",
   "suspension": "<one of: Full Suspension, Hardtail, Rigid>",
   "frame": "<e.g. Aluminum, Carbon, Steel>",
-  "drivetrain": "<e.g. Shimano Deore 12-speed, SRAM NX Eagle>",
-  "fork": "<e.g. RockShox Pike RCT3, Fox 36 Rhythm>",
-  "shock": "<rear shock name or empty string if hardtail>",
-  "weight": "<e.g. 14.2kg or empty string>",
-  "brakes": "<e.g. Shimano MT520 4-piston or empty string>",
-  "description": "<1-2 sentences about what this bike is good for>",
+  "drivetrain": "<brand + speeds, e.g. Shimano Deore 12-speed, SRAM NX Eagle 12-speed — use your knowledge of this model if not in snippet>",
+  "fork": "<fork brand + model, e.g. RockShox Pike RCT3, Fox 36 Rhythm — use your knowledge of this model if not in snippet>",
+  "shock": "<rear shock brand + model, e.g. Fox Float DPS, RockShox Deluxe — empty string only if hardtail — use your knowledge if not in snippet>",
+  "weight": "<bike weight in kg, e.g. 14.2kg — use your knowledge of this model year if not in snippet>",
+  "brakes": "<brake brand + model, e.g. Shimano MT520 4-piston, SRAM Code R — use your knowledge if not in snippet>",
+  "description": "<2-3 sentences: what terrain this bike excels at, who it suits, standout features>",
   "sizes": ["XS","S","M","L","XL"],
   "prices": {"<retailer name>": <price as number in AUD>},
   "wasPrice": <original price if on sale, else null>,
-  "inStock": ["<same retailer name as in prices if available>"],
-  "sourceUrl": "<direct product page URL>",
+  "inStock": ["<same retailer name as in prices — only if snippet indicates stock available>"],
+  "sourceUrl": "<direct product page URL from the snippet>",
   "isEbike": <true if electric, else false>,
-  "motorBrand": <null or "Bosch" etc>,
-  "motor": <null or "Performance CX 85Nm" etc>,
-  "battery": <null or "500Wh" etc>,
-  "range": <null or "80km" etc>,
+  "motorBrand": <null or motor brand string, e.g. "Shimano", "Bosch", "Brose">,
+  "motor": <null or motor model, e.g. "EP8 85Nm", "Performance CX 85Nm">,
+  "battery": <null or capacity string, e.g. "504Wh", "750Wh">,
+  "range": <null or estimated range, e.g. "80km">,
   "ageRange": <null or "Kids 8-12" for youth bikes>,
   "imageUrl": "<product image URL from the Image: line of the matching snippet, or empty string>"
 }
 
-Rules:
-- Only include real, purchasable bikes you can identify from the snippets
-- Only include bikes relevant to the criteria
-- If price is mentioned in another currency, convert to AUD (multiply USD by 1.55, GBP by 2.0)
-- Retailer name in prices/inStock must be a short name like "99 Bikes", "Pushys", "Canyon", "Trek"
-- Do NOT invent prices — only use prices actually mentioned in the snippets
-- Return ONLY a valid JSON array, no markdown, no explanation`;
+CRITICAL RULES FOR SPEC FIELDS:
+- shock, brakes, fork, drivetrain, weight: NEVER leave these empty for full-suspension bikes. Use your training knowledge of the specific brand/model/year/trim to fill them in accurately if the snippet doesn't mention them.
+- sizes: always return a realistic array for this type of bike (e.g. ["S","M","L","XL"] for adult trail bikes, ["XS","S","M","L","XL"] for enduro, ["S","M","L"] for DH)
+- If you know the spec from your training data, use it — do not leave fields blank just because the snippet omitted them
+
+PRICE RULES:
+- Only include prices actually mentioned in the snippets
+- If price is in USD, convert to AUD (multiply by 1.55); GBP multiply by 2.0
+- Retailer name must be a short recognisable name: "99 Bikes", "Pushys", "Canyon AU", "Trek AU", "Specialized AU"
+- Do NOT invent prices — leave prices as {} if none mentioned
+
+Return ONLY a valid JSON array, no markdown, no explanation.`;
 
   const msg = await client.messages.create({
     model: "claude-sonnet-4-6",
