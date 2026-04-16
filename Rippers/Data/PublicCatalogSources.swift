@@ -8,7 +8,7 @@ public enum PublicCatalogSources {
             id: "rippers-public-feed",
             name: "Rippers Public Feed",
             type: .publicFeed,
-            endpoint: URL(string: "https://raw.githubusercontent.com/LeeroyAI/rippers-catalog/main/catalog.json"),
+            endpoint: URL(string: "https://raw.githubusercontent.com/LeeroyAI/rippers-catalog/main/Rippers/catalog.json"),
             ttlSeconds: 3600,
             enabled: true
         ),
