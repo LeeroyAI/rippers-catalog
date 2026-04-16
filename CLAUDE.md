@@ -90,7 +90,34 @@ ruby scripts/generate_xcodeproj.rb
 
 ---
 
+## Commands
+
+**Publish live catalog:**
+```bash
+./scripts/publish_catalog.sh
+```
+Runs import, copies `catalog.json` to the rippers-catalog repo, commits and pushes.
+
+**Deploy Vercel search function:**
+```bash
+vercel deploy --prod
+```
+Requires `BRAVE_SEARCH_API_KEY` and `ANTHROPIC_API_KEY` set in Vercel project settings.
+
+---
+
 ## Architecture
+
+### System overview
+
+```
+iOS App (SwiftUI)
+  ├── LiveSearchService  →  Vercel (api/search.js)
+  │                              ├── Brave Search API  (web snippets)
+  │                              └── Claude API        (bike extraction)
+  ├── CatalogStore       →  GitHub raw URL (catalog.json, TTL 60min)
+  └── BIKES[]            →  Rippers/Data/Bikes.swift (static fallback)
+```
 
 ### Two build systems — different purposes
 
@@ -105,7 +132,10 @@ ruby scripts/generate_xcodeproj.rb
 
 **`FilterStore`** (`ObservableObject`) — owns all filter state and the derived results list:
 - `state: FilterState` — all active filter values (text, category, wheel, budget, brand chips, travel chips, eBike mode, rider profile hints)
-- `filteredBikes: [Bike]` — computed by passing `state` to `BikeFilterEngine.apply()`
+- `liveResults: [Bike]?` — when set, `filteredBikes` uses these instead of `catalog` (set by `LiveSearchService`)
+- `isLiveSearching: Bool` — true while the Vercel API call is in flight
+- `liveResultSource: String?` — display label e.g. "Live · 12 bikes from web"
+- `filteredBikes: [Bike]` — when `liveResults` is set, returns those (text-filtered only); otherwise filters `catalog`
 - `activeFilterTokens` — chip-dismissal tokens for the active filters bar
 
 **`AppState`** (`ObservableObject`) — owns navigation and comparison state:
@@ -133,6 +163,26 @@ Two `@Model` classes, both registered in `RippersApp.sharedModelContainer`:
 - `RiderProfile` — per-rider height/age/style/budget, `isActive` flag (only one active at a time)
 
 `RiderProfile` fields map to `FilterState` profile hints: `style` → `profileStyleHint`, `preferredCategory` → `profileCategoryHint`, `budgetCap` → `profileBudgetCap`.
+
+### `LiveSearchService` — live web search client
+
+`@MainActor` singleton in `Services/LiveSearchService.swift`:
+- `static let baseURL` — Vercel function URL (`https://rippers-pied.vercel.app/api/search`)
+- `search(criteria: LiveSearchCriteria) async throws -> LiveSearchResult` — maps `FilterState` to query params, calls Vercel, decodes `[BikeRecord]` → `[Bike]`
+- `LiveSearchCriteria.from(_ state: FilterState)` — convenience builder
+- Called from `SearchView.performLiveSearch()` on "Search Bikes Live" tap
+- Results stored in `FilterStore.liveResults`; cleared with `FilterStore.clearLiveResults()`
+
+### Vercel search function — `api/search.js`
+
+Node.js ESM serverless function deployed at `https://rippers-pied.vercel.app`:
+- `buildQueries(criteria)` — generates 1–4 targeted Brave Search query strings
+- `searchAll(queries, country)` — parallel Brave API calls, deduplicates up to 30 snippets
+- `extractBikes(snippets, criteria)` — Claude claude-sonnet-4-6 prompt → `[BikeRecord]` JSON
+- `stableHash(str)` — deterministic integer IDs from brand+model+year
+- Env vars required: `BRAVE_SEARCH_API_KEY`, `ANTHROPIC_API_KEY`
+- Cache-Control: `s-maxage=3600, stale-while-revalidate=86400`
+- Max duration: 60s (requires Vercel Pro)
 
 ### Static data
 
