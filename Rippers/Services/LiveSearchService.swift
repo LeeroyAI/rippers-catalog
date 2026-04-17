@@ -63,7 +63,9 @@ final class LiveSearchService {
         }
 
         let decoded = try JSONDecoder().decode(LiveSearchResponse.self, from: data)
-        let bikes = decoded.bikes.map(\.bike).map { enrich($0, from: BIKES) }
+        let bikes = decoded.bikes.map(\.bike)
+            .map { normalizeRetailerKeys($0) }
+            .map { enrich($0, from: BIKES) }
 
         return LiveSearchResult(
             bikes: bikes,
@@ -128,6 +130,42 @@ private struct LiveSearchResponse: Decodable {
     let queries: [String]?
     let timestamp: Double?
     let source: String?
+}
+
+// ---------------------------------------------------------------------------
+// Retailer name → ID normalization
+// Claude returns human-readable names ("99 Bikes", "Trek AU") but the app
+// keys prices and inStock on retailer IDs ("99bikes", "trek"). Map them.
+// ---------------------------------------------------------------------------
+
+private func normalizeRetailerId(_ name: String) -> String {
+    if RETAILERS.first(where: { $0.id == name }) != nil { return name }
+    func clean(_ s: String) -> String {
+        s.lowercased()
+         .replacingOccurrences(of: " au", with: "")
+         .replacingOccurrences(of: " australia", with: "")
+         .filter { $0.isLetter || $0.isNumber }
+    }
+    let key = clean(name)
+    return RETAILERS.first(where: { clean($0.name) == key || $0.id == key })?.id ?? name
+}
+
+private func normalizeRetailerKeys(_ bike: Bike) -> Bike {
+    let prices = Dictionary(
+        uniqueKeysWithValues: bike.prices.map { (normalizeRetailerId($0.key), $0.value) }
+    )
+    let inStock = bike.inStock.map { normalizeRetailerId($0) }
+    return Bike(
+        id: bike.id, brand: bike.brand, model: bike.model, year: bike.year,
+        category: bike.category, wheel: bike.wheel, travel: bike.travel,
+        suspension: bike.suspension, frame: bike.frame, drivetrain: bike.drivetrain,
+        fork: bike.fork, shock: bike.shock, weight: bike.weight, brakes: bike.brakes,
+        description: bike.description, sizes: bike.sizes,
+        prices: prices, wasPrice: bike.wasPrice, inStock: inStock,
+        sourceUrl: bike.sourceUrl, isEbike: bike.isEbike,
+        motorBrand: bike.motorBrand, motor: bike.motor, battery: bike.battery,
+        range: bike.range, ageRange: bike.ageRange, imageUrl: bike.imageUrl
+    )
 }
 
 // ---------------------------------------------------------------------------

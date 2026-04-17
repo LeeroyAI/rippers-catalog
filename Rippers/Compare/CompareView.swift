@@ -5,7 +5,10 @@ struct CompareView: View {
     @EnvironmentObject private var filterStore: FilterStore
 
     private var compared: [Bike] {
-        filterStore.catalog.filter { appState.compareSet.contains($0.id) }
+        // Check live results first, then fall back to catalog
+        let pool = (filterStore.liveResults ?? []) + filterStore.catalog
+        var seen = Set<Int>()
+        return pool.filter { appState.compareSet.contains($0.id) && seen.insert($0.id).inserted }
     }
 
     var body: some View {

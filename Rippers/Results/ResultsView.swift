@@ -132,23 +132,10 @@ struct ResultsView: View {
             }
             .overlay {
                 if filterStore.isLiveSearching {
-                    ZStack {
-                        Color.black.opacity(0.3).ignoresSafeArea()
-                        VStack(spacing: 14) {
-                            ProgressView()
-                                .tint(.white)
-                                .scaleEffect(1.4)
-                            Text("Searching the web for bikes...")
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(.white)
-                            Text("Checking AU retailers · Powered by AI")
-                                .font(.caption)
-                                .foregroundStyle(.white.opacity(0.75))
-                        }
-                        .padding(24)
-                        .background(.ultraThinMaterial)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
-                    }
+                    LiveSearchOverlay(
+                        status: filterStore.liveSearchStatus,
+                        queryDescription: filterStore.liveSearchQueryDescription
+                    )
                 }
             }
             .fullScreenCover(item: $selectedBike) { bike in
@@ -367,4 +354,124 @@ private struct ChatMessage: Identifiable {
 
     static func user(_ text: String) -> ChatMessage { .init(role: .user, text: text) }
     static func assistant(_ text: String) -> ChatMessage { .init(role: .assistant, text: text) }
+}
+
+// ---------------------------------------------------------------------------
+// Live Search Progress Overlay
+// ---------------------------------------------------------------------------
+
+private struct LiveSearchOverlay: View {
+    let status: String
+    let queryDescription: String
+
+    @State private var pulseScale: CGFloat = 1.0
+    @State private var dotPhase: Int = 0
+
+    private struct Step {
+        let label: String
+        let keyword: String
+    }
+
+    private let steps: [Step] = [
+        Step(label: "Building search queries",   keyword: "Building"),
+        Step(label: "Searching AU retailers",    keyword: "Searching"),
+        Step(label: "AI extracting specs",       keyword: "AI extracting"),
+        Step(label: "Fetching bike photos",      keyword: "Fetching"),
+        Step(label: "Finalising results",        keyword: "Almost"),
+    ]
+
+    private var currentStepIndex: Int {
+        for (i, step) in steps.enumerated() {
+            if status.contains(step.keyword) { return i }
+        }
+        return 0
+    }
+
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.55).ignoresSafeArea()
+
+            VStack(spacing: 0) {
+                // Animated icon
+                ZStack {
+                    Circle()
+                        .fill(Color.rOrange.opacity(0.18))
+                        .frame(width: 88, height: 88)
+                        .scaleEffect(pulseScale)
+                        .animation(
+                            .easeInOut(duration: 1.1).repeatForever(autoreverses: true),
+                            value: pulseScale
+                        )
+                    Image(systemName: "bicycle")
+                        .font(.system(size: 38, weight: .semibold))
+                        .foregroundStyle(Color.rOrange)
+                }
+                .padding(.bottom, 18)
+
+                Text("LIVE SEARCH")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(Color.rOrange)
+                    .tracking(2.5)
+                    .padding(.bottom, 8)
+
+                Text(status.isEmpty ? "Preparing..." : status)
+                    .font(.title3.weight(.bold))
+                    .multilineTextAlignment(.center)
+                    .contentTransition(.opacity)
+                    .animation(.easeInOut(duration: 0.4), value: status)
+                    .padding(.bottom, 6)
+
+                if !queryDescription.isEmpty {
+                    Text(queryDescription)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 8)
+                        .padding(.bottom, 20)
+                }
+
+                // Step progress
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(Array(steps.enumerated()), id: \.offset) { index, step in
+                        HStack(spacing: 10) {
+                            if index < currentStepIndex {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(.caption)
+                                    .foregroundStyle(Color.rGreen)
+                                    .frame(width: 16)
+                            } else if index == currentStepIndex {
+                                ProgressView()
+                                    .scaleEffect(0.65)
+                                    .frame(width: 16, height: 16)
+                            } else {
+                                Circle()
+                                    .stroke(Color.secondary.opacity(0.3), lineWidth: 1.5)
+                                    .frame(width: 14, height: 14)
+                                    .frame(width: 16)
+                            }
+                            Text(step.label)
+                                .font(.caption.weight(index == currentStepIndex ? .semibold : .regular))
+                                .foregroundStyle(
+                                    index < currentStepIndex  ? Color.rGreen :
+                                    index == currentStepIndex ? Color.primary :
+                                    Color.secondary
+                                )
+                        }
+                        .animation(.easeInOut(duration: 0.3), value: currentStepIndex)
+                    }
+                }
+
+                Text("Powered by Brave + Claude AI")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                    .padding(.top, 18)
+            }
+            .padding(28)
+            .background(.ultraThinMaterial)
+            .clipShape(RoundedRectangle(cornerRadius: 22))
+            .shadow(color: .black.opacity(0.25), radius: 24, x: 0, y: 8)
+            .padding(.horizontal, 28)
+        }
+        .onAppear { pulseScale = 1.12 }
+    }
 }

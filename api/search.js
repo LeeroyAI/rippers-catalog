@@ -383,7 +383,7 @@ async function enrichWithImages(bikes, country) {
   const imageMap = new Map();
   await Promise.allSettled(
     missing.slice(0, 8).map(async (bike) => {
-      const query = `${bike.brand} ${bike.model} ${bike.year} mountain bike`;
+      const query = `${bike.brand} ${bike.model} ${bike.year} mountain bike product`;
       const img = await braveImageSearch(query, country);
       if (img) imageMap.set(bike.id, img);
     })

@@ -35,6 +35,8 @@ public final class FilterStore: ObservableObject {
     @Published public var isLiveSearching: Bool = false
     @Published public var liveSearchError: String? = nil
     @Published public var liveResultSource: String? = nil
+    @Published public var liveSearchStatus: String = ""
+    @Published public var liveSearchQueryDescription: String = ""
 
     public init() {}
 
@@ -72,6 +74,8 @@ public final class FilterStore: ObservableObject {
         liveResults = nil
         liveResultSource = nil
         liveSearchError = nil
+        liveSearchStatus = ""
+        liveSearchQueryDescription = ""
     }
 
     public var activeFilterTokens: [ActiveFilterToken] {

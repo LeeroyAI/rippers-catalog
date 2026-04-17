@@ -609,23 +609,58 @@ struct SearchView: View {
     }
 
     private func performLiveSearch() async {
+        let criteria = LiveSearchCriteria.from(filterStore.state)
+
         filterStore.isLiveSearching = true
         filterStore.liveSearchError = nil
-        defer { filterStore.isLiveSearching = false }
+        filterStore.liveSearchStatus = "Building search queries..."
+        filterStore.liveSearchQueryDescription = searchDescription(for: criteria)
 
-        let criteria = LiveSearchCriteria.from(filterStore.state)
+        // Switch to Results immediately so the progress overlay is visible
+        appState.activeTab = .results
+
+        // Advance status labels in the background to reflect the real pipeline stages
+        let stageTask = Task<Void, Never> {
+            let stages: [(nanoseconds: UInt64, message: String)] = [
+                (2_000_000_000,  "Searching AU retailers..."),
+                (6_000_000_000,  "AI extracting specs and prices..."),
+                (18_000_000_000, "Fetching bike photos..."),
+                (14_000_000_000, "Almost done..."),
+            ]
+            for stage in stages {
+                try? await Task.sleep(nanoseconds: stage.nanoseconds)
+                guard !Task.isCancelled else { return }
+                filterStore.liveSearchStatus = stage.message
+            }
+        }
+
+        defer {
+            stageTask.cancel()
+            filterStore.isLiveSearching = false
+            filterStore.liveSearchStatus = ""
+        }
+
         do {
             let result = try await LiveSearchService.shared.search(criteria: criteria)
             filterStore.liveResults = result.bikes
             filterStore.liveResultSource = "Live · \(result.count) bikes from web"
             lastSearchFingerprint = currentSearchFingerprint
-            appState.activeTab = .results
         } catch {
             filterStore.liveSearchError = error.localizedDescription
-            // Fall through to show existing results
             lastSearchFingerprint = currentSearchFingerprint
-            appState.activeTab = .results
         }
+    }
+
+    private func searchDescription(for criteria: LiveSearchCriteria) -> String {
+        var parts: [String] = []
+        if let cat = criteria.category { parts.append(cat) }
+        else if criteria.ebike { parts.append("eBikes") }
+        else { parts.append("Mountain bikes") }
+        if !criteria.brands.isEmpty { parts.append(criteria.brands.prefix(2).joined(separator: " & ")) }
+        if let wheel = criteria.wheel { parts.append(wheel) }
+        if let budget = criteria.budget { parts.append("under $\(Int(budget))") }
+        parts.append("in Australia")
+        return parts.joined(separator: " · ")
     }
 
     private func applyPreset(_ preset: SearchPreset) {
