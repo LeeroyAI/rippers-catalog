@@ -108,24 +108,12 @@ struct BikeDetailView: View {
 
     @ViewBuilder
     private var detailImage: some View {
-        if let url = bike.effectiveImageURL {
-            AsyncImage(url: url) { phase in
-                switch phase {
-                case .empty:
-                    placeholder
-                case .success(let image):
-                    image
-                        .resizable()
-                        .scaledToFit()
-                case .failure:
-                    placeholder
-                @unknown default:
-                    placeholder
-                }
-            }
-        } else {
-            placeholder
-        }
+        BikeResolvedImageView(
+            bike: bike,
+            contentMode: .fit,
+            imagePadding: EdgeInsets(),
+            placeholder: { placeholder }
+        )
     }
 
     private var placeholder: some View {

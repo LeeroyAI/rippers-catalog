@@ -87,11 +87,24 @@ public struct Bike: Identifiable, Hashable, Sendable {
         self.imageUrl = imageUrl
     }
 
-    /// The best available image URL: static catalog map first, then live search URL.
+    /// Fast local fallback only. Dynamic resolution happens via `BikeImageResolver`.
     public var effectiveImageURL: URL? {
-        if let s = BIKE_IMAGES[id], let u = URL(string: s) { return u }
-        if let s = imageUrl, !s.isEmpty, let u = URL(string: s) { return u }
+        if let s = imageUrl,
+           !s.isEmpty,
+           let u = URL(string: s),
+           Self.isLikelyProductImageURL(u) {
+            return u
+        }
+        if let s = BIKE_IMAGES[id],
+           let u = URL(string: s),
+           Self.isLikelyProductImageURL(u) {
+            return u
+        }
         return nil
+    }
+
+    public var imageCacheKey: String {
+        "\(brand.lowercased())|\(model.lowercased())|\(year)"
     }
 
     /// Lowest currently in-stock price across known retailers.
@@ -134,6 +147,172 @@ public struct Bike: Identifiable, Hashable, Sendable {
             }
         }
         return Int(digits) ?? 0
+    }
+
+    public static func isLikelyProductImageURL(_ url: URL) -> Bool {
+        let host = (url.host ?? "").lowercased()
+        let full = url.absoluteString.lowercased()
+
+        // Reject obviously non-product imagery unless strong product hints exist.
+        let negativeTokens = [
+            "action", "lifestyle", "riding", "rider", "trail", "landscape",
+            "background", "scenic", "jump", "park", "carousel", "banner"
+        ]
+        let positiveTokens = [
+            "side", "profile", "primary", "product", "bike", "studio", "front"
+        ]
+        let hasNegative = negativeTokens.contains { full.contains($0) }
+        let hasPositive = positiveTokens.contains { full.contains($0) }
+
+        if hasNegative && !hasPositive {
+            return false
+        }
+
+        // Common e-commerce/product CDN hosts used by bike brands and retailers.
+        let trustedHosts = [
+            "sefiles.net",
+            "shopify.com",
+            "santacruzbicycles.com",
+            "giant-bicycles.com",
+            "yt-industries.com",
+            "canyon.com",
+            "commencal",
+            "bikes.com",
+            "forbiddenbike.com",
+            "vitalmtb.com",
+            "bigcommerce.com",
+            "trek.scene7.com",
+            "specialized.com",
+            "norco.com",
+            "merida-cdn.m-c-g.net"
+        ]
+        if trustedHosts.contains(where: { host.contains($0) }) {
+            return true
+        }
+
+        // For unknown hosts, require explicit product hints.
+        return hasPositive
+    }
+}
+
+actor BikeImageResolver {
+    static let shared = BikeImageResolver()
+
+    private let cacheKey = "rippers.dynamicBikeImageCache.v1"
+    private var memoryCache: [String: URL] = [:]
+    private var inFlight: [String: Task<URL?, Never>] = [:]
+
+    func resolvedImageURL(for bike: Bike) async -> URL? {
+        if let cached = memoryCache[bike.imageCacheKey] {
+            return cached
+        }
+        if let persisted = persistedImageURL(for: bike.imageCacheKey) {
+            memoryCache[bike.imageCacheKey] = persisted
+            return persisted
+        }
+        if let task = inFlight[bike.imageCacheKey] {
+            return await task.value
+        }
+
+        let task = Task<URL?, Never> {
+            let resolved = await resolveFreshImageURL(for: bike)
+            return resolved
+        }
+        inFlight[bike.imageCacheKey] = task
+        let resolved = await task.value
+        inFlight[bike.imageCacheKey] = nil
+
+        if let resolved {
+            memoryCache[bike.imageCacheKey] = resolved
+            persistImageURL(resolved, for: bike.imageCacheKey)
+        }
+        return resolved
+    }
+
+    private func resolveFreshImageURL(for bike: Bike) async -> URL? {
+        if let sourceURL = URL(string: bike.sourceUrl),
+           let sourceCandidate = await fetchProductImageFromSourcePage(sourceURL),
+           Bike.isLikelyProductImageURL(sourceCandidate) {
+            return sourceCandidate
+        }
+
+        if let direct = bike.effectiveImageURL {
+            return direct
+        }
+
+        return nil
+    }
+
+    private func fetchProductImageFromSourcePage(_ sourceURL: URL) async -> URL? {
+        var request = URLRequest(url: sourceURL)
+        request.timeoutInterval = 12
+        request.setValue("Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148", forHTTPHeaderField: "User-Agent")
+
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
+                return nil
+            }
+
+            if let mime = http.value(forHTTPHeaderField: "Content-Type")?.lowercased(),
+               mime.contains("image") {
+                return sourceURL
+            }
+
+            guard let html = String(data: data, encoding: .utf8), !html.isEmpty else {
+                return nil
+            }
+
+            let candidates = extractImageCandidates(fromHTML: html, baseURL: sourceURL)
+            return candidates.first(where: { Bike.isLikelyProductImageURL($0) })
+        } catch {
+            return nil
+        }
+    }
+
+    private func extractImageCandidates(fromHTML html: String, baseURL: URL) -> [URL] {
+        var urls: [URL] = []
+        let patterns = [
+            #"<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']"#,
+            #"<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']"#,
+            #""image"\s*:\s*"([^"]+)""#
+        ]
+
+        for pattern in patterns {
+            guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]) else { continue }
+            let range = NSRange(location: 0, length: html.utf16.count)
+            regex.enumerateMatches(in: html, options: [], range: range) { match, _, _ in
+                guard let match, match.numberOfRanges > 1,
+                      let captureRange = Range(match.range(at: 1), in: html) else { return }
+                let candidate = String(html[captureRange]).replacingOccurrences(of: "\\/", with: "/")
+                if let url = URL(string: candidate, relativeTo: baseURL)?.absoluteURL, url.scheme?.hasPrefix("http") == true {
+                    urls.append(url)
+                }
+            }
+        }
+
+        var seen: Set<String> = []
+        return urls.filter {
+            let key = $0.absoluteString
+            guard !seen.contains(key) else { return false }
+            seen.insert(key)
+            return true
+        }
+    }
+
+    private func persistedImageURL(for key: String) -> URL? {
+        guard let dict = UserDefaults.standard.dictionary(forKey: cacheKey) as? [String: String],
+              let raw = dict[key],
+              let url = URL(string: raw) else {
+            return nil
+        }
+        return url
+    }
+
+    private func persistImageURL(_ url: URL, for key: String) {
+        var dict = (UserDefaults.standard.dictionary(forKey: cacheKey) as? [String: String]) ?? [:]
+        dict[key] = url.absoluteString
+        UserDefaults.standard.set(dict, forKey: cacheKey)
     }
 }
 
