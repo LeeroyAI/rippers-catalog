@@ -336,9 +336,25 @@ struct TripPlannerView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 12))
 
                     if !nearbyRidingAreas.isEmpty {
-                        sectionCard(title: "Riding Areas Near \(destination)") {
-                            ForEach(nearbyRidingAreas.prefix(4), id: \.self) { area in
-                                locationRow(name: area.name ?? "Riding Area", subtitle: area.placemark.title ?? "")
+                        sectionCard(title: "Riding Trails Near \(destination)") {
+                            ForEach(nearbyRidingAreas.prefix(5), id: \.self) { area in
+                                trailAreaCard(area)
+                            }
+                            if let coord = destinationPlacemark?.coordinate {
+                                Divider()
+                                    .padding(.vertical, 2)
+                                if let url = trailforksURL(lat: coord.latitude, lon: coord.longitude) {
+                                    Link(destination: url) {
+                                        HStack(spacing: 6) {
+                                            Image(systemName: "map.fill")
+                                            Text("Browse all trails on Trailforks")
+                                                .fontWeight(.semibold)
+                                        }
+                                        .frame(maxWidth: .infinity)
+                                    }
+                                    .buttonStyle(.borderedProminent)
+                                    .tint(Color.rOrange)
+                                }
                             }
                         }
                     }
@@ -519,6 +535,45 @@ struct TripPlannerView: View {
         .padding(10)
         .background(Color.rBackground.opacity(0.55))
         .clipShape(RoundedRectangle(cornerRadius: 10))
+    }
+
+    private func trailAreaCard(_ area: MKMapItem) -> some View {
+        let coord = area.placemark.coordinate
+        return HStack(alignment: .top, spacing: 8) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(area.name ?? "Riding Area")
+                    .font(.subheadline.weight(.semibold))
+                if let subtitle = area.placemark.title, !subtitle.isEmpty {
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                }
+            }
+            Spacer()
+            if let url = trailforksURL(lat: coord.latitude, lon: coord.longitude) {
+                Link(destination: url) {
+                    HStack(spacing: 4) {
+                        Text("Trailforks")
+                            .font(.caption.weight(.semibold))
+                        Image(systemName: "arrow.up.right")
+                            .font(.caption2.weight(.bold))
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(Color.rOrange.opacity(0.15))
+                    .foregroundStyle(Color.rOrange)
+                    .clipShape(Capsule())
+                }
+            }
+        }
+        .padding(10)
+        .background(Color.rBackground.opacity(0.55))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+    }
+
+    private func trailforksURL(lat: Double, lon: Double) -> URL? {
+        URL(string: "https://www.trailforks.com/trails/?lat=\(lat)&lon=\(lon)&context=region")
     }
 
     @ViewBuilder

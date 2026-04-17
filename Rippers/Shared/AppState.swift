@@ -58,6 +58,7 @@ public final class FilterStore: ObservableObject {
             localState.activeBrands = []
             localState.activeTravelRanges = []
             localState.activeEbikeFilter = false
+            localState.tailorToProfile = false
             return BikeFilterEngine.apply(bikes: activeBikePool, filters: localState)
         }
         return BikeFilterEngine.apply(bikes: catalog, filters: state)

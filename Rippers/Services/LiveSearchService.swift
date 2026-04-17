@@ -91,9 +91,21 @@ struct LiveSearchCriteria {
         // Pick first travel range if multiple selected (API takes a single value)
         let travel = state.activeTravelRanges.sorted().first
 
+        // Prefer explicit filter values; fall back to profile hints when tailoring is on
+        let effectiveCategory: String?
+        if state.category != "Any" {
+            effectiveCategory = state.category
+        } else if state.tailorToProfile {
+            effectiveCategory = state.profileCategoryHint
+        } else {
+            effectiveCategory = nil
+        }
+
+        let effectiveBudget = state.maxBudget ?? (state.tailorToProfile ? state.profileBudgetCap : nil)
+
         return LiveSearchCriteria(
-            category: state.category == "Any" ? nil : state.category,
-            budget: state.maxBudget,
+            category: effectiveCategory,
+            budget: effectiveBudget,
             wheel: state.wheel == "Any" ? nil : state.wheel,
             style: state.profileStyleHint,
             travel: travel,

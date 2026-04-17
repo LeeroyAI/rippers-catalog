@@ -174,7 +174,6 @@
 			children = (
 				03061AFA243E4429C924503B /* LiveSearchService.swift */,
 			);
-			name = Services;
 			path = Services;
 			sourceTree = "<group>";
 		};
@@ -225,11 +224,6 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastSwiftUpdateCheck = 1600;
 				LastUpgradeCheck = 2640;
-				TargetAttributes = {
-					B8E2D43C08F6CC1FF3EB4BDD = {
-						DevelopmentTeam = UFZRNHJYBW;
-					};
-				};
 			};
 			buildConfigurationList = FCC30C8035C571C77345A95A /* Build configuration list for PBXProject "Rippers" */;
 			compatibilityVersion = "Xcode 3.2";
@@ -381,6 +375,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLANG_ENABLE_OBJC_WEAK = NO;
+				DEVELOPMENT_TEAM = UFZRNHJYBW;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -465,6 +460,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLANG_ENABLE_OBJC_WEAK = NO;
+				DEVELOPMENT_TEAM = UFZRNHJYBW;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
