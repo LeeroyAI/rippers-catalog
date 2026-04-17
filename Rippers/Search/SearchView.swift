@@ -980,17 +980,12 @@ struct SearchView: View {
         VStack(alignment: .leading, spacing: 0) {
             ZStack {
                 Color(UIColor.secondarySystemBackground)
-                if let url = bike.effectiveImageURL {
-                    AsyncImage(url: url) { phase in
-                        switch phase {
-                        case .success(let img): img.resizable().scaledToFit().padding(8)
-                        case .failure: forYouPlaceholderIcon
-                        default: ProgressView().tint(Color.rOrange)
-                        }
-                    }
-                } else {
-                    forYouPlaceholderIcon
-                }
+                BikeResolvedImageView(
+                    bike: bike,
+                    contentMode: .fit,
+                    imagePadding: EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8),
+                    placeholder: { forYouPlaceholderIcon }
+                )
             }
             .frame(width: 160, height: 112)
             .clipShape(UnevenRoundedRectangle(topLeadingRadius: 14, bottomLeadingRadius: 0, bottomTrailingRadius: 0, topTrailingRadius: 14))
