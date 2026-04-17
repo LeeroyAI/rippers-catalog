@@ -127,28 +127,12 @@ struct CompareView: View {
 
     @ViewBuilder
     private func compareBikeImage(_ bike: Bike) -> some View {
-        if let url = bike.effectiveImageURL {
-            AsyncImage(url: url) { phase in
-                switch phase {
-                case .empty:
-                    ZStack {
-                        compareImagePlaceholder
-                        ProgressView()
-                            .tint(.white)
-                    }
-                case .success(let image):
-                    image
-                        .resizable()
-                        .scaledToFill()
-                case .failure:
-                    compareImagePlaceholder
-                @unknown default:
-                    compareImagePlaceholder
-                }
-            }
-        } else {
-            compareImagePlaceholder
-        }
+        BikeResolvedImageView(
+            bike: bike,
+            contentMode: .fill,
+            imagePadding: EdgeInsets(),
+            placeholder: { compareImagePlaceholder }
+        )
     }
 
     private var compareImagePlaceholder: some View {

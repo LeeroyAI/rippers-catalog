@@ -19,6 +19,8 @@ struct TripPlannerView: View {
     @State private var searchStatus = "Find a riding destination to get profile-matched bike recommendations."
     @State private var regionHint: String = "Trail"
     @State private var nearbyRidingAreas: [MKMapItem] = []
+    @State private var trailforksTrails: [TrailforksTrail] = []
+    @State private var trailforksStatus: String?
     @State private var nearbyShops: [MKMapItem] = []
     @State private var lastSearchedDestination: MKMapItem?
     @State private var destinationPlacemark: MKPlacemark?
@@ -360,36 +362,52 @@ struct TripPlannerView: View {
                         .frame(height: 300)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
 
-                    if !nearbyRidingAreas.isEmpty {
-                        sectionCard(title: "Riding Trails Near \(destination)") {
-                            ForEach(nearbyRidingAreas.prefix(5), id: \.self) { area in
-                                trailAreaCard(area)
-                            }
-                            if let coord = destinationPlacemark?.coordinate {
-                                Divider()
-                                    .padding(.vertical, 2)
-                                if let url = trailforksURL(lat: coord.latitude, lon: coord.longitude) {
-                                    Link(destination: url) {
-                                        HStack(spacing: 6) {
-                                            Image(systemName: "map.fill")
-                                            Text("Browse all trails on Trailforks")
-                                                .fontWeight(.semibold)
-                                        }
-                                        .frame(maxWidth: .infinity)
-                                    }
-                                    .buttonStyle(.borderedProminent)
-                                    .tint(Color.rOrange)
+                    if !nearbyRidingAreas.isEmpty || lastSearchedDestination != nil {
+                        sectionCard(title: "Trails \(nearbyRidingAreas.isEmpty ? "for" : "near") \(destination.isEmpty ? regionHint : destination)") {
+                            if !trailforksTrails.isEmpty {
+                                Text("Local trails from Trailforks")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(.secondary)
+                                ForEach(trailforksTrails.prefix(8)) { trail in
+                                    trailforksTrailCard(trail)
                                 }
+                            } else if !nearbyRidingAreas.isEmpty {
+                                Text("Local trails")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(.secondary)
+                                ForEach(nearbyRidingAreas.prefix(5), id: \.self) { area in
+                                    trailAreaCard(area)
+                                }
+                            } else {
+                                Text("No specific local trails found yet. Search a suburb or trail network to see nearby riding spots.")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
                             }
-                        }
-                    }
-
-                    sectionCard(title: "Bike Styles for \(regionHint)") {
-                        stylePills(areaBikeStyles.map(\.name))
-                        if let topStyle = areaBikeStyles.first {
-                            Text("Top focus: \(topStyle.name)")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                            if let trailforksStatus, !trailforksStatus.isEmpty {
+                                Text(trailforksStatus)
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+                            VStack(alignment: .leading, spacing: 6) {
+                                Divider().padding(.vertical, 2)
+                                Text("Recommended bike styles for these trails")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(.secondary)
+                                stylePills(areaBikeStyles.map(\.name))
+                            }
+                            if let coord = destinationPlacemark?.coordinate,
+                               let url = trailforksURL(lat: coord.latitude, lon: coord.longitude) {
+                                Link(destination: url) {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: "map.fill")
+                                        Text("Browse all trails on Trailforks")
+                                            .fontWeight(.semibold)
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .tint(Color.rOrange)
+                            }
                         }
                     }
 
@@ -548,17 +566,18 @@ struct TripPlannerView: View {
     }
 
     private func stylePills(_ labels: [String]) -> some View {
-        let columns = [GridItem(.adaptive(minimum: 110), spacing: 8)]
-        return LazyVGrid(columns: columns, alignment: .leading, spacing: 8) {
-            ForEach(labels, id: \.self) { label in
-                Text(label)
-                    .font(.caption.weight(.semibold))
-                    .lineLimit(1)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(Color.rOrange.opacity(0.12))
-                    .foregroundStyle(Color.rOrangeDark)
-                    .clipShape(Capsule())
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(labels, id: \.self) { label in
+                    Text(label)
+                        .font(.caption.weight(.semibold))
+                        .lineLimit(1)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(Color.rOrange.opacity(0.12))
+                        .foregroundStyle(Color.rOrangeDark)
+                        .clipShape(Capsule())
+                }
             }
         }
     }
@@ -761,30 +780,43 @@ struct TripPlannerView: View {
     }
 
     private func searchDestination(query: String? = nil, displayName: String? = nil, expectedSubtitle: String? = nil) async {
-        let searchText = (query ?? destination).trimmingCharacters(in: .whitespacesAndNewlines)
+        var effectiveQuery = query
+        var effectiveDisplayName = displayName
+        var effectiveSubtitle = expectedSubtitle
+        if query == nil, displayName == nil, expectedSubtitle == nil,
+           let bestCompletion = bestAutocompleteMatch(for: destination) {
+            // One tap on Search should resolve to the best visible suggestion.
+            effectiveQuery = bestCompletion.queryText
+            effectiveDisplayName = bestCompletion.title
+            effectiveSubtitle = bestCompletion.subtitle
+        }
+
+        let searchText = (effectiveQuery ?? destination).trimmingCharacters(in: .whitespacesAndNewlines)
         guard !searchText.isEmpty else { return }
         let request = MKLocalSearch.Request()
         request.naturalLanguageQuery = searchText
-        request.resultTypes = .address
+        request.resultTypes = [.address, .pointOfInterest]
         do {
             let response = try await MKLocalSearch(request: request).start()
             let selectedItem = selectBestDestination(
                 from: response.mapItems,
-                displayName: displayName,
-                expectedSubtitle: expectedSubtitle
+                query: searchText,
+                displayName: effectiveDisplayName,
+                expectedSubtitle: effectiveSubtitle
             )
             if let item = selectedItem {
                 let coordinate = item.placemark.coordinate
                 lastSearchedDestination = item
                 destinationPlacemark = item.placemark
-                destination = displayName ?? item.name ?? searchText
+                let resolvedLabel = formatDestinationLabel(for: item, fallback: effectiveDisplayName ?? searchText)
+                destination = resolvedLabel
                 searchCompleter.clear()
-                addRecentSearch(destination)
+                addRecentSearch(resolvedLabel)
                 position = .region(
                     MKCoordinateRegion(center: coordinate, span: MKCoordinateSpan(latitudeDelta: 0.22, longitudeDelta: 0.22))
                 )
-                searchStatus = "Destination found: \(item.name ?? destination)"
-                inferRegionHint(from: destination)
+                searchStatus = "Destination found: \(resolvedLabel)"
+                inferRegionHint(from: resolvedLabel)
                 await searchNearbyRidingAreas(around: coordinate)
                 await searchNearbyShops(around: coordinate)
             } else {
@@ -824,27 +856,60 @@ struct TripPlannerView: View {
     }
 
     private func searchNearbyRidingAreas(around coordinate: CLLocationCoordinate2D) async {
+        let region = MKCoordinateRegion(
+            center: coordinate,
+            span: MKCoordinateSpan(latitudeDelta: 0.6, longitudeDelta: 0.6)
+        )
+        let placeHint = destination.trimmingCharacters(in: .whitespacesAndNewlines)
+        let queries = [
+            "mountain bike trail \(placeHint)",
+            "bike park \(placeHint)",
+            "singletrack \(placeHint)",
+            "trail network \(placeHint)",
+            "mtb trails \(placeHint)"
+        ]
+
+        async let q1 = fetchMapItems(query: queries[0], region: region, resultTypes: [.pointOfInterest, .address])
+        async let q2 = fetchMapItems(query: queries[1], region: region, resultTypes: [.pointOfInterest, .address])
+        async let q3 = fetchMapItems(query: queries[2], region: region, resultTypes: [.pointOfInterest, .address])
+        async let q4 = fetchMapItems(query: queries[3], region: region, resultTypes: [.pointOfInterest, .address])
+        async let q5 = fetchMapItems(query: queries[4], region: region, resultTypes: [.pointOfInterest, .address])
+
+        let combined = await q1 + q2 + q3 + q4 + q5
+        let sanitized = sanitizeNearbyResults(combined, around: coordinate, maxDistanceKM: 180)
+        let trailFirst = sanitized.sorted { lhs, rhs in
+            let lTrail = trailRelevanceScore(for: lhs)
+            let rTrail = trailRelevanceScore(for: rhs)
+            if lTrail == rTrail {
+                let lDist = CLLocation(latitude: lhs.placemark.coordinate.latitude, longitude: lhs.placemark.coordinate.longitude)
+                    .distance(from: CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude))
+                let rDist = CLLocation(latitude: rhs.placemark.coordinate.latitude, longitude: rhs.placemark.coordinate.longitude)
+                    .distance(from: CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude))
+                return lDist < rDist
+            }
+            return lTrail > rTrail
+        }
+        nearbyRidingAreas = Array(trailFirst.prefix(10))
+    }
+
+    private func fetchMapItems(query: String, region: MKCoordinateRegion, resultTypes: MKLocalSearch.ResultType) async -> [MKMapItem] {
         let request = MKLocalSearch.Request()
-        let hint = regionHint.lowercased()
-        if hint.contains("gravity") || hint.contains("enduro") {
-            request.naturalLanguageQuery = "bike park"
-        } else if hint.contains("xc") || hint.contains("cross") {
-            request.naturalLanguageQuery = "mountain bike trail"
-        } else {
-            request.naturalLanguageQuery = "trail network"
-        }
-        request.resultTypes = .pointOfInterest
-        request.region = MKCoordinateRegion(center: coordinate, span: MKCoordinateSpan(latitudeDelta: 0.22, longitudeDelta: 0.22))
-        do {
-            let raw = try await MKLocalSearch(request: request).start().mapItems
-            nearbyRidingAreas = sanitizeNearbyResults(
-                raw,
-                around: coordinate,
-                maxDistanceKM: 120
-            )
-        } catch {
-            nearbyRidingAreas = []
-        }
+        request.naturalLanguageQuery = query
+        request.resultTypes = resultTypes
+        request.region = region
+        return (try? await MKLocalSearch(request: request).start().mapItems) ?? []
+    }
+
+    private func trailRelevanceScore(for item: MKMapItem) -> Int {
+        let text = [item.name, item.placemark.title]
+            .compactMap { $0?.lowercased() }
+            .joined(separator: " ")
+        var score = 0
+        if text.contains("trail") { score += 30 }
+        if text.contains("bike park") || text.contains("mtb") || text.contains("mountain bike") { score += 35 }
+        if text.contains("singletrack") { score += 25 }
+        if text.contains("reserve") || text.contains("forest") || text.contains("national park") { score += 10 }
+        return score
     }
 
     private func shopCard(_ shop: MKMapItem) -> some View {
@@ -949,7 +1014,10 @@ struct TripPlannerView: View {
     private func addRecentSearch(_ query: String) {
         let clean = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !clean.isEmpty else { return }
-        var updated = recentSearches.filter { $0.caseInsensitiveCompare(clean) != .orderedSame }
+        let normalizedClean = normalizeRecentSearch(clean)
+        var updated = recentSearches.filter { existing in
+            normalizeRecentSearch(existing) != normalizedClean
+        }
         updated.insert(clean, at: 0)
         persistRecentSearches(Array(updated.prefix(8)))
     }
@@ -964,21 +1032,99 @@ struct TripPlannerView: View {
         recentSearchesData = text
     }
 
-    private func selectBestDestination(from items: [MKMapItem], displayName: String?, expectedSubtitle: String?) -> MKMapItem? {
-        guard !items.isEmpty else { return nil }
-        guard let expectedSubtitle, !expectedSubtitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            return items.first
+    private func bestAutocompleteMatch(for text: String) -> LocationSuggestion? {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard !trimmed.isEmpty else { return nil }
+
+        if let exact = searchCompleter.completions.first(where: {
+            $0.title.lowercased() == trimmed || $0.queryText.lowercased() == trimmed
+        }) {
+            return exact
         }
 
-        let hint = expectedSubtitle.lowercased()
-        let subtitleMatch = items.first { item in
-            let title = item.placemark.title?.lowercased() ?? ""
-            let locality = item.placemark.locality?.lowercased() ?? ""
-            let admin = item.placemark.administrativeArea?.lowercased() ?? ""
-            let country = item.placemark.country?.lowercased() ?? ""
-            return title.contains(hint) || hint.contains(locality) || hint.contains(admin) || hint.contains(country)
+        return searchCompleter.completions.first(where: {
+            $0.title.lowercased().hasPrefix(trimmed) || $0.queryText.lowercased().hasPrefix(trimmed)
+        }) ?? searchCompleter.completions.first
+    }
+
+    private func formatDestinationLabel(for item: MKMapItem, fallback: String) -> String {
+        let base = item.name?.trimmingCharacters(in: .whitespacesAndNewlines) ?? fallback
+        let locality = item.placemark.locality?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let admin = item.placemark.administrativeArea?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let country = item.placemark.countryCode?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+
+        var suffixParts: [String] = []
+        if !locality.isEmpty && locality.caseInsensitiveCompare(base) != .orderedSame {
+            suffixParts.append(locality)
         }
-        return subtitleMatch ?? items.first
+        if !admin.isEmpty && admin.caseInsensitiveCompare(base) != .orderedSame {
+            suffixParts.append(admin)
+        }
+        if suffixParts.isEmpty && !country.isEmpty {
+            suffixParts.append(country)
+        }
+        guard !suffixParts.isEmpty else { return base }
+        return "\(base), \(suffixParts.joined(separator: ", "))"
+    }
+
+    private func normalizeRecentSearch(_ value: String) -> String {
+        value
+            .lowercased()
+            .replacingOccurrences(of: "[^a-z0-9]", with: "", options: .regularExpression)
+    }
+
+    private func selectBestDestination(from items: [MKMapItem], query: String, displayName: String?, expectedSubtitle: String?) -> MKMapItem? {
+        guard !items.isEmpty else { return nil }
+        let normalizedQuery = normalizeSearchText(query)
+        let normalizedDisplay = normalizeSearchText(displayName ?? "")
+        let normalizedExpected = normalizeSearchText(expectedSubtitle ?? "")
+
+        return items
+            .map { item in (item: item, score: destinationScore(item, query: normalizedQuery, displayName: normalizedDisplay, expectedSubtitle: normalizedExpected)) }
+            .max(by: { $0.score < $1.score })?
+            .item
+    }
+
+    private func destinationScore(_ item: MKMapItem, query: String, displayName: String, expectedSubtitle: String) -> Int {
+        var score = 0
+        let name = normalizeSearchText(item.name ?? "")
+        let title = normalizeSearchText(item.placemark.title ?? "")
+        let locality = normalizeSearchText(item.placemark.locality ?? "")
+        let admin = normalizeSearchText(item.placemark.administrativeArea ?? "")
+        let countryCode = normalizeSearchText(item.placemark.isoCountryCode ?? "")
+
+        if !query.isEmpty {
+            if name == query { score += 80 }
+            if name.hasPrefix(query) { score += 55 }
+            if title.contains(query) { score += 35 }
+            if locality == query || locality.contains(query) { score += 40 }
+        }
+        if !displayName.isEmpty {
+            if name == displayName { score += 45 }
+            if name.contains(displayName) { score += 25 }
+        }
+        if !expectedSubtitle.isEmpty {
+            if title.contains(expectedSubtitle) { score += 30 }
+            if locality.contains(expectedSubtitle) || admin.contains(expectedSubtitle) { score += 20 }
+        }
+
+        if countryCode == "au" { score += 10 }
+
+        let location = item.placemark.location
+        if let location, let destinationPlacemark {
+            let prior = destinationPlacemark.location
+            if let prior {
+                let distanceKM = prior.distance(from: location) / 1000.0
+                if distanceKM < 100 { score += 5 }
+            }
+        }
+        return score
+    }
+
+    private func normalizeSearchText(_ value: String) -> String {
+        value
+            .lowercased()
+            .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     private func sanitizeNearbyResults(_ items: [MKMapItem], around coordinate: CLLocationCoordinate2D, maxDistanceKM: Double) -> [MKMapItem] {
