@@ -1040,24 +1040,38 @@ struct SearchView: View {
 
     private func forYouBikeCard(bike: Bike, score: Int) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Image
-            Group {
+            // Image — scaledToFit so product shots show the full bike;
+            // gradient background fills the remaining space on brand.
+            ZStack {
+                LinearGradient(
+                    colors: [Color.rOrangeLight.opacity(0.45), Color.rCard],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
                 if let url = bike.effectiveImageURL {
                     AsyncImage(url: url) { phase in
                         switch phase {
                         case .success(let img):
-                            img.resizable().scaledToFill()
+                            img
+                                .resizable()
+                                .scaledToFit()
+                                .padding(6)
+                        case .failure:
+                            forYouPlaceholderIcon
                         default:
-                            bikePlaceholder
+                            ProgressView()
+                                .tint(Color.rOrange)
                         }
                     }
                 } else {
-                    bikePlaceholder
+                    forYouPlaceholderIcon
                 }
             }
             .frame(width: 130, height: 90)
-            .clipped()
-            .background(Color.rCard)
+            .clipShape(UnevenRoundedRectangle(
+                topLeadingRadius: 12, bottomLeadingRadius: 0,
+                bottomTrailingRadius: 0, topTrailingRadius: 12
+            ))
 
             // Info
             VStack(alignment: .leading, spacing: 3) {
@@ -1089,6 +1103,12 @@ struct SearchView: View {
         .background(Color.rCard)
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.rBorder, lineWidth: 1))
+    }
+
+    private var forYouPlaceholderIcon: some View {
+        Image(systemName: "bicycle")
+            .font(.title2)
+            .foregroundStyle(Color.rOrange.opacity(0.55))
     }
 
     private var bikePlaceholder: some View {
