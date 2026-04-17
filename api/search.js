@@ -63,7 +63,8 @@ export default async function handler(req, res) {
 
     const queries = buildQueries(criteria);
     const snippets = await searchAll(queries, country, cursor);
-    const bikes = await extractBikes(snippets, criteria);
+    const rawBikes = await extractBikes(snippets, criteria);
+    const bikes = await enrichWithImages(rawBikes, country);
 
     // Cache for 1 hour on CDN, serve stale for 24 hours while revalidating
     res.setHeader(
@@ -245,7 +246,15 @@ async function extractBikes(snippets, criteria) {
     .filter(Boolean)
     .join("\n");
 
-  const prompt = `You are a mountain bike product data specialist. Extract individual mountain bike product listings from these web search result snippets.
+  const prompt = `You are a mountain bike product data specialist with comprehensive knowledge of MTB specifications for all major brands (Specialized, Trek, Giant, Santa Cruz, Yeti, Canyon, Orbea, Scott, Norco, Rocky Mountain, Intense, Pivot, etc.).
+
+Your task has TWO PHASES:
+
+PHASE 1 — DISCOVERY (use the snippets below)
+Identify every distinct mountain bike for sale in these web search results. Extract: brand, model, trim level, year, price, retailer, sourceUrl, and imageUrl. Snippets are retailer listings — they rarely contain full specs. That is fine. They exist only to tell you WHAT bikes are for sale and at what price.
+
+PHASE 2 — SPECS (use your training knowledge, not the snippets)
+For every bike identified in Phase 1, provide COMPLETE, ACCURATE specifications from your training data. Do not leave spec fields empty because the snippet omitted them — the snippets almost never have full specs. Use your knowledge of the exact brand + model + year + trim. If the year is unclear, use 2024 or 2025 and apply the spec set for that model year.
 
 Search criteria:
 ${criteriaDesc || "General mountain bikes"}
@@ -253,48 +262,52 @@ ${criteriaDesc || "General mountain bikes"}
 Web search results:
 ${snippetText}
 
-Extract every distinct mountain bike product you can identify. For each bike return a JSON object with EXACTLY these fields:
+For each bike return a JSON object with EXACTLY these fields:
 
 {
   "id": <stable integer — use Math.abs(hash of brand+model+year), must be unique>,
   "brand": "<manufacturer brand name, e.g. Specialized, Trek, Canyon>",
-  "model": "<model name including trim level, e.g. Stumpjumper Comp Carbon>",
-  "year": <model year as integer, e.g. 2025 — use current year if unknown>,
+  "model": "<full model name including trim level, e.g. Stumpjumper Comp Carbon, Sight A30, Jeffsy CF Zeb>",
+  "year": <model year as integer — extract from snippet or default to 2025>,
   "category": "<one of: Trail, Enduro, XC / Cross-Country, Downhill, All-Mountain, Hardtail, eBike>",
   "wheel": "<one of: 27.5\\", 29\\", Mullet (29/27.5), 26\\">",
-  "travel": "<front travel, e.g. 140mm — use Hardtail if no rear suspension>",
+  "travel": "<front travel in mm, e.g. 140mm — write Hardtail only if truly no rear suspension>",
   "suspension": "<one of: Full Suspension, Hardtail, Rigid>",
-  "frame": "<e.g. Aluminum, Carbon, Steel>",
-  "drivetrain": "<brand + speeds, e.g. Shimano Deore 12-speed, SRAM NX Eagle 12-speed — use your knowledge of this model if not in snippet>",
-  "fork": "<fork brand + model, e.g. RockShox Pike RCT3, Fox 36 Rhythm — use your knowledge of this model if not in snippet>",
-  "shock": "<rear shock brand + model, e.g. Fox Float DPS, RockShox Deluxe — empty string only if hardtail — use your knowledge if not in snippet>",
-  "weight": "<bike weight in kg, e.g. 14.2kg — use your knowledge of this model year if not in snippet>",
-  "brakes": "<brake brand + model, e.g. Shimano MT520 4-piston, SRAM Code R — use your knowledge if not in snippet>",
-  "description": "<2-3 sentences: what terrain this bike excels at, who it suits, standout features>",
+  "frame": "<material — e.g. Aluminum, Carbon, Steel, Titanium>",
+  "drivetrain": "<brand + speeds, e.g. Shimano Deore 12-speed, SRAM GX Eagle 12-speed, Shimano XT 12-speed — USE YOUR TRAINING KNOWLEDGE, this field must never be empty>",
+  "fork": "<fork brand + full model name, e.g. RockShox Pike Ultimate 140mm, Fox 36 Float Rhythm 150mm — USE YOUR TRAINING KNOWLEDGE, must never be empty for FS bikes>",
+  "shock": "<rear shock brand + full model name, e.g. Fox Float DPS, RockShox Super Deluxe Ultimate — empty string ONLY for hardtails — USE YOUR TRAINING KNOWLEDGE>",
+  "weight": "<bike weight with rider-ready setup, e.g. 13.8kg — USE YOUR TRAINING KNOWLEDGE, provide a realistic estimate if exact figure not known>",
+  "brakes": "<brake brand + model, e.g. Shimano Deore M6100 4-piston, SRAM Code Silver Stealth, TRP Quadiem — USE YOUR TRAINING KNOWLEDGE, must never be empty>",
+  "description": "<3 sentences: terrain this bike excels at, who it suits, standout features and what makes it special>",
   "sizes": ["XS","S","M","L","XL"],
   "prices": {"<retailer name>": <price as number in AUD>},
   "wasPrice": <original price if on sale, else null>,
-  "inStock": ["<same retailer name as in prices — only if snippet indicates stock available>"],
-  "sourceUrl": "<direct product page URL from the snippet>",
+  "inStock": ["<retailer name — only if snippet explicitly indicates in stock>"],
+  "sourceUrl": "<product page URL from the snippet>",
   "isEbike": <true if electric, else false>,
-  "motorBrand": <null or motor brand string, e.g. "Shimano", "Bosch", "Brose">,
-  "motor": <null or motor model, e.g. "EP8 85Nm", "Performance CX 85Nm">,
-  "battery": <null or capacity string, e.g. "504Wh", "750Wh">,
-  "range": <null or estimated range, e.g. "80km">,
-  "ageRange": <null or "Kids 8-12" for youth bikes>,
-  "imageUrl": "<product image URL from the Image: line of the matching snippet, or empty string>"
+  "motorBrand": <null or motor brand, e.g. "Shimano", "Bosch", "Brose", "TQ">,
+  "motor": <null or motor model + torque, e.g. "EP8 RS 85Nm", "Performance CX 85Nm">,
+  "battery": <null or capacity, e.g. "504Wh", "750Wh", "360Wh">,
+  "range": <null or estimated range, e.g. "80km", "120km">,
+  "ageRange": <null or age range string for youth bikes, e.g. "Kids 8-12">,
+  "imageUrl": "<product image URL from the Image: line of the matching snippet, or empty string if none>"
 }
 
-CRITICAL RULES FOR SPEC FIELDS:
-- shock, brakes, fork, drivetrain, weight: NEVER leave these empty for full-suspension bikes. Use your training knowledge of the specific brand/model/year/trim to fill them in accurately if the snippet doesn't mention them.
-- sizes: always return a realistic array for this type of bike (e.g. ["S","M","L","XL"] for adult trail bikes, ["XS","S","M","L","XL"] for enduro, ["S","M","L"] for DH)
-- If you know the spec from your training data, use it — do not leave fields blank just because the snippet omitted them
+MANDATORY SPEC RULES — violations are not acceptable:
+- drivetrain, fork, brakes: MUST be filled for every bike. Use your training knowledge of the exact model + year + trim. These fields being empty is a failure.
+- shock: MUST be filled for every full-suspension bike. Empty string only for hardtails.
+- weight: MUST be filled. Provide your best knowledge-based estimate (e.g. "14.2kg") — never leave empty.
+- frame: MUST be filled — Aluminum, Carbon, Steel, or Titanium.
+- travel: MUST be filled in mm format (e.g. "140mm"). Never just say "Hardtail" unless it truly has no rear travel.
+- sizes: MUST be a realistic array — ["S","M","L","XL"] for most trail bikes, ["XS","S","M","L","XL"] for enduro, ["S","M","L"] for DH.
+- description: MUST be 3 sentences, specific to this model — not generic filler.
 
 PRICE RULES:
-- Only include prices actually mentioned in the snippets
-- If price is in USD, convert to AUD (multiply by 1.55); GBP multiply by 2.0
-- Retailer name must be a short recognisable name: "99 Bikes", "Pushys", "Canyon AU", "Trek AU", "Specialized AU"
-- Do NOT invent prices — leave prices as {} if none mentioned
+- Only include prices actually visible in the snippets
+- If price is in USD convert to AUD (×1.55); GBP ×2.0
+- Retailer names: short and recognisable — "99 Bikes", "Pushys", "Canyon AU", "Trek AU", "Specialized AU", "Giant AU", "JetBlack Cycling"
+- Do NOT invent prices — leave prices as {} if none shown
 
 Return ONLY a valid JSON array, no markdown, no explanation.`;
 
@@ -325,6 +338,61 @@ Return ONLY a valid JSON array, no markdown, no explanation.`;
       inStock: b.inStock || [],
       isEbike: !!b.isEbike,
     }));
+}
+
+// ---------------------------------------------------------------------------
+// Brave Image Search — fetches a high-quality product image for a bike
+// ---------------------------------------------------------------------------
+
+async function braveImageSearch(query, country = "AU") {
+  const url = new URL("https://api.search.brave.com/res/v1/images/search");
+  url.searchParams.set("q", query);
+  url.searchParams.set("count", "5");
+  url.searchParams.set("country", country === "AU" ? "AU" : "ALL");
+  url.searchParams.set("search_lang", "en");
+  url.searchParams.set("safesearch", "strict");
+  url.searchParams.set("spellcheck", "0");
+
+  const response = await fetch(url.toString(), {
+    headers: {
+      Accept: "application/json",
+      "Accept-Encoding": "gzip",
+      "X-Subscription-Token": process.env.BRAVE_SEARCH_API_KEY,
+    },
+  });
+
+  if (!response.ok) return null;
+  const data = await response.json();
+
+  // Prefer full-size source image, fall back to thumbnail
+  for (const result of data.results || []) {
+    const img = result.properties?.url || result.thumbnail?.original || result.thumbnail?.src;
+    if (img && img.startsWith("http") && !img.includes("logo") && !img.includes("favicon")) {
+      return img;
+    }
+  }
+  return null;
+}
+
+// After extraction, fetch proper product images for any bike missing one.
+// Runs up to 8 image searches in parallel to stay within the 60s budget.
+async function enrichWithImages(bikes, country) {
+  const missing = bikes.filter((b) => !b.imageUrl || b.imageUrl === "");
+  if (missing.length === 0) return bikes;
+
+  const imageMap = new Map();
+  await Promise.allSettled(
+    missing.slice(0, 8).map(async (bike) => {
+      const query = `${bike.brand} ${bike.model} ${bike.year} mountain bike`;
+      const img = await braveImageSearch(query, country);
+      if (img) imageMap.set(bike.id, img);
+    })
+  );
+
+  return bikes.map((b) => ({
+    ...b,
+    imageUrl: b.imageUrl && b.imageUrl !== "" ? b.imageUrl : imageMap.get(b.id) || "",
+  }));
 }
 
 // Simple stable string hash → positive integer
