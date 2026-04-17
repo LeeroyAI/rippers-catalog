@@ -124,7 +124,7 @@ struct BikeCardView: View {
                 Spacer()
 
                 if let bestRow = sortedRetailerPrices.first,
-                   let dealURL = bestRow.retailer.dealURL(for: bike) {
+                   let dealURL = bestRow.retailer.searchURL(for: "\(bike.brand) \(bike.model)") {
                     Link(destination: dealURL) {
                         HStack(spacing: 4) {
                             Text("Best Deal")
@@ -236,12 +236,26 @@ struct BikeCardView: View {
 
     @ViewBuilder
     private var bikeImageView: some View {
-        BikeResolvedImageView(
-            bike: bike,
-            contentMode: .fit,
-            imagePadding: EdgeInsets(top: 6, leading: 8, bottom: 6, trailing: 8),
-            placeholder: { placeholderImage }
-        )
+        if let url = bike.effectiveImageURL {
+            AsyncImage(url: url) { phase in
+                switch phase {
+                case .empty:
+                    placeholderImage
+                case .success(let image):
+                    image
+                        .resizable()
+                        .scaledToFit()
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 6)
+                case .failure:
+                    placeholderImage
+                @unknown default:
+                    placeholderImage
+                }
+            }
+        } else {
+            placeholderImage
+        }
     }
 
     private var placeholderImage: some View {
@@ -273,60 +287,5 @@ struct BikeCardView: View {
                 priceHistory: [bike.bestPrice ?? 0]
             ))
         }
-    }
-}
-
-struct BikeResolvedImageView<Placeholder: View>: View {
-    let bike: Bike
-    let contentMode: ContentMode
-    let imagePadding: EdgeInsets
-    let placeholder: () -> Placeholder
-
-    @State private var resolvedURL: URL?
-    @State private var isResolving = false
-
-    var body: some View {
-        ZStack {
-            if let resolvedURL {
-                AsyncImage(url: resolvedURL) { phase in
-                    switch phase {
-                    case .empty:
-                        progressPlaceholder
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .aspectRatio(contentMode: contentMode)
-                            .padding(imagePadding)
-                    case .failure:
-                        placeholder()
-                    @unknown default:
-                        placeholder()
-                    }
-                }
-            } else {
-                progressPlaceholder
-            }
-        }
-        .task(id: bike.imageCacheKey) {
-            await resolve()
-        }
-    }
-
-    @ViewBuilder
-    private var progressPlaceholder: some View {
-        if isResolving {
-            ZStack {
-                placeholder()
-                ProgressView().tint(Color.rOrange)
-            }
-        } else {
-            placeholder()
-        }
-    }
-
-    private func resolve() async {
-        isResolving = true
-        defer { isResolving = false }
-        resolvedURL = await BikeImageResolver.shared.resolvedImageURL(for: bike)
     }
 }
