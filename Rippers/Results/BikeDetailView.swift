@@ -64,7 +64,7 @@ struct BikeDetailView: View {
                                 Text(Formatting.currency(row.price))
                                     .font(.subheadline.weight(.bold))
                                 Button("Deal") {
-                                    if let url = row.retailer.searchURL(for: "\(bike.brand) \(bike.model)") {
+                                    if let url = row.retailer.dealURL(for: bike) {
                                         openURL(url)
                                     }
                                 }

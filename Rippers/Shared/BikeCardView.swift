@@ -124,7 +124,7 @@ struct BikeCardView: View {
                 Spacer()
 
                 if let bestRow = sortedRetailerPrices.first,
-                   let dealURL = bestRow.retailer.searchURL(for: "\(bike.brand) \(bike.model)") {
+                   let dealURL = bestRow.retailer.dealURL(for: bike) {
                     Link(destination: dealURL) {
                         HStack(spacing: 4) {
                             Text("Best Deal")

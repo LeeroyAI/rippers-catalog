@@ -94,10 +94,19 @@ public struct Bike: Identifiable, Hashable, Sendable {
         return nil
     }
 
-    public var bestPrice: Double? { prices.values.min() }
+    /// Lowest currently in-stock price across known retailers.
+    public var bestPrice: Double? {
+        prices
+            .filter { inStock.contains($0.key) }
+            .map(\.value)
+            .min()
+    }
 
     public var bestRetailerId: String? {
-        prices.min(by: { $0.value < $1.value })?.key
+        prices
+            .filter { inStock.contains($0.key) }
+            .min(by: { $0.value < $1.value })?
+            .key
     }
 
     public var savings: Double? {
