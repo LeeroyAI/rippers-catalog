@@ -64,7 +64,7 @@ struct BikeDetailView: View {
                                 Text(Formatting.currency(row.price))
                                     .font(.subheadline.weight(.bold))
                                 Button("Deal") {
-                                    if let url = row.retailer.dealURL(for: bike) {
+                                    if let url = row.retailer.searchURL(for: "\(bike.brand) \(bike.model)") {
                                         openURL(url)
                                     }
                                 }
@@ -108,12 +108,24 @@ struct BikeDetailView: View {
 
     @ViewBuilder
     private var detailImage: some View {
-        BikeResolvedImageView(
-            bike: bike,
-            contentMode: .fit,
-            imagePadding: EdgeInsets(),
-            placeholder: { placeholder }
-        )
+        if let url = bike.effectiveImageURL {
+            AsyncImage(url: url) { phase in
+                switch phase {
+                case .empty:
+                    placeholder
+                case .success(let image):
+                    image
+                        .resizable()
+                        .scaledToFit()
+                case .failure:
+                    placeholder
+                @unknown default:
+                    placeholder
+                }
+            }
+        } else {
+            placeholder
+        }
     }
 
     private var placeholder: some View {
