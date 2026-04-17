@@ -33,7 +33,7 @@ public let BIKE_IMAGES: [Int: String] = [
     30: "https://www.sefiles.net/images/library/large/scott-patron-eride-900-385600-1.jpg",
     31: "https://www.canyon.com/dw/image/v2/BCML_PRD/on/demandware.static/-/Sites-canyon-master/default/dwf0b8e5b4/images/bikes/mountainbikes/emtb/spectral-on/cf/7/spectral-on-cf-7-red.jpg",
     32: "https://bikes.com/cdn/shop/files/altitude-powerplay-a50-profile.jpg",
-    33: "https://merida-cdn.m-c-g.net/merida-v2/crud-zoom-img/db-global/2024/product-pages/24-merida-e-mountainbikes-e160-cf-gallery-01.jpg",
+    33: "https://www.sefiles.net/images/library/large/merida-eone-sixty-875-385600-1.jpg",
     34: "https://www.pivotcycles.com/medias/shuttle-lt-pro-carbon-side.jpg",
     35: "https://cdn.shopify.com/s/files/1/0794/3638/4399/files/AmflowPXCarbon_01copy.webp",
     36: "https://cdn.shopify.com/s/files/1/0794/3638/4399/files/AmflowPXCarbonPro_01copy.webp",
