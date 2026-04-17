@@ -161,39 +161,64 @@ struct TripPlannerView: View {
             bikes = inStockBikes
         }
 
-        let sorted = bikes.sorted { ($0.bestPrice ?? .greatestFiniteMagnitude) < ($1.bestPrice ?? .greatestFiniteMagnitude) }
+        let sorted = bikes
+            .map { bike in (bike: bike, score: areaMatchScore(for: bike)) }
+            .filter { $0.score > 0 }
+            .sorted {
+                if $0.score == $1.score {
+                    return ($0.bike.bestPrice ?? .greatestFiniteMagnitude) < ($1.bike.bestPrice ?? .greatestFiniteMagnitude)
+                }
+                return $0.score > $1.score
+            }
+            .map(\.bike)
         return (sorted, usedProfileFallback)
     }
     private var recommendedBikes: [Bike] { recommendationResult.bikes }
+    private var recommendationTrailSignals: [String] {
+        let textBlob = nearbyRidingAreas
+            .compactMap { area in
+                [area.name, area.placemark.title]
+                    .compactMap { $0?.lowercased() }
+                    .joined(separator: " ")
+            }
+            .joined(separator: " ")
+        var signals: [String] = []
+        if textBlob.contains("downhill") || textBlob.contains("bike park") { signals.append("Steep / gravity terrain") }
+        if textBlob.contains("enduro") || textBlob.contains("technical") { signals.append("Technical descending") }
+        if textBlob.contains("cross country") || textBlob.contains("xc") { signals.append("Pedal-heavy XC loops") }
+        if textBlob.contains("jump") || textBlob.contains("pump track") { signals.append("Jumps and pump track features") }
+        if textBlob.contains("flow") || textBlob.contains("singletrack") { signals.append("Flowing singletrack") }
+        return signals
+    }
     private var areaBikeStyles: [AreaBikeStyle] {
         switch locationRideType {
         case .gravity:
             return [
-                .init(name: "Enduro", reason: "Long travel and stable geometry for steep descents."),
-                .init(name: "Downhill", reason: "Maximum control and braking power for bike-park tracks."),
-                .init(name: "eMTB", reason: "Helpful on long elevation days and shuttle alternatives.")
+                .init(name: "Enduro"),
+                .init(name: "Downhill"),
+                .init(name: "eMTB")
             ]
         case .crossCountry:
             return [
-                .init(name: "XC / Cross-Country", reason: "Efficient climbing and fast rolling for long loops."),
-                .init(name: "Trail Hardtail", reason: "Light and responsive for smoother singletrack.")
+                .init(name: "XC / Cross-Country"),
+                .init(name: "Trail Hardtail")
             ]
         case .trail:
             return [
-                .init(name: "Trail", reason: "Balanced handling for mixed climbs, descents, and tech sections."),
-                .init(name: "All-Mountain", reason: "Extra travel and confidence for rougher descents."),
-                .init(name: "eMTB", reason: "Great for covering more distance in big trail networks.")
+                .init(name: "Trail"),
+                .init(name: "All-Mountain"),
+                .init(name: "eMTB")
             ]
         case .jump:
             return [
-                .init(name: "Hardtail", reason: "Responsive handling for pump tracks and jump lines."),
-                .init(name: "Dirt Jump", reason: "Stable and playful for airtime-focused riding.")
+                .init(name: "Hardtail"),
+                .init(name: "Dirt Jump")
             ]
         case .other:
             return [
-                .init(name: "Trail", reason: "Balanced setup for mixed terrain when destination style is unclear."),
-                .init(name: "All-Mountain", reason: "Good all-rounder for varied climbs and descents."),
-                .init(name: "eMTB", reason: "Useful for covering more ground while scouting a new area.")
+                .init(name: "Trail"),
+                .init(name: "All-Mountain"),
+                .init(name: "eMTB")
             ]
         }
     }
@@ -360,17 +385,11 @@ struct TripPlannerView: View {
                     }
 
                     sectionCard(title: "Bike Styles for \(regionHint)") {
-                        ForEach(areaBikeStyles) { style in
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(style.name)
-                                    .font(.subheadline.weight(.semibold))
-                                Text(style.reason)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            .padding(10)
-                            .background(Color.rBackground.opacity(0.55))
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                        stylePills(areaBikeStyles.map(\.name))
+                        if let topStyle = areaBikeStyles.first {
+                            Text("Top focus: \(topStyle.name)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
                         }
                     }
 
@@ -379,6 +398,9 @@ struct TripPlannerView: View {
                     }
 
                     sectionCard(title: "Recommended Bikes for \(regionHint)") {
+                        if !recommendationTrailSignals.isEmpty {
+                            stylePills(recommendationTrailSignals)
+                        }
                         if recommendationResult.usedProfileFallback {
                             Text("Showing area matches. Your active profile filters were too strict for this location.")
                                 .font(.caption)
@@ -393,22 +415,26 @@ struct TripPlannerView: View {
                                 Button {
                                     selectedTripBike = bike
                                 } label: {
-                                    HStack {
-                                        VStack(alignment: .leading) {
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        HStack(alignment: .top) {
                                             Text("\(bike.brand) \(bike.model)")
                                                 .font(.subheadline.weight(.semibold))
                                                 .foregroundStyle(.primary)
-                                            Text("\(bike.category) · \(bike.travel)")
-                                                .font(.caption)
+                                            Spacer()
+                                            Text(Formatting.currency(bike.bestPrice))
+                                                .font(.caption.weight(.semibold))
+                                                .foregroundStyle(Color.rGreen)
+                                        }
+                                        stylePills(recommendationPills(for: bike))
+                                        HStack {
+                                            Text("Match score \(areaMatchScore(for: bike))")
+                                                .font(.caption2.weight(.semibold))
+                                                .foregroundStyle(Color.rOrangeDark)
+                                            Spacer()
+                                            Image(systemName: "chevron.right")
+                                                .font(.caption.weight(.semibold))
                                                 .foregroundStyle(.secondary)
                                         }
-                                        Spacer()
-                                        Text(Formatting.currency(bike.bestPrice))
-                                            .font(.caption.weight(.semibold))
-                                            .foregroundStyle(Color.rGreen)
-                                        Image(systemName: "chevron.right")
-                                            .font(.caption.weight(.semibold))
-                                            .foregroundStyle(.secondary)
                                     }
                                     .padding(10)
                                     .background(Color.rBackground.opacity(0.55))
@@ -519,6 +545,80 @@ struct TripPlannerView: View {
         .padding()
         .background(Color.rCard)
         .clipShape(RoundedRectangle(cornerRadius: 14))
+    }
+
+    private func stylePills(_ labels: [String]) -> some View {
+        let columns = [GridItem(.adaptive(minimum: 110), spacing: 8)]
+        return LazyVGrid(columns: columns, alignment: .leading, spacing: 8) {
+            ForEach(labels, id: \.self) { label in
+                Text(label)
+                    .font(.caption.weight(.semibold))
+                    .lineLimit(1)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(Color.rOrange.opacity(0.12))
+                    .foregroundStyle(Color.rOrangeDark)
+                    .clipShape(Capsule())
+            }
+        }
+    }
+
+    private func recommendationPills(for bike: Bike) -> [String] {
+        var pills = [bike.category, bike.travel]
+        if bike.suspension == "Hardtail" {
+            pills.append("Hardtail")
+        }
+        if bike.isEbike {
+            pills.append("eMTB")
+        }
+        return Array(pills.prefix(4))
+    }
+
+    private func areaMatchScore(for bike: Bike) -> Int {
+        var score = 0
+        let travel = bike.travelMM
+        let category = bike.category.lowercased()
+        let isHardtail = bike.suspension.lowercased() == "hardtail"
+
+        switch locationRideType {
+        case .gravity:
+            if category.contains("downhill") || category.contains("enduro") { score += 60 }
+            if travel >= 160 { score += 25 }
+            if !isHardtail { score += 15 }
+        case .crossCountry:
+            if category.contains("xc") || category.contains("cross-country") { score += 55 }
+            if isHardtail { score += 20 }
+            if travel <= 130 { score += 25 }
+        case .jump:
+            if isHardtail { score += 45 }
+            if bike.wheel == "26\"" || bike.wheel == "27.5\"" { score += 30 }
+            if travel <= 140 { score += 25 }
+        case .trail:
+            if category.contains("trail") || category.contains("all-mountain") { score += 50 }
+            if (130...160).contains(travel) { score += 25 }
+            if bike.isEbike { score += 10 }
+            if !isHardtail { score += 10 }
+        case .other:
+            if category.contains("trail") || category.contains("all-mountain") || category.contains("xc") { score += 40 }
+            if (120...160).contains(travel) { score += 20 }
+            if bike.isEbike { score += 15 }
+        }
+
+        let signalBlob = recommendationTrailSignals.joined(separator: " ").lowercased()
+        if signalBlob.contains("gravity"), category.contains("enduro") || category.contains("downhill") {
+            score += 20
+        }
+        if signalBlob.contains("pedal-heavy"), category.contains("xc") || isHardtail {
+            score += 15
+        }
+        if signalBlob.contains("jumps"), isHardtail {
+            score += 15
+        }
+        if signalBlob.contains("flowing"), category.contains("trail") || category.contains("all-mountain") {
+            score += 15
+        }
+
+        return score
     }
 
     private func locationRow(name: String, subtitle: String) -> some View {
@@ -929,7 +1029,6 @@ private extension Double {
 private struct AreaBikeStyle: Identifiable {
     let id = UUID()
     let name: String
-    let reason: String
 }
 
 private struct TripGearItem: Identifiable {

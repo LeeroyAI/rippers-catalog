@@ -23,6 +23,7 @@ struct SearchView: View {
     @State private var profileAvatarData: Data?
     @State private var photoUploadStatus: String?
     @State private var showAdvancedFilters: Bool = false
+    @State private var showProfileEditor: Bool = false
     @State private var lastSearchFingerprint: String = ""
     @State private var showClearProfileConfirmation = false
     @State private var savedSearchFlash = false
@@ -36,13 +37,8 @@ struct SearchView: View {
     private let travelRanges = ["Hardtail", "100-120mm", "130-140mm", "150-160mm", "160-180mm"]
     private let experiences = ["Beginner", "Intermediate", "Expert"]
     private let styles = [
-        "Trail",
-        "Enduro",
-        "Downhill",
-        "Cross-Country",
-        "All-Mountain",
-        "Freeride",
-        "Dirt Jump / Pump Track"
+        "Trail", "Enduro", "Downhill", "Cross-Country",
+        "All-Mountain", "Freeride", "Dirt Jump / Pump Track"
     ]
     private var brands: [String] { Array(Set(filterStore.catalog.map(\.brand))).sorted() }
     private var activeProfile: RiderProfile? { profiles.first(where: { $0.isActive }) }
@@ -67,7 +63,6 @@ struct SearchView: View {
         case gravity = "Gravity Ready"
         case ebike = "All eBikes"
         case kids24 = "Kids 24\""
-
         var id: String { rawValue }
     }
 
@@ -78,6 +73,7 @@ struct SearchView: View {
         }
         return decoded
     }
+
     private var forYouTopPicks: [(bike: Bike, score: Int)] {
         guard let profile = activeProfile else { return [] }
         var s = FilterState()
@@ -89,9 +85,6 @@ struct SearchView: View {
         return Array(BikeFilterEngine.rank(bikes: inStock, filters: s).prefix(5))
     }
 
-    private var isProfileTailoringLocked: Bool {
-        filterStore.state.tailorToProfile && activeProfile != nil
-    }
     private var currentSearchFingerprint: String {
         [
             filterStore.state.searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(),
@@ -103,6 +96,7 @@ struct SearchView: View {
             ebikeMode.rawValue
         ].joined(separator: "||")
     }
+
     private var shouldShowOpenResultsButton: Bool {
         filterStore.filteredBikes.isEmpty == false
             && currentSearchFingerprint != lastSearchFingerprint
@@ -110,9 +104,7 @@ struct SearchView: View {
     }
 
     private var ebikeMode: EbikeMode {
-        get {
-            return filterStore.state.activeEbikeFilter ? .ebikeOnly : .any
-        }
+        get { filterStore.state.activeEbikeFilter ? .ebikeOnly : .any }
         nonmutating set {
             switch newValue {
             case .any:
@@ -131,396 +123,15 @@ struct SearchView: View {
                 VStack(spacing: 14) {
                     welcomeHero
                     catalogStatusBanner
-                    statsRow
 
-                    sectionCard("Rider Profile") {
-                        if let profile = activeProfile {
-                            HStack(spacing: 10) {
-                                avatarView(data: profile.avatarData)
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(profile.name).font(.headline)
-                                    Text("\(profile.experience) · \(profile.style) · \(profile.heightCm)cm/\(profile.weightKg)kg")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                Spacer()
-                                Button("Active") {}
-                                    .buttonStyle(.borderedProminent)
-                                    .tint(Color.rOrange)
-                            }
-                            .padding(.bottom, 4)
-
-                            Button(role: .destructive) {
-                                showClearProfileConfirmation = true
-                            } label: {
-                                Text("Clear Current Profile")
-                            }
-                            .buttonStyle(.bordered)
-                        }
-
-                        ForEach(profiles.filter { !$0.isActive }) { profile in
-                            HStack(spacing: 10) {
-                                avatarView(data: profile.avatarData)
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(profile.name).font(.subheadline.weight(.semibold))
-                                    Text("\(profile.experience) · \(profile.style) · \(profile.preferredCategory)")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                Spacer()
-                                Button(profile.isActive ? "Selected" : "Select") {
-                                    activateProfile(profile)
-                                }
-                                .buttonStyle(.bordered)
-                                Button(role: .destructive) {
-                                    profilePendingDeletion = profile
-                                } label: { Text("Delete") }
-                                .buttonStyle(.borderless)
-                            }
-                        }
-
-                        Divider().padding(.vertical, 6)
-
-                        Text("Create or update your rider profile for smarter matching.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Profile name").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
-                            TextField("e.g. Trail Weekend Setup", text: $profileName)
-                                .textFieldStyle(.roundedBorder)
-                                .focused($focusedField, equals: .name)
-                        }
-
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Body metrics").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
-                            HStack(spacing: 8) {
-                                TextField("Age", text: $profileAgeText)
-                                    .focused($focusedField, equals: .age)
-                                TextField("Height cm", text: $profileHeightText)
-                                    .focused($focusedField, equals: .height)
-                            }
-                            .textFieldStyle(.roundedBorder)
-                            .keyboardType(.numberPad)
-                            TextField("Weight kg", text: $profileWeightText)
-                                .textFieldStyle(.roundedBorder)
-                                .keyboardType(.numberPad)
-                                .focused($focusedField, equals: .weight)
-                        }
-
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Riding setup").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
-                            VStack(alignment: .leading, spacing: 5) {
-                                Text("Experience").font(.caption2).foregroundStyle(.secondary)
-                                Menu {
-                                    ForEach(experiences, id: \.self) { option in
-                                        Button {
-                                            profileExperience = option
-                                        } label: {
-                                            Label(option, systemImage: option == profileExperience ? "checkmark.circle.fill" : "circle")
-                                        }
-                                    }
-                                } label: {
-                                    profileSelectionField(title: profileExperience, subtitle: "Current rider confidence level")
-                                }
-                            }
-                            VStack(alignment: .leading, spacing: 5) {
-                                Text("Riding style").font(.caption2).foregroundStyle(.secondary)
-                                Menu {
-                                    ForEach(styles, id: \.self) { option in
-                                        Button {
-                                            profileStyle = option
-                                        } label: {
-                                            Label(option, systemImage: option == profileStyle ? "checkmark.circle.fill" : "circle")
-                                        }
-                                    }
-                                } label: {
-                                    profileSelectionField(title: profileStyle, subtitle: profileStyleSummary(profileStyle))
-                                }
-                            }
-
-                            HStack(alignment: .center, spacing: 6) {
-                                Image(systemName: "info.circle.fill")
-                                    .foregroundStyle(Color.rOrange)
-                                    .font(.caption)
-                                Text("Style auto-maps to category: Trail, Enduro, XC, or Hardtail.")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                    .lineLimit(2)
-                            }
-
-                            TextField("Budget cap", text: $profileBudgetText)
-                                .textFieldStyle(.roundedBorder)
-                                .keyboardType(.numberPad)
-                                .focused($focusedField, equals: .budget)
-                        }
-
-                        PhotosPicker("Upload profile image", selection: $selectedPhotoItem, matching: .images)
-                            .buttonStyle(.bordered)
-                        if let profileAvatarData {
-                            HStack(spacing: 8) {
-                                avatarView(data: profileAvatarData)
-                                Text(photoUploadStatus ?? "Image ready")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                        } else if let photoUploadStatus {
-                            Text(photoUploadStatus)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-
-                        Button(activeProfile == nil ? "Create Profile" : "Update Profile") {
-                            upsertProfile()
-                        }
-                            .buttonStyle(.borderedProminent)
-                            .tint(Color.rOrange)
-                            .disabled(!profileFormIsValid)
-                    }
-
-                    sectionCard("Find Your Bike") {
-                        VStack(spacing: 12) {
-                            Text("1) Start with a quick mode")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.secondary)
-
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack {
-                                    ForEach(SearchPreset.allCases) { preset in
-                                        Button(preset.rawValue) { applyPreset(preset) }
-                                            .buttonStyle(.bordered)
-                                            .tint(Color.rOrange)
-                                            .disabled(isProfileTailoringLocked)
-                                    }
-                                }
-                            }
-
-                            if !savedSearches.isEmpty {
-                                ScrollView(.horizontal, showsIndicators: false) {
-                                    HStack {
-                                        ForEach(savedSearches) { saved in
-                                            HStack(spacing: 6) {
-                                                Button(saved.name) { applySavedSearch(saved) }
-                                                    .buttonStyle(.bordered)
-                                                Button {
-                                                    deleteSavedSearch(saved.id)
-                                                } label: {
-                                                    Image(systemName: "xmark.circle.fill")
-                                                }
-                                                .accessibilityLabel("Delete saved search \(saved.name)")
-                                                .foregroundStyle(.secondary)
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-
-                            Text("2) Set main filters")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.secondary)
-
-                            Toggle("Use active profile defaults", isOn: Binding(
-                                get: { filterStore.state.tailorToProfile },
-                                set: { enabled in
-                                    filterStore.state.tailorToProfile = enabled
-                                    if enabled {
-                                        applyProfileHintsFromActive()
-                                    } else {
-                                        clearProfileHints()
-                                    }
-                                }
-                            ))
-                            if isProfileTailoringLocked, let activeProfile {
-                                Text("Using profile defaults: \(activeProfile.style) style, \(activeProfile.preferredCategory) category\(activeProfile.budgetCap > 0 ? ", budget $\(Int(activeProfile.budgetCap))" : "").")
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                            }
-
-                            TextField("Bike model or brand", text: Binding(
-                                get: { filterStore.state.searchText },
-                                set: { filterStore.state.searchText = $0 }
-                            ))
-                            .textFieldStyle(.roundedBorder)
-
-                            HStack(spacing: 10) {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text("Category")
-                                        .font(.caption2.weight(.semibold))
-                                        .foregroundStyle(.secondary)
-                                    Picker("Category", selection: Binding(
-                                        get: { filterStore.state.category },
-                                        set: { filterStore.state.category = $0 }
-                                    )) { ForEach(categories, id: \.self, content: Text.init) }
-                                    .disabled(isProfileTailoringLocked)
-                                }
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text("Wheel")
-                                        .font(.caption2.weight(.semibold))
-                                        .foregroundStyle(.secondary)
-                                    Picker("Wheel", selection: Binding(
-                                        get: { filterStore.state.wheel },
-                                        set: { filterStore.state.wheel = $0 }
-                                    )) { ForEach(wheels, id: \.self, content: Text.init) }
-                                }
-                            }
-                            .font(.caption)
-
-                            TextField("Max budget (AUD)", text: $maxBudgetText)
-                                .textFieldStyle(.roundedBorder)
-                                .keyboardType(.numberPad)
-                                .disabled(isProfileTailoringLocked && (activeProfile?.budgetCap ?? 0) > 0)
-                                .onChange(of: maxBudgetText) { _, newValue in
-                                    let digits = newValue.filter(\.isNumber)
-                                    if digits != newValue { maxBudgetText = digits }
-                                    filterStore.state.maxBudget = Double(digits)
-                                }
-
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text("eBike")
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(.secondary)
-                                Picker("eBike mode", selection: Binding(
-                                    get: { ebikeMode },
-                                    set: { ebikeMode = $0 }
-                                )) {
-                                    ForEach(EbikeMode.allCases, id: \.self) { mode in
-                                        Text(mode.rawValue).tag(mode)
-                                    }
-                                }
-                                .pickerStyle(.segmented)
-                            }
-
-                            DisclosureGroup(isExpanded: $showAdvancedFilters) {
-                                VStack(alignment: .leading, spacing: 10) {
-                                    VStack(alignment: .leading, spacing: 6) {
-                                        HStack {
-                                            Text("Brands")
-                                                .font(.caption.weight(.semibold))
-                                                .foregroundStyle(.secondary)
-                                            Spacer()
-                                            Menu {
-                                                ForEach(brands, id: \.self) { brand in
-                                                    Button {
-                                                        if filterStore.state.activeBrands.contains(brand) {
-                                                            filterStore.state.activeBrands.remove(brand)
-                                                        } else {
-                                                            filterStore.state.activeBrands.insert(brand)
-                                                        }
-                                                    } label: {
-                                                        Label(
-                                                            brand,
-                                                            systemImage: filterStore.state.activeBrands.contains(brand) ? "checkmark.circle.fill" : "circle"
-                                                        )
-                                                    }
-                                                }
-                                            } label: {
-                                                Text(filterStore.state.activeBrands.isEmpty ? "All brands" : "\(filterStore.state.activeBrands.count) selected")
-                                                    .font(.caption.weight(.semibold))
-                                            }
-                                        }
-                                        if !filterStore.state.activeBrands.isEmpty {
-                                            ScrollView(.horizontal, showsIndicators: false) {
-                                                HStack {
-                                                    ForEach(Array(filterStore.state.activeBrands).sorted(), id: \.self) { brand in
-                                                        ChipButton(title: brand, isActive: true) {
-                                                            filterStore.state.activeBrands.remove(brand)
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    chipRow(title: "Travel", items: travelRanges, selected: filterStore.state.activeTravelRanges) { range in
-                                        if filterStore.state.activeTravelRanges.contains(range) { filterStore.state.activeTravelRanges.remove(range) }
-                                        else { filterStore.state.activeTravelRanges.insert(range) }
-                                    }
-                                }
-                            } label: {
-                                Text("Advanced filters (brand, travel)")
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(.secondary)
-                            }
-
-                            Text("3) Search")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.secondary)
-
-                            Button(filterStore.isLiveSearching ? "Searching..." : "Search Bikes Live") {
-                                Task { await performLiveSearch() }
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .tint(Color.rOrange)
-                            .disabled(filterStore.isLiveSearching)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-
-                            HStack {
-                                Button(savedSearchFlash ? "Saved!" : "Save Search") {
-                                    saveCurrentSearch()
-                                    savedSearchFlash = true
-                                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                                        savedSearchFlash = false
-                                    }
-                                }
-                                    .buttonStyle(.plain)
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(savedSearchFlash ? Color.rGreen : .secondary)
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 8)
-                                    .background(Color.rBackground.opacity(0.75))
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .stroke(savedSearchFlash ? Color.rGreen : Color.rBorder, lineWidth: 1)
-                                    )
-                                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                                    .animation(.easeInOut(duration: 0.2), value: savedSearchFlash)
-                                Button("Reset Filters") {
-                                    filterStore.state = .init()
-                                    maxBudgetText = ""
-                                    applyProfileHintsFromActive()
-                                }
-                                .buttonStyle(.plain)
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 8)
-                                .background(Color.rBackground.opacity(0.75))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 10)
-                                        .stroke(Color.rBorder, lineWidth: 1)
-                                )
-                                .clipShape(RoundedRectangle(cornerRadius: 10))
-                                Spacer()
-                                if shouldShowOpenResultsButton {
-                                    Button("Open Results") {
-                                        appState.activeTab = .results
-                                    }
-                                    .buttonStyle(.bordered)
-                                }
-                            }
-
-                            Text("Tip: start with a preset, adjust category + budget, then tap Search Bikes.")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-
-                    sectionCard("Ready To Explore") {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Current Matches")
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(.secondary)
-                                Text("\(filterStore.filteredBikes.count) bikes found")
-                                    .font(.headline)
-                            }
-                            Spacer()
-                            Button("View Results") {
-                                appState.activeTab = .results
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .tint(Color.rOrange)
-                        }
+                    if activeProfile != nil {
+                        profileSearchCard
+                        statsRow
+                        compactProfileCard
+                    } else {
+                        findYourBikeCard
+                        statsRow
+                        profileSetupCard
                     }
 
                     if !filterStore.activeFilterTokens.isEmpty {
@@ -580,9 +191,7 @@ struct SearchView: View {
             }
             .alert("Clear current profile?", isPresented: $showClearProfileConfirmation) {
                 Button("Cancel", role: .cancel) {}
-                Button("Clear", role: .destructive) {
-                    clearCurrentProfile()
-                }
+                Button("Clear", role: .destructive) { clearCurrentProfile() }
             } message: {
                 Text("This removes your active profile and profile-based defaults from search.")
             }
@@ -608,6 +217,449 @@ struct SearchView: View {
         }
     }
 
+    // ---------------------------------------------------------------------------
+    // MARK: Profile-active: search action card
+    // ---------------------------------------------------------------------------
+
+    private var profileSearchCard: some View {
+        sectionCard("Search") {
+            VStack(spacing: 10) {
+                Button {
+                    Task { await performLiveSearch() }
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: filterStore.isLiveSearching ? "arrow.triangle.2.circlepath" : "wifi")
+                        Text(filterStore.isLiveSearching ? "Searching..." : "Search Bikes Live")
+                            .fontWeight(.semibold)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(Color.rOrange)
+                .disabled(filterStore.isLiveSearching)
+
+                Button {
+                    appState.activeTab = .results
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "list.bullet")
+                        Text("Browse \(filterStore.catalog.count) bikes in catalog")
+                    }
+                    .frame(maxWidth: .infinity)
+                    .font(.subheadline)
+                }
+                .buttonStyle(.bordered)
+                .tint(Color.rOrange)
+
+                if !savedSearches.isEmpty {
+                    Divider()
+                    Text("Recent searches")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack {
+                            ForEach(savedSearches) { saved in
+                                HStack(spacing: 4) {
+                                    Button(saved.name) { applySavedSearch(saved) }
+                                        .buttonStyle(.bordered)
+                                        .font(.caption)
+                                    Button {
+                                        deleteSavedSearch(saved.id)
+                                    } label: {
+                                        Image(systemName: "xmark.circle.fill")
+                                    }
+                                    .foregroundStyle(.secondary)
+                                    .font(.caption)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // ---------------------------------------------------------------------------
+    // MARK: Profile-active: compact profile card with optional edit
+    // ---------------------------------------------------------------------------
+
+    private var compactProfileCard: some View {
+        sectionCard("Rider Profile") {
+            VStack(spacing: 10) {
+                if let profile = activeProfile {
+                    HStack(spacing: 10) {
+                        avatarView(data: profile.avatarData)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(profile.name).font(.headline)
+                            Text("\(profile.experience) · \(profile.style) · \(profile.heightCm)cm / \(profile.weightKg)kg")
+                                .font(.caption).foregroundStyle(.secondary)
+                            if profile.budgetCap > 0 {
+                                Text("Budget cap: \(Formatting.currency(profile.budgetCap))")
+                                    .font(.caption2).foregroundStyle(Color.rOrange)
+                            }
+                        }
+                        Spacer()
+                        Text("Active")
+                            .font(.caption.weight(.bold))
+                            .padding(.horizontal, 10).padding(.vertical, 5)
+                            .background(Color.rOrange)
+                            .foregroundStyle(.white)
+                            .clipShape(Capsule())
+                    }
+
+                    HStack(spacing: 8) {
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.2)) { showProfileEditor.toggle() }
+                        } label: {
+                            Label(showProfileEditor ? "Hide Editor" : "Edit Profile", systemImage: "pencil")
+                                .font(.caption.weight(.semibold))
+                        }
+                        .buttonStyle(.bordered)
+
+                        Button(role: .destructive) {
+                            showClearProfileConfirmation = true
+                        } label: {
+                            Text("Clear Profile")
+                                .font(.caption.weight(.semibold))
+                        }
+                        .buttonStyle(.bordered)
+
+                        Spacer()
+                    }
+                }
+
+                ForEach(profiles.filter { !$0.isActive }) { profile in
+                    Divider()
+                    HStack(spacing: 10) {
+                        avatarView(data: profile.avatarData)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(profile.name).font(.subheadline.weight(.semibold))
+                            Text("\(profile.experience) · \(profile.style)")
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Button("Switch") { activateProfile(profile) }
+                            .buttonStyle(.bordered)
+                            .font(.caption)
+                        Button(role: .destructive) {
+                            profilePendingDeletion = profile
+                        } label: {
+                            Image(systemName: "trash")
+                        }
+                        .buttonStyle(.borderless)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                    }
+                }
+
+                if showProfileEditor {
+                    Divider().padding(.vertical, 2)
+                    profileEditForm
+                }
+            }
+        }
+    }
+
+    // ---------------------------------------------------------------------------
+    // MARK: No-profile: find your bike card
+    // ---------------------------------------------------------------------------
+
+    private var findYourBikeCard: some View {
+        sectionCard("Find Your Bike") {
+            VStack(spacing: 12) {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack {
+                        ForEach(SearchPreset.allCases) { preset in
+                            Button(preset.rawValue) { applyPreset(preset) }
+                                .buttonStyle(.bordered)
+                                .tint(Color.rOrange)
+                        }
+                    }
+                }
+
+                if !savedSearches.isEmpty {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack {
+                            ForEach(savedSearches) { saved in
+                                HStack(spacing: 6) {
+                                    Button(saved.name) { applySavedSearch(saved) }
+                                        .buttonStyle(.bordered)
+                                    Button {
+                                        deleteSavedSearch(saved.id)
+                                    } label: {
+                                        Image(systemName: "xmark.circle.fill")
+                                    }
+                                    .accessibilityLabel("Delete saved search \(saved.name)")
+                                    .foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                TextField("Bike model or brand", text: Binding(
+                    get: { filterStore.state.searchText },
+                    set: { filterStore.state.searchText = $0 }
+                ))
+                .textFieldStyle(.roundedBorder)
+
+                HStack(spacing: 10) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Category")
+                            .font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
+                        Picker("Category", selection: Binding(
+                            get: { filterStore.state.category },
+                            set: { filterStore.state.category = $0 }
+                        )) { ForEach(categories, id: \.self, content: Text.init) }
+                    }
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Wheel")
+                            .font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
+                        Picker("Wheel", selection: Binding(
+                            get: { filterStore.state.wheel },
+                            set: { filterStore.state.wheel = $0 }
+                        )) { ForEach(wheels, id: \.self, content: Text.init) }
+                    }
+                }
+                .font(.caption)
+
+                TextField("Max budget (AUD)", text: $maxBudgetText)
+                    .textFieldStyle(.roundedBorder)
+                    .keyboardType(.numberPad)
+                    .onChange(of: maxBudgetText) { _, newValue in
+                        let digits = newValue.filter(\.isNumber)
+                        if digits != newValue { maxBudgetText = digits }
+                        filterStore.state.maxBudget = Double(digits)
+                    }
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("eBike")
+                        .font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                    Picker("eBike mode", selection: Binding(
+                        get: { ebikeMode },
+                        set: { ebikeMode = $0 }
+                    )) {
+                        ForEach(EbikeMode.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                    }
+                    .pickerStyle(.segmented)
+                }
+
+                DisclosureGroup(isExpanded: $showAdvancedFilters) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack {
+                                Text("Brands")
+                                    .font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                                Spacer()
+                                Menu {
+                                    ForEach(brands, id: \.self) { brand in
+                                        Button {
+                                            if filterStore.state.activeBrands.contains(brand) {
+                                                filterStore.state.activeBrands.remove(brand)
+                                            } else {
+                                                filterStore.state.activeBrands.insert(brand)
+                                            }
+                                        } label: {
+                                            Label(brand, systemImage: filterStore.state.activeBrands.contains(brand) ? "checkmark.circle.fill" : "circle")
+                                        }
+                                    }
+                                } label: {
+                                    Text(filterStore.state.activeBrands.isEmpty ? "All brands" : "\(filterStore.state.activeBrands.count) selected")
+                                        .font(.caption.weight(.semibold))
+                                }
+                            }
+                            if !filterStore.state.activeBrands.isEmpty {
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    HStack {
+                                        ForEach(Array(filterStore.state.activeBrands).sorted(), id: \.self) { brand in
+                                            ChipButton(title: brand, isActive: true) {
+                                                filterStore.state.activeBrands.remove(brand)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        chipRow(title: "Travel", items: travelRanges, selected: filterStore.state.activeTravelRanges) { range in
+                            if filterStore.state.activeTravelRanges.contains(range) {
+                                filterStore.state.activeTravelRanges.remove(range)
+                            } else {
+                                filterStore.state.activeTravelRanges.insert(range)
+                            }
+                        }
+                    }
+                } label: {
+                    Text("Advanced filters (brand, travel)")
+                        .font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                }
+
+                Button {
+                    Task { await performLiveSearch() }
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: filterStore.isLiveSearching ? "arrow.triangle.2.circlepath" : "wifi")
+                        Text(filterStore.isLiveSearching ? "Searching..." : "Search Bikes Live")
+                            .fontWeight(.semibold)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(Color.rOrange)
+                .disabled(filterStore.isLiveSearching)
+
+                HStack {
+                    Button(savedSearchFlash ? "Saved!" : "Save Search") {
+                        saveCurrentSearch()
+                        savedSearchFlash = true
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { savedSearchFlash = false }
+                    }
+                    .buttonStyle(.plain)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(savedSearchFlash ? Color.rGreen : .secondary)
+                    .padding(.horizontal, 12).padding(.vertical, 8)
+                    .background(Color.rBackground.opacity(0.75))
+                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(savedSearchFlash ? Color.rGreen : Color.rBorder, lineWidth: 1))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .animation(.easeInOut(duration: 0.2), value: savedSearchFlash)
+
+                    Button("Reset Filters") {
+                        filterStore.state = .init()
+                        maxBudgetText = ""
+                    }
+                    .buttonStyle(.plain)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 12).padding(.vertical, 8)
+                    .background(Color.rBackground.opacity(0.75))
+                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.rBorder, lineWidth: 1))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+
+                    Spacer()
+
+                    if shouldShowOpenResultsButton {
+                        Button("Open Results") { appState.activeTab = .results }
+                            .buttonStyle(.bordered)
+                    }
+                }
+            }
+        }
+    }
+
+    // ---------------------------------------------------------------------------
+    // MARK: No-profile: profile setup card
+    // ---------------------------------------------------------------------------
+
+    private var profileSetupCard: some View {
+        sectionCard("Rider Profile") {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Create a profile to get personalised bike picks, sizing, and trip advice.")
+                    .font(.caption).foregroundStyle(.secondary)
+                profileEditForm
+            }
+        }
+    }
+
+    // ---------------------------------------------------------------------------
+    // MARK: Shared profile edit form
+    // ---------------------------------------------------------------------------
+
+    @ViewBuilder
+    private var profileEditForm: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Profile name").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+            TextField("e.g. Trail Weekend Setup", text: $profileName)
+                .textFieldStyle(.roundedBorder)
+                .focused($focusedField, equals: .name)
+        }
+
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Body metrics").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+            HStack(spacing: 8) {
+                TextField("Age", text: $profileAgeText)
+                    .focused($focusedField, equals: .age)
+                TextField("Height cm", text: $profileHeightText)
+                    .focused($focusedField, equals: .height)
+            }
+            .textFieldStyle(.roundedBorder)
+            .keyboardType(.numberPad)
+            TextField("Weight kg", text: $profileWeightText)
+                .textFieldStyle(.roundedBorder)
+                .keyboardType(.numberPad)
+                .focused($focusedField, equals: .weight)
+        }
+
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Riding setup").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 5) {
+                Text("Experience").font(.caption2).foregroundStyle(.secondary)
+                Menu {
+                    ForEach(experiences, id: \.self) { option in
+                        Button {
+                            profileExperience = option
+                        } label: {
+                            Label(option, systemImage: option == profileExperience ? "checkmark.circle.fill" : "circle")
+                        }
+                    }
+                } label: {
+                    profileSelectionField(title: profileExperience, subtitle: "Current rider confidence level")
+                }
+            }
+            VStack(alignment: .leading, spacing: 5) {
+                Text("Riding style").font(.caption2).foregroundStyle(.secondary)
+                Menu {
+                    ForEach(styles, id: \.self) { option in
+                        Button {
+                            profileStyle = option
+                        } label: {
+                            Label(option, systemImage: option == profileStyle ? "checkmark.circle.fill" : "circle")
+                        }
+                    }
+                } label: {
+                    profileSelectionField(title: profileStyle, subtitle: profileStyleSummary(profileStyle))
+                }
+            }
+
+            HStack(alignment: .center, spacing: 6) {
+                Image(systemName: "info.circle.fill")
+                    .foregroundStyle(Color.rOrange).font(.caption)
+                Text("Style auto-maps to category: Trail, Enduro, XC, or Hardtail.")
+                    .font(.caption).foregroundStyle(.secondary).lineLimit(2)
+            }
+
+            TextField("Budget cap", text: $profileBudgetText)
+                .textFieldStyle(.roundedBorder)
+                .keyboardType(.numberPad)
+                .focused($focusedField, equals: .budget)
+        }
+
+        PhotosPicker("Upload profile image", selection: $selectedPhotoItem, matching: .images)
+            .buttonStyle(.bordered)
+
+        if let profileAvatarData {
+            HStack(spacing: 8) {
+                avatarView(data: profileAvatarData)
+                Text(photoUploadStatus ?? "Image ready")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+        } else if let photoUploadStatus {
+            Text(photoUploadStatus)
+                .font(.caption).foregroundStyle(.secondary)
+        }
+
+        Button(activeProfile == nil ? "Create Profile" : "Update Profile") {
+            upsertProfile()
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(Color.rOrange)
+        .disabled(!profileFormIsValid)
+    }
+
+    // ---------------------------------------------------------------------------
+    // MARK: Live search
+    // ---------------------------------------------------------------------------
+
     private func performLiveSearch() async {
         let criteria = LiveSearchCriteria.from(filterStore.state)
 
@@ -616,10 +668,8 @@ struct SearchView: View {
         filterStore.liveSearchStatus = "Building search queries..."
         filterStore.liveSearchQueryDescription = searchDescription(for: criteria)
 
-        // Switch to Results immediately so the progress overlay is visible
         appState.activeTab = .results
 
-        // Advance status labels in the background to reflect the real pipeline stages
         let stageTask = Task<Void, Never> {
             let stages: [(nanoseconds: UInt64, message: String)] = [
                 (2_000_000_000,  "Searching AU retailers..."),
@@ -662,6 +712,10 @@ struct SearchView: View {
         parts.append("in Australia")
         return parts.joined(separator: " · ")
     }
+
+    // ---------------------------------------------------------------------------
+    // MARK: Preset / saved search actions
+    // ---------------------------------------------------------------------------
 
     private func applyPreset(_ preset: SearchPreset) {
         switch preset {
@@ -721,11 +775,7 @@ struct SearchView: View {
         maxBudgetText = saved.maxBudget.map { String(Int($0)) } ?? ""
         filterStore.state.activeBrands = Set(saved.activeBrands)
         filterStore.state.activeTravelRanges = Set(saved.activeTravelRanges)
-        if saved.ebikeMode == "DJI Avinox" {
-            ebikeMode = .ebikeOnly
-        } else {
-            ebikeMode = EbikeMode(rawValue: saved.ebikeMode) ?? .any
-        }
+        ebikeMode = EbikeMode(rawValue: saved.ebikeMode) ?? .any
     }
 
     private func deleteSavedSearch(_ id: UUID) {
@@ -738,21 +788,21 @@ struct SearchView: View {
         savedSearchesData = text
     }
 
+    // ---------------------------------------------------------------------------
+    // MARK: Profile management
+    // ---------------------------------------------------------------------------
+
     private func createProfile() {
         guard !profileName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-        let age = Int(profileAgeText) ?? 0
-        let height = Int(profileHeightText) ?? 0
-        let weight = Int(profileWeightText) ?? 0
-        let budget = Double(profileBudgetText) ?? 0
         let profile = RiderProfile(
             name: profileName,
-            age: age,
-            heightCm: height,
-            weightKg: weight,
+            age: Int(profileAgeText) ?? 0,
+            heightCm: Int(profileHeightText) ?? 0,
+            weightKg: Int(profileWeightText) ?? 0,
             experience: profileExperience,
             style: profileStyle,
             preferredCategory: inferredCategory(for: profileStyle),
-            budgetCap: budget,
+            budgetCap: Double(profileBudgetText) ?? 0,
             avatarData: profileAvatarData
         )
         if profiles.isEmpty { profile.isActive = true }
@@ -771,11 +821,10 @@ struct SearchView: View {
             activeProfile.style = profileStyle
             activeProfile.preferredCategory = inferredCategory(for: profileStyle)
             activeProfile.budgetCap = Double(profileBudgetText) ?? 0
-            if let profileAvatarData {
-                activeProfile.avatarData = profileAvatarData
-            }
+            if let profileAvatarData { activeProfile.avatarData = profileAvatarData }
             photoUploadStatus = "Updated \(activeProfile.name)'s profile settings."
             applyProfileHints(activeProfile)
+            withAnimation { showProfileEditor = false }
         } else {
             createProfile()
         }
@@ -794,14 +843,12 @@ struct SearchView: View {
 
     private func applyProfileHints(_ profile: RiderProfile) {
         filterStore.state.tailorToProfile = true
-        let inferredCategory = inferredCategory(for: profile.style)
-        filterStore.state.profileCategoryHint = inferredCategory == "Any" ? nil : inferredCategory
+        let inferredCat = inferredCategory(for: profile.style)
+        filterStore.state.profileCategoryHint = inferredCat == "Any" ? nil : inferredCat
         filterStore.state.profileStyleHint = profile.style
         filterStore.state.profileHeightCm = profile.heightCm > 0 ? profile.heightCm : nil
         filterStore.state.profileBudgetCap = profile.budgetCap > 0 ? profile.budgetCap : nil
-        if inferredCategory != "Any" {
-            filterStore.state.category = inferredCategory
-        }
+        if inferredCat != "Any" { filterStore.state.category = inferredCat }
         if profile.budgetCap > 0 {
             filterStore.state.maxBudget = profile.budgetCap
             maxBudgetText = String(Int(profile.budgetCap))
@@ -816,6 +863,7 @@ struct SearchView: View {
         clearProfileDraft()
         maxBudgetText = filterStore.state.maxBudget.map { String(Int($0)) } ?? ""
         photoUploadStatus = "Current profile cleared."
+        showProfileEditor = false
     }
 
     private func clearProfileHints() {
@@ -838,18 +886,12 @@ struct SearchView: View {
     }
 
     private func inferredCategory(for style: String) -> String {
-        let normalized = style.lowercased()
-        switch normalized {
-        case "trail", "all-mountain", "all mountain":
-            return "Trail"
-        case "enduro", "downhill", "freeride", "gravity":
-            return "Enduro"
-        case "cross-country", "cross country", "xc":
-            return "XC / Cross-Country"
-        case "dirt jump / pump track", "dirt jump", "pump track", "slopestyle":
-            return "Hardtail"
-        default:
-            return "Any"
+        switch style.lowercased() {
+        case "trail", "all-mountain", "all mountain": return "Trail"
+        case "enduro", "downhill", "freeride", "gravity": return "Enduro"
+        case "cross-country", "cross country", "xc": return "XC / Cross-Country"
+        case "dirt jump / pump track", "dirt jump", "pump track", "slopestyle": return "Hardtail"
+        default: return "Any"
         }
     }
 
@@ -867,119 +909,29 @@ struct SearchView: View {
         photoUploadStatus = nil
     }
 
-    private func profileSelectionField(title: String, subtitle: String) -> some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 1) {
-                Text(title)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.primary)
-                Text(subtitle)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
-            Spacer()
-            Image(systemName: "chevron.up.chevron.down")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 9)
-        .background(Color.rBackground.opacity(0.65))
-        .clipShape(RoundedRectangle(cornerRadius: 10))
-    }
-
-    private func profileStyleSummary(_ style: String) -> String {
-        switch RidingDisciplineKind.from(style) {
-        case .trail:
-            return "Balanced all-round riding focus"
-        case .gravity:
-            return "Steep descending and technical terrain"
-        case .crossCountry:
-            return "Fast climbing and efficiency"
-        case .jump:
-            return "Pump track and jump handling"
-        case .other:
-            return "General mountain bike riding"
-        }
-    }
-
-    private func avatarView(data: Data?) -> some View {
-        Group {
-            if let data, let image = UIImage(data: data) {
-                Image(uiImage: image).resizable().scaledToFill()
-            } else {
-                ZStack {
-                    Circle().fill(Color.rOrangeLight)
-                    Image(systemName: "person.fill").foregroundStyle(Color.rOrange)
-                }
-            }
-        }
-        .frame(width: 36, height: 36)
-        .clipShape(Circle())
-    }
-
-    private var statsRow: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 10) {
-                statCard("Bikes Found", "\(filterStore.filteredBikes.count)") {
-                    appState.activeTab = .results
-                }
-                statCard("Best Price", Formatting.currency(filterStore.filteredBikes.compactMap(\.bestPrice).min())) {
-                    appState.activeTab = .results
-                }
-                statCard("Retailers", "\(RETAILERS.count)") {
-                    appState.activeTab = .results
-                }
-                statCard("Price Alerts", "0") {
-                    appState.activeTab = .results
-                }
-            }
-        }
-    }
-
-    private var catalogStatusBanner: some View {
-        HStack(spacing: 8) {
-            Circle()
-                .fill(catalogStore.sourceStatus == "Live source" ? Color.rGreen : Color.rOrange)
-                .frame(width: 8, height: 8)
-            Text(catalogStore.sourceStatus)
-                .font(.caption.weight(.semibold))
-            if let fallbackReason = catalogStore.fallbackReason, !fallbackReason.isEmpty {
-                Text("· \(fallbackReason)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-            }
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.rCard)
-        .clipShape(RoundedRectangle(cornerRadius: 10))
-    }
+    // ---------------------------------------------------------------------------
+    // MARK: Reusable sub-views
+    // ---------------------------------------------------------------------------
 
     @ViewBuilder
     private var welcomeHero: some View {
         if let profile = activeProfile, !forYouTopPicks.isEmpty {
-            // "For You" personalised showcase
             VStack(alignment: .leading, spacing: 10) {
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 3) {
                         Text("Hey \(profile.name.components(separatedBy: " ").first ?? profile.name)!")
                             .font(.title3.weight(.bold))
                         Text("Your top picks · \(profile.style)")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .font(.caption).foregroundStyle(.secondary)
                     }
                     Spacer()
                     Button {
                         appState.activeTab = .results
                     } label: {
-                        Text("See all")
-                            .font(.caption.weight(.semibold))
-                        Image(systemName: "chevron.right")
-                            .font(.caption2.weight(.semibold))
+                        HStack(spacing: 2) {
+                            Text("See all").font(.caption.weight(.semibold))
+                            Image(systemName: "chevron.right").font(.caption2.weight(.semibold))
+                        }
                     }
                     .foregroundStyle(Color.rOrange)
                 }
@@ -999,25 +951,17 @@ struct SearchView: View {
                 }
             }
             .padding(14)
-            .background(
-                LinearGradient(
-                    colors: [Color.rCard, Color.rOrangeLight],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
+            .background(LinearGradient(colors: [Color.rCard, Color.rOrangeLight], startPoint: .topLeading, endPoint: .bottomTrailing))
             .clipShape(RoundedRectangle(cornerRadius: 16))
             .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.rBorder, lineWidth: 1))
         } else {
-            // No profile yet — call to action
             VStack(alignment: .leading, spacing: 10) {
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Find your perfect mountain bike")
                             .font(.title3.weight(.bold))
                         Text("Build your profile to get matched picks, sizing, budget planning, and trip advice.")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .font(.subheadline).foregroundStyle(.secondary)
                     }
                     Spacer()
                     Image(systemName: "mountain.2.fill")
@@ -1026,13 +970,7 @@ struct SearchView: View {
                 }
             }
             .padding(14)
-            .background(
-                LinearGradient(
-                    colors: [Color.rCard, Color.rOrangeLight],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
+            .background(LinearGradient(colors: [Color.rCard, Color.rOrangeLight], startPoint: .topLeading, endPoint: .bottomTrailing))
             .clipShape(RoundedRectangle(cornerRadius: 16))
             .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.rBorder, lineWidth: 1))
         }
@@ -1040,83 +978,90 @@ struct SearchView: View {
 
     private func forYouBikeCard(bike: Bike, score: Int) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Image — scaledToFit so product shots show the full bike;
-            // gradient background fills the remaining space on brand.
             ZStack {
-                LinearGradient(
-                    colors: [Color.rOrangeLight.opacity(0.45), Color.rCard],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
+                Color(UIColor.secondarySystemBackground)
                 if let url = bike.effectiveImageURL {
                     AsyncImage(url: url) { phase in
                         switch phase {
-                        case .success(let img):
-                            img
-                                .resizable()
-                                .scaledToFit()
-                                .padding(6)
-                        case .failure:
-                            forYouPlaceholderIcon
-                        default:
-                            ProgressView()
-                                .tint(Color.rOrange)
+                        case .success(let img): img.resizable().scaledToFit().padding(8)
+                        case .failure: forYouPlaceholderIcon
+                        default: ProgressView().tint(Color.rOrange)
                         }
                     }
                 } else {
                     forYouPlaceholderIcon
                 }
             }
-            .frame(width: 130, height: 90)
-            .clipShape(UnevenRoundedRectangle(
-                topLeadingRadius: 12, bottomLeadingRadius: 0,
-                bottomTrailingRadius: 0, topTrailingRadius: 12
-            ))
+            .frame(width: 160, height: 112)
+            .clipShape(UnevenRoundedRectangle(topLeadingRadius: 14, bottomLeadingRadius: 0, bottomTrailingRadius: 0, topTrailingRadius: 14))
 
-            // Info
             VStack(alignment: .leading, spacing: 3) {
                 Text(bike.brand.uppercased())
-                    .font(.system(size: 9, weight: .semibold))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                    .font(.system(size: 9, weight: .bold)).foregroundStyle(.secondary).lineLimit(1)
                 Text(bike.model)
-                    .font(.caption.weight(.semibold))
-                    .lineLimit(2)
+                    .font(.caption.weight(.semibold)).foregroundStyle(.primary).lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
                 HStack(spacing: 4) {
                     Text(Formatting.currency(bike.bestPrice))
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(Color.rGreen)
+                        .font(.caption2.weight(.bold)).foregroundStyle(Color.rGreen)
                     Spacer()
                     Text("\(score)%")
                         .font(.system(size: 9, weight: .bold))
-                        .padding(.horizontal, 5)
-                        .padding(.vertical, 2)
-                        .background(Color.rOrangeLight)
-                        .foregroundStyle(Color.rOrangeDark)
+                        .padding(.horizontal, 5).padding(.vertical, 2)
+                        .background(Color.rOrangeLight).foregroundStyle(Color.rOrangeDark)
                         .clipShape(Capsule())
                 }
             }
-            .padding(8)
+            .padding(9)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.rCard)
         }
-        .frame(width: 130)
-        .background(Color.rCard)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.rBorder, lineWidth: 1))
+        .frame(width: 160)
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.rBorder, lineWidth: 1))
+        .shadow(color: .black.opacity(0.07), radius: 5, x: 0, y: 2)
     }
 
     private var forYouPlaceholderIcon: some View {
         Image(systemName: "bicycle")
-            .font(.title2)
-            .foregroundStyle(Color.rOrange.opacity(0.55))
+            .font(.system(size: 28, weight: .semibold))
+            .foregroundStyle(Color.rOrange.opacity(0.45))
     }
 
-    private var bikePlaceholder: some View {
-        ZStack {
-            Color.rOrangeLight
-            Image(systemName: "bicycle")
-                .font(.title2)
-                .foregroundStyle(Color.rOrange.opacity(0.6))
+    private var catalogStatusBanner: some View {
+        HStack(spacing: 8) {
+            Circle()
+                .fill(catalogStore.sourceStatus == "Live source" ? Color.rGreen : Color.rOrange)
+                .frame(width: 8, height: 8)
+            Text(catalogStore.sourceStatus)
+                .font(.caption.weight(.semibold))
+            if let fallbackReason = catalogStore.fallbackReason, !fallbackReason.isEmpty {
+                Text("· \(fallbackReason)")
+                    .font(.caption).foregroundStyle(.secondary).lineLimit(2)
+            }
+        }
+        .padding(.horizontal, 10).padding(.vertical, 8)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.rCard)
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+    }
+
+    private var statsRow: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 10) {
+                statCard(activeProfile != nil ? "Profile Matches" : "Bikes Found", "\(filterStore.filteredBikes.count)") {
+                    appState.activeTab = .results
+                }
+                statCard("Best Price", Formatting.currency(filterStore.filteredBikes.compactMap(\.bestPrice).min())) {
+                    appState.activeTab = .results
+                }
+                statCard("Retailers", "\(RETAILERS.count)") {
+                    appState.activeTab = .results
+                }
+                statCard("Price Alerts", "0") {
+                    appState.activeTab = .results
+                }
+            }
         }
     }
 
@@ -1135,13 +1080,6 @@ struct SearchView: View {
     }
 
     private func sectionCard<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
-        sectionBody(title: title, content: content)
-            .padding(12)
-            .background(Color.rCard)
-            .clipShape(RoundedRectangle(cornerRadius: 14))
-    }
-
-    private func sectionBody<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(title.uppercased())
                 .font(.caption.weight(.bold))
@@ -1149,6 +1087,49 @@ struct SearchView: View {
             content()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(Color.rCard)
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+    }
+
+    private func profileSelectionField(title: String, subtitle: String) -> some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 1) {
+                Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(.primary)
+                Text(subtitle).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+            }
+            Spacer()
+            Image(systemName: "chevron.up.chevron.down")
+                .font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 10).padding(.vertical, 9)
+        .background(Color.rBackground.opacity(0.65))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+    }
+
+    private func profileStyleSummary(_ style: String) -> String {
+        switch RidingDisciplineKind.from(style) {
+        case .trail: return "Balanced all-round riding focus"
+        case .gravity: return "Steep descending and technical terrain"
+        case .crossCountry: return "Fast climbing and efficiency"
+        case .jump: return "Pump track and jump handling"
+        case .other: return "General mountain bike riding"
+        }
+    }
+
+    private func avatarView(data: Data?) -> some View {
+        Group {
+            if let data, let image = UIImage(data: data) {
+                Image(uiImage: image).resizable().scaledToFill()
+            } else {
+                ZStack {
+                    Circle().fill(Color.rOrangeLight)
+                    Image(systemName: "person.fill").foregroundStyle(Color.rOrange)
+                }
+            }
+        }
+        .frame(width: 36, height: 36)
+        .clipShape(Circle())
     }
 
     private func chipRow(
@@ -1158,15 +1139,11 @@ struct SearchView: View {
         onTap: @escaping (String) -> Void
     ) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(title)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
+            Text(title).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack {
                     ForEach(items, id: \.self) { item in
-                        ChipButton(title: item, isActive: selected.contains(item)) {
-                            onTap(item)
-                        }
+                        ChipButton(title: item, isActive: selected.contains(item)) { onTap(item) }
                     }
                 }
             }
@@ -1194,13 +1171,9 @@ private struct FlowPills: View {
         VStack(alignment: .leading, spacing: 8) {
             ForEach(tokens) { token in
                 HStack {
-                    Text(token.label)
-                        .font(.caption)
-                        .foregroundStyle(Color.rChipForeground)
+                    Text(token.label).font(.caption).foregroundStyle(Color.rChipForeground)
                     Spacer()
-                    Button("✕") { remove(token) }
-                        .font(.caption)
-                        .foregroundStyle(Color.rChipForeground)
+                    Button("✕") { remove(token) }.font(.caption).foregroundStyle(Color.rChipForeground)
                 }
                 .padding(8)
                 .background(Color.rOrangeLight)
@@ -1218,13 +1191,10 @@ private struct ChipButton: View {
     var body: some View {
         Button(title, action: action)
             .buttonStyle(.plain)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 7)
+            .padding(.horizontal, 10).padding(.vertical, 7)
             .background(isActive ? Color.rOrangeLight : Color.rCard)
             .foregroundStyle(isActive ? Color.rChipForeground : Color.primary)
-            .overlay(
-                Capsule().stroke(isActive ? Color.rOrange : Color.rBorder, lineWidth: 1)
-            )
+            .overlay(Capsule().stroke(isActive ? Color.rOrange : Color.rBorder, lineWidth: 1))
             .clipShape(Capsule())
     }
 }

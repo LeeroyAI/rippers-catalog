@@ -374,8 +374,38 @@ async function braveImageSearch(query, country = "AU") {
   return null;
 }
 
-// After extraction, fetch proper product images for any bike missing one.
-// Runs up to 8 image searches in parallel to stay within the 60s budget.
+// Official brand website domains — used to target product images directly
+// from manufacturer sites rather than lifestyle/riding photos.
+const BRAND_DOMAINS = {
+  "pivot": "pivotcycles.com",
+  "specialized": "specialized.com",
+  "trek": "trekbikes.com",
+  "giant": "giant-bicycles.com",
+  "santa cruz": "santacruzbicycles.com",
+  "yeti": "yeticycles.com",
+  "canyon": "canyon.com",
+  "orbea": "orbea.com",
+  "scott": "scott-sports.com",
+  "norco": "norco.com",
+  "rocky mountain": "bikes.com",
+  "intense": "intensecycles.com",
+  "commencal": "commencal.com",
+  "transition": "transitionbikes.com",
+  "evil": "evil-bikes.com",
+  "ibis": "ibiscycles.com",
+  "cannondale": "cannondale.com",
+  "kona": "konaworld.com",
+  "merida": "merida-bikes.com",
+  "nukeproof": "nukeproof.com",
+  "devinci": "devinci.com",
+  "forbidden": "forbiddenbike.com",
+  "yt industries": "yt-industries.com",
+  "yt": "yt-industries.com",
+};
+
+// After extraction, fetch official brand product images for bikes missing one.
+// Tries the brand's own website first; falls back to a general product search.
+// Runs up to 8 in parallel to stay within the 60s function budget.
 async function enrichWithImages(bikes, country) {
   const missing = bikes.filter((b) => !b.imageUrl || b.imageUrl === "");
   if (missing.length === 0) return bikes;
@@ -383,8 +413,24 @@ async function enrichWithImages(bikes, country) {
   const imageMap = new Map();
   await Promise.allSettled(
     missing.slice(0, 8).map(async (bike) => {
-      const query = `${bike.brand} ${bike.model} ${bike.year} mountain bike product`;
-      const img = await braveImageSearch(query, country);
+      const brandKey = bike.brand.toLowerCase();
+      const domain = BRAND_DOMAINS[brandKey];
+
+      let img = null;
+      // 1st choice: brand's own site (gives showroom-quality product images)
+      if (domain) {
+        img = await braveImageSearch(
+          `"${bike.brand} ${bike.model}" site:${domain}`,
+          country
+        );
+      }
+      // 2nd choice: general product search (retailer/review site product shots)
+      if (!img) {
+        img = await braveImageSearch(
+          `"${bike.brand} ${bike.model}" ${bike.year} mountain bike`,
+          country
+        );
+      }
       if (img) imageMap.set(bike.id, img);
     })
   );
