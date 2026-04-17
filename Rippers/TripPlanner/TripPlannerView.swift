@@ -363,11 +363,20 @@ struct TripPlannerView: View {
                     if !nearbyRidingAreas.isEmpty || lastSearchedDestination != nil {
                         sectionCard(title: "Trails \(nearbyRidingAreas.isEmpty ? "for" : "near") \(destination.isEmpty ? regionHint : destination)") {
                             if !nearbyRidingAreas.isEmpty {
-                                stylePills(nearbyRidingAreas.prefix(10).compactMap(\.name))
-                                Divider().padding(.vertical, 2)
+                                Text("Local trails")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(.secondary)
+                                ForEach(nearbyRidingAreas.prefix(5), id: \.self) { area in
+                                    trailAreaCard(area)
+                                }
+                            } else {
+                                Text("No specific local trails found yet. Search a suburb or trail network to see nearby riding spots.")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
                             }
                             VStack(alignment: .leading, spacing: 6) {
-                                Text("Best bikes for this terrain")
+                                Divider().padding(.vertical, 2)
+                                Text("Recommended bike styles for these trails")
                                     .font(.caption.weight(.semibold))
                                     .foregroundStyle(.secondary)
                                 stylePills(areaBikeStyles.map(\.name))
