@@ -1040,14 +1040,9 @@ struct SearchView: View {
 
     private func forYouBikeCard(bike: Bike, score: Int) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Image — scaledToFit so product shots show the full bike;
-            // gradient background fills the remaining space on brand.
+            // Product image — light background so the bike stands out clearly
             ZStack {
-                LinearGradient(
-                    colors: [Color.rOrangeLight.opacity(0.45), Color.rCard],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
+                Color(UIColor.secondarySystemBackground)
                 if let url = bike.effectiveImageURL {
                     AsyncImage(url: url) { phase in
                         switch phase {
@@ -1055,32 +1050,32 @@ struct SearchView: View {
                             img
                                 .resizable()
                                 .scaledToFit()
-                                .padding(6)
+                                .padding(8)
                         case .failure:
                             forYouPlaceholderIcon
                         default:
-                            ProgressView()
-                                .tint(Color.rOrange)
+                            ProgressView().tint(Color.rOrange)
                         }
                     }
                 } else {
                     forYouPlaceholderIcon
                 }
             }
-            .frame(width: 130, height: 90)
+            .frame(width: 160, height: 112)
             .clipShape(UnevenRoundedRectangle(
-                topLeadingRadius: 12, bottomLeadingRadius: 0,
-                bottomTrailingRadius: 0, topTrailingRadius: 12
+                topLeadingRadius: 14, bottomLeadingRadius: 0,
+                bottomTrailingRadius: 0, topTrailingRadius: 14
             ))
 
-            // Info
+            // Info panel below the image
             VStack(alignment: .leading, spacing: 3) {
                 Text(bike.brand.uppercased())
-                    .font(.system(size: 9, weight: .semibold))
+                    .font(.system(size: 9, weight: .bold))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                 Text(bike.model)
                     .font(.caption.weight(.semibold))
+                    .foregroundStyle(.primary)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
                 HStack(spacing: 4) {
@@ -1097,18 +1092,20 @@ struct SearchView: View {
                         .clipShape(Capsule())
                 }
             }
-            .padding(8)
+            .padding(9)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.rCard)
         }
-        .frame(width: 130)
-        .background(Color.rCard)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.rBorder, lineWidth: 1))
+        .frame(width: 160)
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.rBorder, lineWidth: 1))
+        .shadow(color: .black.opacity(0.07), radius: 5, x: 0, y: 2)
     }
 
     private var forYouPlaceholderIcon: some View {
         Image(systemName: "bicycle")
-            .font(.title2)
-            .foregroundStyle(Color.rOrange.opacity(0.55))
+            .font(.system(size: 28, weight: .semibold))
+            .foregroundStyle(Color.rOrange.opacity(0.45))
     }
 
     private var bikePlaceholder: some View {
