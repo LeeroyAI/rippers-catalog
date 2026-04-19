@@ -953,13 +953,12 @@ struct SearchView: View {
     private var welcomeHero: some View {
         if let profile = activeProfile {
             VStack(alignment: .leading, spacing: 12) {
-                HStack(alignment: .top) {
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text("Hey \(profile.name.components(separatedBy: " ").first ?? profile.name)!")
-                            .font(.title3.weight(.bold))
-                        Text("Your \(profile.style.lowercased()) picks, ranked for you.")
-                            .font(.caption).foregroundStyle(.secondary)
-                    }
+                HStack(spacing: 8) {
+                    RippersLogoMark()
+                        .frame(width: 40, height: 40)
+                    Text("RIPPERS")
+                        .font(.system(size: 16, weight: .black, design: .rounded))
+                        .foregroundStyle(Color.rOrange)
                     Spacer()
                     if !forYouTopPicks.isEmpty {
                         Button {
@@ -980,6 +979,13 @@ struct SearchView: View {
                         }
                         .buttonStyle(.plain)
                     }
+                }
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Hey \(profile.name.components(separatedBy: " ").first ?? profile.name)!")
+                        .font(.title3.weight(.bold))
+                    Text("Your \(profile.style.lowercased()) picks, ranked for you.")
+                        .font(.caption).foregroundStyle(.secondary)
                 }
 
                 if forYouTopPicks.isEmpty {
