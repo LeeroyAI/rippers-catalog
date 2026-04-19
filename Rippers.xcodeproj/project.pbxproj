@@ -25,6 +25,7 @@
 		6AB54344E40694A831D612E4 /* CatalogFeatureFlags.swift in Sources */ = {isa = PBXBuildFile; fileRef = F13F014A7BEBBE919CE8397A /* CatalogFeatureFlags.swift */; };
 		6D54B38A4F92F2F2B42F0B5A /* SizingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 984B34B0CB9455066F5F1ED0 /* SizingView.swift */; };
 		88DB5D04B14165B3B9840EF5 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A14D715E2DE1F015B051F2 /* AppState.swift */; };
+		89B6109B61EE5323D08F3D83 /* CachedBike.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19D9AAE63F26C6E9320F461D /* CachedBike.swift */; };
 		8D080A10AE337BC0DCEF62AF /* Retailers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 764F58CF1EFBD8330DAF73C8 /* Retailers.swift */; };
 		8F81BC82DFFB6E6774295B50 /* ResultsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A6BA01AC724160456109A9E /* ResultsView.swift */; };
 		97B0597E6E1131EF40444198 /* BikeCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A014C5BE0F3046A8191134F6 /* BikeCardView.swift */; };
@@ -36,7 +37,6 @@
 		C29D6A44450BB3E7EA5CB6A6 /* PublicJSONCatalogProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A772E79393AEB20842620118 /* PublicJSONCatalogProvider.swift */; };
 		CA0017FBDF682700E7578ABE /* StaticCatalogProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57F8531CF29C7991747C465 /* StaticCatalogProvider.swift */; };
 		CB83F08F0B2151E5A030181C /* TripPlannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 022ABDFB49A0CAC379C90AC8 /* TripPlannerView.swift */; };
-		D08185E985D893FA8939E169 /* CachedBike.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C31B74703B99C052D806DF8 /* CachedBike.swift */; };
 		DA764EC3EED09F6AF3E2F266 /* RippersApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C31849E63E9D48179C98487 /* RippersApp.swift */; };
 		DCA7187C3F1C84FD430F66F8 /* SplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65F6E62FDA0181DF5691EAF9 /* SplashView.swift */; };
 		E006DDAD349697217933FC4C /* CatalogModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93384C89FF82A4CF0ABFA305 /* CatalogModels.swift */; };
@@ -59,8 +59,8 @@
 		02B40196D17C9E4F2032737A /* BudgetView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BudgetView.swift; path = Budget/BudgetView.swift; sourceTree = "<group>"; };
 		03061AFA243E4429C924503B /* LiveSearchService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = LiveSearchService.swift; path = ../Rippers/Services/LiveSearchService.swift; sourceTree = "<group>"; };
 		070DD36ADADA647D522EC66B /* Bikes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = Bikes.swift; path = Data/Bikes.swift; sourceTree = "<group>"; };
-		0C31B74703B99C052D806DF8 /* CachedBike.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CachedBike.swift; path = CachedBike.swift; sourceTree = "<group>"; };
 		1601D1975848B92F50D54847 /* BrandSystem.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BrandSystem.swift; path = Shared/BrandSystem.swift; sourceTree = "<group>"; };
+		19D9AAE63F26C6E9320F461D /* CachedBike.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CachedBike.swift; sourceTree = "<group>"; };
 		31AC9660F6114E26A188D7AB /* HelpView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = HelpView.swift; path = Help/HelpView.swift; sourceTree = "<group>"; };
 		420F37138D9EA194590256B9 /* WatchlistView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WatchlistView.swift; path = Watchlist/WatchlistView.swift; sourceTree = "<group>"; };
 		4BD9C64243A74CE515733DF8 /* Theme.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = Theme.swift; path = Shared/Theme.swift; sourceTree = "<group>"; };
@@ -172,6 +172,7 @@
 				420F37138D9EA194590256B9 /* WatchlistView.swift */,
 				6B27C3B63D4E5F70AAB82345 /* ProfileOnboardingView.swift */,
 				C8D3F59A7E4B42F2AF6A5F21 /* catalog.json */,
+				F0FC56C204A78C5B374BF5F9 /* Models */,
 			);
 			path = Rippers;
 			sourceTree = "<group>";
@@ -179,7 +180,6 @@
 		7254106670FD343EC265E258 /* Models */ = {
 			isa = PBXGroup;
 			children = (
-				0C31B74703B99C052D806DF8 /* CachedBike.swift */,
 			);
 			name = Models;
 			path = Rippers/Models;
@@ -208,6 +208,15 @@
 				03061AFA243E4429C924503B /* LiveSearchService.swift */,
 			);
 			path = Services;
+			sourceTree = "<group>";
+		};
+		F0FC56C204A78C5B374BF5F9 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				19D9AAE63F26C6E9320F461D /* CachedBike.swift */,
+			);
+			name = Models;
+			path = Models;
 			sourceTree = "<group>";
 		};
 		F2C45CE7E133505055CB786E /* Products */ = {
@@ -335,8 +344,8 @@
 				5EACEA8C4E274CBCAAA7300B /* HelpView.swift in Sources */,
 				0929A720BDBCB1A0EC0B9804 /* LiveSearchService.swift in Sources */,
 				F5881568BE6169CDB798EED6 /* AIChatService.swift in Sources */,
-				D08185E985D893FA8939E169 /* CachedBike.swift in Sources */,
 				F7858DDE737CF86A26D5249A /* ProfileTabView.swift in Sources */,
+				89B6109B61EE5323D08F3D83 /* CachedBike.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
