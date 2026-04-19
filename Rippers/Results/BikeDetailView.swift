@@ -29,7 +29,7 @@ struct BikeDetailView: View {
                             .foregroundStyle(.secondary)
                         Text("\(bike.model) · \(String(bike.year))")
                             .font(.title3.weight(.bold))
-                        Text("Best \(Formatting.currency(bike.bestPrice))")
+                        Text("Best \(Formatting.currency(bike.displayBestPrice))")
                             .font(.headline.weight(.semibold))
                             .foregroundStyle(Color.rGreen)
                     }
@@ -56,28 +56,32 @@ struct BikeDetailView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Retailer Prices")
                             .font(.headline)
-                        ForEach(priceRows, id: \.retailer.id) { row in
-                            HStack {
-                                VStack(alignment: .leading) {
-                                    Text(row.retailer.name)
-                                        .font(.subheadline.weight(.semibold))
-                                    Text(row.retailer.isAustralian ? "AU" : "INTL")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                Spacer()
-                                Text(Formatting.currency(row.price))
-                                    .font(.subheadline.weight(.bold))
-                                Button("Deal") {
-                                    if let url = row.retailer.dealURL(for: bike) {
-                                        openURL(url)
+                        if bike.retailerPriceLines.isEmpty {
+                            Text("No retailer prices on file for this listing. Try opening the source link from search results, or run a live search again.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        } else {
+                            ForEach(bike.retailerPriceLines, id: \.id) { row in
+                                HStack {
+                                    VStack(alignment: .leading) {
+                                        Text(row.displayName)
+                                            .font(.subheadline.weight(.semibold))
+                                        Text(regionLabel(for: row.retailer))
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
                                     }
+                                    Spacer()
+                                    Text(Formatting.currency(row.price))
+                                        .font(.subheadline.weight(.bold))
+                                    Button("Deal") {
+                                        openDealURL(for: row)
+                                    }
+                                    .buttonStyle(.bordered)
                                 }
-                                .buttonStyle(.bordered)
+                                .padding(10)
+                                .background(Color.rCard)
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
                             }
-                            .padding(10)
-                            .background(Color.rCard)
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
                         }
                     }
                 }
@@ -142,20 +146,23 @@ struct BikeDetailView: View {
         } else {
             modelContext.insert(WatchlistItem(
                 bikeId: bike.id,
-                targetPrice: bike.bestPrice ?? 0,
-                priceHistory: [bike.bestPrice ?? 0]
+                targetPrice: bike.displayBestPrice ?? 0,
+                priceHistory: [bike.displayBestPrice ?? 0]
             ))
         }
     }
 
-    private var priceRows: [(retailer: Retailer, price: Double)] {
-        bike.prices
-            .compactMap { key, value in
-                guard bike.inStock.contains(key),
-                      let retailer = RETAILERS.first(where: { $0.id == key }) else { return nil }
-                return (retailer, value)
-            }
-            .sorted(by: { $0.price < $1.price })
+    private func regionLabel(for retailer: Retailer?) -> String {
+        guard let retailer else { return "Listed" }
+        return retailer.isAustralian ? "AU" : "INTL"
+    }
+
+    private func openDealURL(for row: Bike.RetailerPriceLine) {
+        if let retailer = row.retailer, let url = retailer.dealURL(for: bike) {
+            openURL(url)
+        } else if let url = URL(string: bike.sourceUrl), !bike.sourceUrl.isEmpty {
+            openURL(url)
+        }
     }
 }
 

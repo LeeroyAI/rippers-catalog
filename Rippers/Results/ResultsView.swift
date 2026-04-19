@@ -341,14 +341,14 @@ private struct ResultsAIChatModal: View {
             return "I do not see any bikes in results yet. Try broadening filters or budget, then search again."
         }
 
-        let sortedByPrice = bikes.sorted { ($0.bestPrice ?? .greatestFiniteMagnitude) < ($1.bestPrice ?? .greatestFiniteMagnitude) }
+        let sortedByPrice = bikes.sorted { ($0.displayBestPrice ?? .greatestFiniteMagnitude) < ($1.displayBestPrice ?? .greatestFiniteMagnitude) }
         let cheapest = sortedByPrice.first
-        let topThree = sortedByPrice.prefix(3).map { "\($0.brand) \($0.model) (\(Formatting.currency($0.bestPrice)))" }
+        let topThree = sortedByPrice.prefix(3).map { "\($0.brand) \($0.model) (\(Formatting.currency($0.displayBestPrice)))" }
         let filtersText = activeFilterLabels.isEmpty ? "No active filters." : "Active filters: \(activeFilterLabels.joined(separator: ", "))."
 
         if q.contains("best value") || q.contains("cheapest") || q.contains("budget") {
             if let cheapest {
-                return "Best value from current results is \(cheapest.brand) \(cheapest.model) at \(Formatting.currency(cheapest.bestPrice)). \(filtersText)"
+                return "Best value from current results is \(cheapest.brand) \(cheapest.model) at \(Formatting.currency(cheapest.displayBestPrice)). \(filtersText)"
             }
         }
 

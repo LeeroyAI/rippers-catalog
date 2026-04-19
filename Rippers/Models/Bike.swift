@@ -141,6 +141,26 @@ public struct Bike: Identifiable, Hashable, Sendable {
             .key
     }
 
+    public var displayBestPrice: Double? { bestPrice }
+
+    public struct RetailerPriceLine: Identifiable {
+        public let id: String
+        public let displayName: String
+        public let price: Double
+        public let retailer: Retailer?
+    }
+
+    public var retailerPriceLines: [RetailerPriceLine] {
+        prices
+            .filter { inStock.contains($0.key) }
+            .compactMap { key, value in
+                let retailer = RETAILERS.first { $0.id == key }
+                let name = retailer?.name ?? key
+                return RetailerPriceLine(id: key, displayName: name, price: value, retailer: retailer)
+            }
+            .sorted { $0.price < $1.price }
+    }
+
     public var savings: Double? {
         guard let was = wasPrice, let best = bestPrice else { return nil }
         return was - best

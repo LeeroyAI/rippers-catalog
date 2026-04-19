@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import UIKit
 
 struct ContentView: View {
     @EnvironmentObject private var appState: AppState
@@ -12,6 +13,24 @@ struct ContentView: View {
 
     private var activeProfile: RiderProfile? { profiles.first(where: { $0.isActive }) }
     private var activeProfileTag: String { activeProfile?.id.uuidString ?? "" }
+
+    @ViewBuilder
+    private var profileTabItemContent: some View {
+        if let data = activeProfile?.avatarData,
+           let uiImage = UIImage(data: data),
+           uiImage.size.width > 0 {
+            Image(uiImage: uiImage)
+                .renderingMode(.original)
+                .resizable()
+                .scaledToFill()
+                .frame(width: 26, height: 26)
+                .clipShape(Circle())
+            Text("Profile")
+        } else {
+            Image(systemName: "person.crop.circle")
+            Text("Profile")
+        }
+    }
 
     var body: some View {
         ZStack {
@@ -30,7 +49,7 @@ struct ContentView: View {
                     .tabItem { Label("Compare", systemImage: "arrow.left.arrow.right") }
                     .tag(AppTab.compare)
                 ProfileTabView()
-                    .tabItem { Label("Profile", systemImage: "person.crop.circle") }
+                    .tabItem { profileTabItemContent }
                     .tag(AppTab.profile)
             }
             .tint(Color.rOrange)
@@ -86,7 +105,7 @@ struct ContentView: View {
 
     private var watchlistAlertCount: Int {
         watchlistItems.filter { item in
-            guard let price = filterStore.catalog.first(where: { $0.id == item.bikeId })?.bestPrice else { return false }
+            guard let price = filterStore.catalog.first(where: { $0.id == item.bikeId })?.displayBestPrice else { return false }
             return item.targetPrice > 0 && price <= item.targetPrice
         }.count
     }
