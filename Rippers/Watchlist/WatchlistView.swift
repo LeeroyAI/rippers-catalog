@@ -112,7 +112,7 @@ struct WatchlistView: View {
                                         }
                                         .buttonStyle(.bordered)
 
-                                        Button("Snapshot Price") {
+                                        Button("Record today's price") {
                                             snapshotCurrentPrice(for: item, bike: bike)
                                         }
                                         .buttonStyle(.bordered)

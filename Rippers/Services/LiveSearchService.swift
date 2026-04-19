@@ -24,6 +24,9 @@ final class LiveSearchService {
             URLQueryItem(name: "country", value: "AU")
         ]
 
+        if let searchText = criteria.searchText {
+            items.append(URLQueryItem(name: "q", value: searchText))
+        }
         if let category = criteria.category, category != "Any" {
             items.append(URLQueryItem(name: "category", value: category))
         }
@@ -81,6 +84,7 @@ final class LiveSearchService {
 // ---------------------------------------------------------------------------
 
 struct LiveSearchCriteria {
+    var searchText: String?
     var category: String?
     var budget: Double?
     var wheel: String?
@@ -104,8 +108,10 @@ struct LiveSearchCriteria {
         }
 
         let effectiveBudget = state.maxBudget ?? (state.tailorToProfile ? state.profileBudgetCap : nil)
+        let text = state.searchText.trimmingCharacters(in: .whitespacesAndNewlines)
 
         return LiveSearchCriteria(
+            searchText: text.isEmpty ? nil : text,
             category: effectiveCategory,
             budget: effectiveBudget,
             wheel: state.wheel == "Any" ? nil : state.wheel,

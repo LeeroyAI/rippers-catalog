@@ -26,6 +26,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "GET only" });
 
   const {
+    q,
     category,
     budget,
     wheel,
@@ -49,6 +50,7 @@ export default async function handler(req, res) {
 
   try {
     const criteria = {
+      q: q || null,
       category,
       budget: budget ? Number(budget) : null,
       wheel,
@@ -90,6 +92,7 @@ export default async function handler(req, res) {
 
 function buildQueries(criteria) {
   const {
+    q,
     category,
     budget,
     wheel,
@@ -104,7 +107,14 @@ function buildQueries(criteria) {
 
   const baseTerms = [];
 
-  if (ebike) {
+  // Free-text search drives the primary query when provided
+  if (q) {
+    baseTerms.push(q);
+    // Always append "mountain bike" for context unless the query already implies it
+    if (!/mountain bike|mtb|ebike|e-bike/i.test(q)) {
+      baseTerms.push("mountain bike");
+    }
+  } else if (ebike) {
     baseTerms.push("electric mountain bike eMTB");
   } else if (ageRange && ageRange.toLowerCase().includes("kids")) {
     baseTerms.push("kids mountain bike youth bicycle");
@@ -113,6 +123,7 @@ function buildQueries(criteria) {
   }
 
   if (
+    !q &&
     category &&
     category !== "Any" &&
     category !== "eBike" &&
@@ -144,6 +155,11 @@ function buildQueries(criteria) {
   // If specific brands requested, generate one query per brand
   if (brands && brands.length > 0) {
     return brands.map((b) => `${b} ${base}`);
+  }
+
+  // Free-text: run the exact query + a "buy" variant
+  if (q) {
+    return [...new Set([base, `buy ${base}`])].slice(0, 4);
   }
 
   // Otherwise generate several covering different price/style angles
@@ -215,6 +231,47 @@ async function braveSearch(query, country, cursor) {
 }
 
 // ---------------------------------------------------------------------------
+// Complete-bike guard — rejects components, accessories, apparel
+// ---------------------------------------------------------------------------
+
+const COMPONENT_BRANDS = new Set([
+  'rockshox', 'fox racing shox', 'fox', 'marzocchi', 'manitou', 'sr suntour',
+  'shimano', 'sram', 'campagnolo', 'microshift',
+  'maxxis', 'schwalbe', 'wtb', 'continental', 'michelin',
+  'crankbrothers', 'magura', 'hayes', 'formula', 'trp', 'hope',
+  'e*thirteen', 'race face', 'absoluteblack', 'oneup', 'wolf tooth',
+  'selle italia', 'fi\'zi:k', 'ergon',
+]);
+
+const COMPONENT_MODEL_KEYWORDS = [
+  'fork', 'frameset', ' frame', 'wheelset', 'wheel set',
+  'tyre', 'tire', 'inner tube', 'tube ',
+  'derailleur', 'cassette', 'crankset', 'crank arm', 'bottom bracket',
+  'handlebar', ' stem', 'seatpost', 'seat post', 'saddle',
+  'pedal', 'grip ', 'brake lever', 'rotor',
+  'shock absorber', 'rear shock', 'air spring',
+  'helmet', 'jersey', 'shorts', 'gloves', 'shoes', 'pads',
+  'pump', 'tool', 'bag ', 'pack',
+];
+
+const VALID_CATEGORIES = new Set([
+  'Trail', 'Enduro', 'XC / Cross-Country', 'Downhill',
+  'All-Mountain', 'Hardtail', 'eBike',
+]);
+
+function isCompleteBike(b) {
+  const brandLower = (b.brand || '').toLowerCase().trim();
+  if (COMPONENT_BRANDS.has(brandLower)) return false;
+
+  const nameLower = `${b.brand} ${b.model}`.toLowerCase();
+  if (COMPONENT_MODEL_KEYWORDS.some((kw) => nameLower.includes(kw))) return false;
+
+  if (b.category && !VALID_CATEGORIES.has(b.category)) return false;
+
+  return true;
+}
+
+// ---------------------------------------------------------------------------
 // Claude extraction — structures raw search snippets into BikeRecord JSON
 // ---------------------------------------------------------------------------
 
@@ -231,6 +288,7 @@ async function extractBikes(snippets, criteria) {
     .join("\n\n");
 
   const criteriaDesc = [
+    criteria.q ? `Search query: "${criteria.q}"` : null,
     criteria.category && criteria.category !== "Any"
       ? `Category: ${criteria.category}`
       : null,
@@ -247,6 +305,19 @@ async function extractBikes(snippets, criteria) {
     .join("\n");
 
   const prompt = `You are a mountain bike product data specialist with comprehensive knowledge of MTB specifications for all major brands (Specialized, Trek, Giant, Santa Cruz, Yeti, Canyon, Orbea, Scott, Norco, Rocky Mountain, Intense, Pivot, etc.).
+
+CRITICAL RULE — COMPLETE BIKES ONLY:
+Only extract COMPLETE, RIDEABLE BICYCLES. Absolutely DO NOT include:
+- Forks (e.g. RockShox Pike, Fox 36, Marzocchi Bomber)
+- Frames or framesets
+- Rear shocks or air springs
+- Wheelsets, wheels, or tyres
+- Drivetrain components (derailleurs, cassettes, cranksets)
+- Brakes or brake components
+- Stems, handlebars, seatposts, saddles, grips
+- Helmets, pads, shoes, gloves, or any apparel
+- Accessories or bike parts of any kind
+If a snippet is about a component or accessory — skip it entirely.
 
 Your task has TWO PHASES:
 
@@ -284,7 +355,8 @@ For each bike return a JSON object with EXACTLY these fields:
   "prices": {"<retailer name>": <price as number in AUD>},
   "wasPrice": <original price if on sale, else null>,
   "inStock": ["<retailer name — only if snippet explicitly indicates in stock>"],
-  "sourceUrl": "<product page URL from the snippet>",
+  "sourceUrl": "<product page URL from the primary snippet>",
+  "retailerUrls": {"<retailer name>": "<direct product page URL for that retailer — only include if you have a real URL from the snippet, never guess>"},
   "isEbike": <true if electric, else false>,
   "motorBrand": <null or motor brand, e.g. "Shimano", "Bosch", "Brose", "TQ">,
   "motor": <null or motor model + torque, e.g. "EP8 RS 85Nm", "Performance CX 85Nm">,
@@ -328,7 +400,7 @@ Return ONLY a valid JSON array, no markdown, no explanation.`;
 
   const raw = JSON.parse(match[0]);
   return raw
-    .filter((b) => b && b.brand && b.model)
+    .filter((b) => b && b.brand && b.model && isCompleteBike(b))
     .map((b) => ({
       ...b,
       id: b.id || stableHash(b.brand + b.model + b.year),

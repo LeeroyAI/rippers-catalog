@@ -8,7 +8,7 @@ struct RippersApp: App {
     @StateObject private var catalogStore = CatalogStore()
 
     var sharedModelContainer: ModelContainer = {
-        let schema = Schema([WatchlistItem.self, RiderProfile.self])
+        let schema = Schema([WatchlistItem.self, RiderProfile.self, CachedBike.self])
         let config = ModelConfiguration(isStoredInMemoryOnly: false)
         return try! ModelContainer(for: schema, configurations: [config])
     }()
