@@ -49,10 +49,12 @@
 		F326A7B5AD9A20D1E3CC4FD7 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F2854DF9711430D99661C661 /* Foundation.framework */; };
 		F48E629F2522284B2C44D519 /* RiderProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB4D9F4F4B9E6F5559C6C549 /* RiderProfile.swift */; };
 		F5881568BE6169CDB798EED6 /* AIChatService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C3438769605E0B8645DF57 /* AIChatService.swift */; };
+		F7858DDE737CF86A26D5249A /* ProfileTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00A690FCB0A4DFB7B827F114 /* ProfileTabView.swift */; };
 		FDA7799698D6C0354DF6D251 /* WatchlistItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8841B34A776AF2EAEADFE78D /* WatchlistItem.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		00A690FCB0A4DFB7B827F114 /* ProfileTabView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ProfileTabView.swift; path = ../Rippers/Profile/ProfileTabView.swift; sourceTree = "<group>"; };
 		022ABDFB49A0CAC379C90AC8 /* TripPlannerView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = TripPlannerView.swift; path = TripPlanner/TripPlannerView.swift; sourceTree = "<group>"; };
 		02B40196D17C9E4F2032737A /* BudgetView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BudgetView.swift; path = Budget/BudgetView.swift; sourceTree = "<group>"; };
 		03061AFA243E4429C924503B /* LiveSearchService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = LiveSearchService.swift; path = ../Rippers/Services/LiveSearchService.swift; sourceTree = "<group>"; };
@@ -183,6 +185,15 @@
 			path = Models;
 			sourceTree = "<group>";
 		};
+		92A67EC6CFE04A4FF08FBB7D /* Profile */ = {
+			isa = PBXGroup;
+			children = (
+				00A690FCB0A4DFB7B827F114 /* ProfileTabView.swift */,
+			);
+			name = Profile;
+			path = Profile;
+			sourceTree = "<group>";
+		};
 		CD4A30AD778DC2F20A269245 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
@@ -216,6 +227,7 @@
 				D9E17BFC90EB01EC6CF3D56D /* Services */,
 				43817A23F0A08D6B531319A4 /* Services */,
 				7254106670FD343EC265E258 /* Models */,
+				92A67EC6CFE04A4FF08FBB7D /* Profile */,
 			);
 			sourceTree = "<group>";
 		};
@@ -324,6 +336,7 @@
 				0929A720BDBCB1A0EC0B9804 /* LiveSearchService.swift in Sources */,
 				F5881568BE6169CDB798EED6 /* AIChatService.swift in Sources */,
 				D08185E985D893FA8939E169 /* CachedBike.swift in Sources */,
+				F7858DDE737CF86A26D5249A /* ProfileTabView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

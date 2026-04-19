@@ -258,11 +258,14 @@ struct SearchView: View {
                 .disabled(filterStore.isLiveSearching)
 
                 Button {
+                    filterStore.clearLiveResults()
+                    filterStore.state = FilterState()
+                    maxBudgetText = ""
                     appState.activeTab = .results
                 } label: {
                     HStack(spacing: 8) {
                         Image(systemName: "list.bullet")
-                        Text("Browse \(filterStore.catalog.count) bikes in catalog")
+                        Text("Browse all \(filterStore.catalog.count) bikes")
                     }
                     .frame(maxWidth: .infinity)
                     .font(.subheadline)
@@ -1156,7 +1159,7 @@ struct SearchView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("What is the catalog?")
                             .font(.headline)
-                        Text("The catalog is a curated set of ~48 AU mountain bikes loaded from a hosted JSON file and refreshed hourly. It powers the Results, Sizing, Budget, and Trip pages.\n\nLive Search goes beyond the catalog — it fetches fresh stock, specs, and pricing directly from AU retailer websites in real time using Brave Search and Claude AI.")
+                        Text("The catalog is your personal bike library — it starts with ~48 AU mountain bikes and grows every time you run a Live Search. Results are saved to your profile and persist between sessions.\n\nLive Search fetches fresh stock, specs, and pricing from AU retailer websites in real time using Brave Search and Claude AI. Tap Refresh to run a new search now.")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
@@ -1165,10 +1168,7 @@ struct SearchView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 14))
 
                     Button {
-                        Task {
-                            await catalogStore.bootstrap()
-                            filterStore.catalog = catalogStore.bikes
-                        }
+                        Task { await catalogStore.refresh() }
                         showCatalogInfo = false
                     } label: {
                         HStack(spacing: 8) {

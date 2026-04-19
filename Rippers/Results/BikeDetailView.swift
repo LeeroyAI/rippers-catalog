@@ -48,11 +48,6 @@ struct BikeDetailView: View {
                         DetailRow(label: "Sizes", value: bike.sizes.joined(separator: ", "))
                     }
 
-                    Text("— indicates spec not available from retailer data")
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
-                        .padding(.top, 2)
-
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Retailer Prices")
                             .font(.headline)
@@ -83,7 +78,7 @@ struct BikeDetailView: View {
                                     }
                                 }
                                 .buttonStyle(.bordered)
-                                .tint(isVerified ? Color.rOrange : .secondary)
+                                .tint(isVerified ? Color.rOrange : Color.primary)
                             }
                             .padding(10)
                             .background(Color.rCard)

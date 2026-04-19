@@ -86,30 +86,20 @@ struct BikeCardView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 8))
             }
 
-            Text("Best: \(Formatting.currency(bike.bestPrice))")
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(Color.rGreen)
+            if let price = bike.bestPrice {
+                Text("Best: \(Formatting.currency(price))")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(Color.rGreen)
+            } else {
+                Text("See retailer for pricing")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
 
-            VStack(spacing: 6) {
-                ForEach(sortedRetailerPrices, id: \.retailer.id) { row in
-                    HStack {
-                        Text(row.retailer.name)
-                            .font(.caption)
-                        if !row.retailer.isAustralian {
-                            Text("INTL")
-                                .font(.caption2.weight(.semibold))
-                                .foregroundStyle(Color.rBadgeForeground)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(Color.rBlueBg)
-                                .clipShape(Capsule())
-                        }
-                        Spacer()
-                        Text(Formatting.currency(row.price))
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(row.price == bike.bestPrice ? Color.rGreen : Color.primary)
-                    }
-                }
+            if !sortedRetailerPrices.isEmpty {
+                Text("\(sortedRetailerPrices.count) retailer\(sortedRetailerPrices.count == 1 ? "" : "s") · tap for details")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             Text("Sizes: \(bike.sizes.joined(separator: ", "))")

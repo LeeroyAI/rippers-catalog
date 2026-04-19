@@ -5,12 +5,9 @@ import SwiftData
 public enum AppTab: Hashable {
     case search
     case results
-    case compare
     case watchlist
-    case help
-    case sizing
-    case budget
-    case trip
+    case compare
+    case profile
 }
 
 public final class AppState: ObservableObject {

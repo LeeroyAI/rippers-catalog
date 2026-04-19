@@ -22,25 +22,16 @@ struct ContentView: View {
                 ResultsView()
                     .tabItem { Label("Results", systemImage: "list.bullet") }
                     .tag(AppTab.results)
-                CompareView()
-                    .tabItem { Label("Compare", systemImage: "arrow.left.arrow.right") }
-                    .tag(AppTab.compare)
                 WatchlistView()
                     .tabItem { Label("Watchlist", systemImage: "bell") }
                     .tag(AppTab.watchlist)
                     .badge(watchlistAlertCount > 0 ? watchlistAlertCount : 0)
-                HelpView()
-                    .tabItem { Label("Help", systemImage: "questionmark.circle") }
-                    .tag(AppTab.help)
-                SizingView()
-                    .tabItem { Label("Sizing", systemImage: "ruler") }
-                    .tag(AppTab.sizing)
-                BudgetView()
-                    .tabItem { Label("Budget", systemImage: "dollarsign.circle") }
-                    .tag(AppTab.budget)
-                TripPlannerView()
-                    .tabItem { Label("Trip", systemImage: "map") }
-                    .tag(AppTab.trip)
+                CompareView()
+                    .tabItem { Label("Compare", systemImage: "arrow.left.arrow.right") }
+                    .tag(AppTab.compare)
+                ProfileTabView()
+                    .tabItem { Label("Profile", systemImage: "person.crop.circle") }
+                    .tag(AppTab.profile)
             }
             .tint(Color.rOrange)
 
