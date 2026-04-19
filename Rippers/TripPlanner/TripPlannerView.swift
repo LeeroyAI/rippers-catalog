@@ -922,7 +922,7 @@ struct TripPlannerView: View {
         guard let destLocation = destinationPlacemark?.location else { return nil }
         let shopLoc = CLLocation(latitude: shop.placemark.coordinate.latitude, longitude: shop.placemark.coordinate.longitude)
         let km = destLocation.distance(from: shopLoc) / 1000
-        return km < 1 ? "\(Int(km * 1000)) m away" : String(format: "%.1f km away", km)
+        return km < 1 ? "\(Int(km * 1000)) m from destination" : String(format: "%.1f km from destination", km)
     }
 
     private func rentalKey(for item: MKMapItem) -> String? {
@@ -980,7 +980,7 @@ struct TripPlannerView: View {
     private func searchTrailforksTrails(around coordinate: CLLocationCoordinate2D) async {
         guard !TrailforksConfig.appID.isEmpty, !TrailforksConfig.appSecret.isEmpty else {
             trailforksTrails = []
-            trailforksStatus = "Trailforks API keys not configured yet. Use the button below to browse trails on Trailforks."
+            trailforksStatus = nil
             return
         }
 

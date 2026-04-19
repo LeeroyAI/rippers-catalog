@@ -14,26 +14,11 @@ struct CompareView: View {
     var body: some View {
         NavigationStack {
             if compared.isEmpty {
-                VStack(spacing: 16) {
-                    Image(systemName: "arrow.left.arrow.right")
-                        .font(.system(size: 44, weight: .light))
-                        .foregroundStyle(Color.rOrange)
-                    Text("No Bikes Selected")
-                        .font(.title3.weight(.semibold))
-                    Text("Select up to 3 bikes in Results to compare side-by-side.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                    Button {
-                        appState.activeTab = .results
-                    } label: {
-                        Label("Browse Results", systemImage: "list.bullet")
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color.rOrange)
-                }
-                .padding(32)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                ContentUnavailableView(
+                    "No Bikes Selected",
+                    systemImage: "arrow.left.arrow.right",
+                    description: Text("Select up to 3 bikes in Results to compare.")
+                )
             } else {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 14) {
@@ -142,15 +127,12 @@ struct CompareView: View {
 
     @ViewBuilder
     private func compareBikeImage(_ bike: Bike) -> some View {
-        ZStack {
-            Color.rCard
-            BikeResolvedImageView(
-                bike: bike,
-                contentMode: .fit,
-                imagePadding: EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8),
-                placeholder: { compareImagePlaceholder }
-            )
-        }
+        BikeResolvedImageView(
+            bike: bike,
+            contentMode: .fill,
+            imagePadding: EdgeInsets(),
+            placeholder: { compareImagePlaceholder }
+        )
     }
 
     private var compareImagePlaceholder: some View {

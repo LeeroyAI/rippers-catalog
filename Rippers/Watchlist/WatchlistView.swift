@@ -300,7 +300,8 @@ struct WatchlistView: View {
         let trimmed = Array(values.suffix(12))
         let maxValue = trimmed.max() ?? 1
         let minValue = trimmed.min() ?? 0
-        let range = max(1, maxValue - minValue)
+        let avg = trimmed.reduce(0, +) / Double(max(1, trimmed.count))
+        let range = max(avg * 0.05, maxValue - minValue, 1)
         HStack(alignment: .bottom, spacing: 2) {
             ForEach(Array(trimmed.enumerated()), id: \.offset) { _, value in
                 let normalized = (value - minValue) / range

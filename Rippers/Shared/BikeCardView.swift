@@ -44,6 +44,7 @@ struct BikeCardView: View {
                         .clipShape(Capsule())
                 }
                 Button {
+                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                     toggleWatch()
                 } label: {
                     Image(systemName: isWatched ? "bell.fill" : "bell")
@@ -116,10 +117,13 @@ struct BikeCardView: View {
                 .foregroundStyle(.secondary)
 
             HStack {
-                Button(isInCompare ? "Remove Compare" : "+ Compare") {
+                let atCapacity = !isInCompare && appState.compareSet.count >= 3
+                Button(isInCompare ? "Remove Compare" : atCapacity ? "Compare Full (3/3)" : "+ Compare") {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
                     appState.toggleCompare(bike.id)
                 }
                 .buttonStyle(.bordered)
+                .disabled(atCapacity)
 
                 Spacer()
 

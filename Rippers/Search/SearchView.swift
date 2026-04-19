@@ -101,7 +101,6 @@ struct SearchView: View {
 
     private var shouldShowOpenResultsButton: Bool {
         filterStore.filteredBikes.isEmpty == false
-            && currentSearchFingerprint != lastSearchFingerprint
             && appState.activeTab != .results
     }
 
@@ -171,9 +170,16 @@ struct SearchView: View {
                     clearProfileDraft()
                 }
             }
-            .onChange(of: currentSearchFingerprint) { _, _ in
+            .onChange(of: filterStore.state.searchText) { _, _ in
                 if filterStore.liveResults != nil {
                     filterStore.clearLiveResults()
+                }
+            }
+            .onChange(of: photoUploadStatus) { _, newValue in
+                guard newValue != nil else { return }
+                Task {
+                    try? await Task.sleep(for: .seconds(3))
+                    await MainActor.run { photoUploadStatus = nil }
                 }
             }
             .onChange(of: selectedPhotoItem) { _, newValue in
@@ -196,11 +202,11 @@ struct SearchView: View {
                     }
                 }
             }
-            .alert("Clear current profile?", isPresented: $showClearProfileConfirmation) {
+            .alert("Delete profile?", isPresented: $showClearProfileConfirmation) {
                 Button("Cancel", role: .cancel) {}
-                Button("Clear", role: .destructive) { clearCurrentProfile() }
+                Button("Delete", role: .destructive) { clearCurrentProfile() }
             } message: {
-                Text("This removes your active profile and profile-based defaults from search.")
+                Text("This permanently deletes your profile. Search filters will reset to defaults.")
             }
             .alert(
                 "Delete profile?",
@@ -371,7 +377,7 @@ struct SearchView: View {
                         Button(role: .destructive) {
                             showClearProfileConfirmation = true
                         } label: {
-                            Text("Clear Profile")
+                            Text("Delete Profile")
                                 .font(.caption.weight(.semibold))
                         }
                         .buttonStyle(.bordered)
@@ -635,10 +641,22 @@ struct SearchView: View {
             }
             .textFieldStyle(.roundedBorder)
             .keyboardType(.numberPad)
+            if !profileHeightText.isEmpty, !(100...220).contains(Int(profileHeightText) ?? 0) {
+                Text("Height must be between 100–220 cm")
+                    .font(.caption2).foregroundStyle(Color.rRed)
+            }
+            if !profileAgeText.isEmpty, !(5...100).contains(Int(profileAgeText) ?? 0) {
+                Text("Age must be between 5–100")
+                    .font(.caption2).foregroundStyle(Color.rRed)
+            }
             TextField("Weight kg", text: $profileWeightText)
                 .textFieldStyle(.roundedBorder)
                 .keyboardType(.numberPad)
                 .focused($focusedField, equals: .weight)
+            if !profileWeightText.isEmpty, !(20...150).contains(Int(profileWeightText) ?? 0) {
+                Text("Weight must be between 20–150 kg")
+                    .font(.caption2).foregroundStyle(Color.rRed)
+            }
         }
 
         VStack(alignment: .leading, spacing: 8) {

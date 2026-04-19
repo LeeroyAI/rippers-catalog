@@ -48,6 +48,11 @@ struct BikeDetailView: View {
                         DetailRow(label: "Sizes", value: bike.sizes.joined(separator: ", "))
                     }
 
+                    Text("— indicates spec not available from retailer data")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                        .padding(.top, 2)
+
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Retailer Prices")
                             .font(.headline)
@@ -87,14 +92,17 @@ struct BikeDetailView: View {
                 }
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     Button {
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
                         appState.toggleCompare(bike.id)
                     } label: {
                         Image(systemName: isInCompare ? "arrow.left.arrow.right.circle.fill" : "arrow.left.arrow.right.circle")
                     }
                     .tint(isInCompare ? Color.rOrange : .primary)
-                    .accessibilityLabel(isInCompare ? "Remove from compare" : "Add to compare")
+                    .disabled(!isInCompare && appState.compareSet.count >= 3)
+                    .accessibilityLabel(isInCompare ? "Remove from compare" : appState.compareSet.count >= 3 ? "Compare full" : "Add to compare")
 
                     Button {
+                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                         toggleWatch()
                     } label: {
                         Image(systemName: isWatched ? "bell.fill" : "bell")

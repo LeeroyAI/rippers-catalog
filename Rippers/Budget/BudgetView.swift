@@ -81,7 +81,8 @@ struct BudgetView: View {
                     VStack(alignment: .leading, spacing: 12) {
                         Picker("Bike", selection: $selectedBikeId) {
                             ForEach(filterStore.catalog) { bike in
-                                Text("\(bike.brand) \(bike.model)").tag(bike.id)
+                                let isSuggested = activeProfile != nil && bike.id == suggestedBikeId
+                                Text(isSuggested ? "\(bike.brand) \(bike.model) ✓" : "\(bike.brand) \(bike.model)").tag(bike.id)
                             }
                         }
 
@@ -95,6 +96,9 @@ struct BudgetView: View {
                                 }
                             }
                             .pickerStyle(.segmented)
+                            Text("Budget = discount shops (0.8×) · Mid = standard retail · Premium = high-end brands (1.3×)")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
                         }
 
                         HStack(spacing: 8) {
