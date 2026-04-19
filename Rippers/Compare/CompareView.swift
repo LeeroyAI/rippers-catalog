@@ -44,7 +44,7 @@ struct CompareView: View {
 
                         sectionTitle("Key Differences")
                         comparisonCard(title: "Best Price") { bike in
-                            Formatting.currency(bike.bestPrice)
+                            Formatting.currency(bike.displayBestPrice)
                         }
                         comparisonCard(title: "Weight") { $0.weight }
                         comparisonCard(title: "Travel") { $0.travel }
@@ -78,63 +78,96 @@ struct CompareView: View {
     }
 
     private var bikeHeroRow: some View {
-        HStack(spacing: 10) {
+        HStack(alignment: .top, spacing: 10) {
             ForEach(compared) { bike in
-                VStack(spacing: 0) {
-                    ZStack {
-                        Color.rCard
-                        BikeResolvedImageView(
-                            bike: bike,
-                            contentMode: .fit,
-                            imagePadding: EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8),
-                            placeholder: { compareImagePlaceholder }
-                        )
-                    }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 130)
+                compareHeroTile(bike: bike)
+            }
+        }
+    }
 
-                    Divider()
+    private func compareHeroTile(bike: Bike) -> some View {
+        ZStack {
+            compareBikeImage(bike)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .clipped()
 
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(bike.brand.uppercased())
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                        Text(bike.model)
-                            .font(.footnote.weight(.bold))
-                            .lineLimit(2)
-                            .minimumScaleFactor(0.8)
-                        if let price = bike.bestPrice {
-                            Text(Formatting.currency(price))
-                                .font(.footnote.weight(.heavy))
-                                .foregroundStyle(Color.rGreen)
-                        } else {
-                            Text("See retailer")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 8)
-                    .background(Color.rCard)
-                }
-                .clipShape(RoundedRectangle(cornerRadius: 14))
-                .overlay(alignment: .topTrailing) {
+            LinearGradient(
+                colors: [
+                    Color.black.opacity(0.1),
+                    Color.black.opacity(0.45),
+                    Color.black.opacity(0.82),
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .allowsHitTesting(false)
+
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(alignment: .center) {
+                    Text(bike.brand.uppercased())
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.black.opacity(0.45))
+                        .clipShape(Capsule())
+                    Spacer(minLength: 0)
                     Button {
                         appState.toggleCompare(bike.id)
                     } label: {
                         Image(systemName: "xmark")
-                            .font(.system(size: 9, weight: .bold))
-                            .padding(6)
-                            .background(.ultraThinMaterial)
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(.white)
+                            .frame(width: 30, height: 30)
+                            .background(Color.black.opacity(0.45))
                             .clipShape(Circle())
                     }
-                    .foregroundStyle(.primary)
-                    .padding(8)
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Remove from compare")
                 }
-                .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.rBorder, lineWidth: 1))
-                .shadow(color: Color.black.opacity(0.08), radius: 6, x: 0, y: 3)
+
+                Spacer(minLength: 8)
+
+                Text(bike.model)
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(.white)
+                    .lineLimit(3)
+                    .minimumScaleFactor(0.85)
+                    .shadow(color: .black.opacity(0.35), radius: 2, x: 0, y: 1)
+
+                HStack(alignment: .lastTextBaseline, spacing: 6) {
+                    Text(Formatting.currency(bike.displayBestPrice))
+                        .font(.title3.weight(.heavy))
+                        .foregroundStyle(Color.rOrangeLight)
+                    Text("Best")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.white.opacity(0.85))
+                }
+                .padding(.top, 4)
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .padding(12)
+        }
+        .frame(maxWidth: .infinity, minHeight: 220, maxHeight: 220)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.white.opacity(0.22), lineWidth: 1)
+        )
+        .shadow(color: Color.black.opacity(0.14), radius: 10, x: 0, y: 5)
+    }
+
+    @ViewBuilder
+    private func compareBikeImage(_ bike: Bike) -> some View {
+        ZStack {
+            Color.rCard
+            BikeResolvedImageView(
+                bike: bike,
+                contentMode: .fill,
+                imagePadding: EdgeInsets(),
+                placeholder: { compareImagePlaceholder }
+            )
         }
     }
 
@@ -149,6 +182,7 @@ struct CompareView: View {
                 .font(.system(size: 30, weight: .semibold))
                 .foregroundStyle(.white.opacity(0.9))
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     @ViewBuilder
@@ -161,7 +195,7 @@ struct CompareView: View {
             HStack(alignment: .top, spacing: 10) {
                 ForEach(compared) { bike in
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(shortLabel(for: bike))
+                        Text(bike.brand)
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
@@ -186,11 +220,6 @@ struct CompareView: View {
         )
     }
 
-    private func shortLabel(for bike: Bike) -> String {
-        let m = bike.model
-        return m.count > 14 ? String(m.prefix(13)) + "…" : m
-    }
-
     private func sectionTitle(_ text: String) -> some View {
         Text(text)
             .font(.subheadline.weight(.semibold))
@@ -198,12 +227,8 @@ struct CompareView: View {
     }
 
     private func retailerPriceSummary(for bike: Bike) -> String {
-        bike.prices
-            .compactMap { key, price in
-                guard let retailer = RETAILERS.first(where: { $0.id == key }) else { return nil }
-                return "\(retailer.name): \(Formatting.currency(price))"
-            }
-            .sorted()
+        bike.retailerPriceLines
+            .map { "\($0.displayName): \(Formatting.currency($0.price))" }
             .joined(separator: "  ·  ")
     }
 }

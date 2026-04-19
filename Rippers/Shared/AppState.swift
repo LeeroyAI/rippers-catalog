@@ -1,32 +1,17 @@
 import Foundation
-import SwiftUI
 import SwiftData
-
-@Model
-final class CachedBike {
-    var bikeId: Int
-    var profileTag: String
-    var fetchedAt: Date
-    var recordData: Data
-
-    init(record: BikeRecord, profileTag: String, fetchedAt: Date = .now) {
-        self.bikeId = record.id
-        self.profileTag = profileTag
-        self.fetchedAt = fetchedAt
-        self.recordData = (try? JSONEncoder().encode(record)) ?? Data()
-    }
-
-    var bike: Bike? {
-        (try? JSONDecoder().decode(BikeRecord.self, from: recordData))?.bike
-    }
-}
+import SwiftUI
 
 public enum AppTab: Hashable {
     case search
     case results
-    case watchlist
     case compare
+    case watchlist
     case profile
+    case help
+    case sizing
+    case budget
+    case trip
 }
 
 public final class AppState: ObservableObject {
@@ -71,13 +56,14 @@ public final class FilterStore: ObservableObject {
         // but skip catalog-level filters that the API already handled.
         if liveResults != nil {
             var localState = state
+            // Skip only UI chip filters the API already applied; keep rider profile tailoring
+            // (Downhill / XC / etc.) so live rows are still filtered by `matchesProfileHints`.
             localState.category = "Any"
             localState.wheel = "Any"
             localState.maxBudget = nil
             localState.activeBrands = []
             localState.activeTravelRanges = []
             localState.activeEbikeFilter = false
-            localState.tailorToProfile = false
             return BikeFilterEngine.apply(bikes: activeBikePool, filters: localState)
         }
         return BikeFilterEngine.apply(bikes: catalog, filters: state)
@@ -137,119 +123,183 @@ public final class FilterStore: ObservableObject {
 public final class CatalogStore: ObservableObject {
     @Published public private(set) var bikes: [Bike] = BIKES
     @Published public private(set) var lastUpdated: Date?
-    @Published public private(set) var sourceID: String = "seed"
-    @Published public private(set) var sourceStatus: String = "Seed data"
-    @Published public private(set) var fallbackReason: String? = nil
-    @Published public private(set) var lastSuccessfulLiveSource: String? = nil
+    @Published public private(set) var sourceID: String = "embedded-static"
+    @Published public private(set) var sourceStatus: String = "Static fallback"
+    @Published public private(set) var fallbackReason: String?
+    @Published public private(set) var lastSuccessfulLiveSource: String?
     @Published public private(set) var isRefreshing: Bool = false
     @Published public private(set) var hasCriticalAudits: Bool = false
-    // Incremented when a manual refresh is requested via refresh() — ContentView observes this.
+    /// Bumps when views request a fresh profile-scoped live search (observed in `ContentView`).
     @Published public private(set) var refreshRequestToken: Int = 0
 
-    public var liveCatalogEnabled: Bool { true }
-    public var brandedUIEnabled: Bool { false }
-    public var freshnessTTLMinutes: Int { 1440 }    // 24h expressed as minutes
+    private let flags: CatalogFeatureFlags
+    private let repository: BikeCatalogRepository
+    private var configuredProfileTag: String = ""
 
-    private var modelContext: ModelContext?
-    private var currentProfileTag: String = ""
+    public init(flags: CatalogFeatureFlags = .current) {
+        self.flags = flags
+        self.repository = CatalogStore.makeRepository()
+    }
 
-    public init() {}
-
-    // MARK: - Setup
-
+    /// Wire SwiftData and load cached live-search results for the active rider profile (if any).
     public func configure(context: ModelContext, profileTag: String) {
-        modelContext = context
-        currentProfileTag = profileTag
-        seedIfNeeded()
-        reloadBikes()
+        _ = context
+        switchProfile(profileTag: profileTag)
     }
 
     public func switchProfile(profileTag: String) {
-        currentProfileTag = profileTag
-        reloadBikes()
+        configuredProfileTag = profileTag
+        applyProfileLiveCache()
     }
 
-    // MARK: - Live search persistence
-
-    public func save(_ newBikes: [Bike], profileTag: String) {
-        guard let ctx = modelContext, !profileTag.isEmpty else { return }
-        let now = Date()
-        for bike in newBikes {
-            let id = bike.id
-            let desc = FetchDescriptor<CachedBike>(predicate: #Predicate<CachedBike> {
-                $0.bikeId == id && $0.profileTag == profileTag
-            })
-            let existing = (try? ctx.fetch(desc)) ?? []
-            existing.forEach { ctx.delete($0) }
-            ctx.insert(CachedBike(record: BikeRecord(bike), profileTag: profileTag, fetchedAt: now))
-        }
-        try? ctx.save()
-        reloadBikes()
-        lastUpdated = now
+    /// Call after profile or search criteria change to trigger a silent refresh in `ContentView`.
+    public func requestProfileLiveCatalogRefresh() {
+        refreshRequestToken &+= 1
     }
-
-    // MARK: - Staleness check
 
     public func needsRefresh(profileTag: String) -> Bool {
-        guard let ctx = modelContext, !profileTag.isEmpty else { return false }
-        let desc = FetchDescriptor<CachedBike>(predicate: #Predicate<CachedBike> {
-            $0.profileTag == profileTag
-        })
-        let items = (try? ctx.fetch(desc)) ?? []
-        guard !items.isEmpty else { return true }
-        let oldest = items.min(by: { $0.fetchedAt < $1.fetchedAt })?.fetchedAt ?? .distantPast
-        return Date().timeIntervalSince(oldest) > 86400
+        guard !profileTag.isEmpty else { return false }
+        guard let cachedAt = Self.profileCacheDate(for: profileTag) else { return true }
+        let ttl = TimeInterval(freshnessTTLMinutes * 60)
+        return Date().timeIntervalSince(cachedAt) > ttl
     }
 
-    // MARK: - Manual refresh trigger (ContentView observes refreshRequestToken)
+    public func save(_ bikes: [Bike], profileTag: String) {
+        guard !profileTag.isEmpty else { return }
+        Self.persistProfileLiveCache(bikes: bikes, profileTag: profileTag)
+        guard profileTag == configuredProfileTag else { return }
+        self.bikes = bikes
+        lastUpdated = .now
+        sourceStatus = "Live search (profile)"
+        fallbackReason = nil
+    }
+
+    private func applyProfileLiveCache() {
+        let tag = configuredProfileTag
+        guard !tag.isEmpty, let cached = Self.loadProfileLiveCache(profileTag: tag), !cached.isEmpty else { return }
+        bikes = cached
+        lastUpdated = Self.profileCacheDate(for: tag)
+        sourceStatus = "Live search (profile cache)"
+        fallbackReason = nil
+    }
+
+    private static let profileLiveCachePrefix = "rippers.profileLiveCatalog."
+
+    private static func profileCacheKey(_ tag: String) -> String { "\(profileLiveCachePrefix)\(tag)" }
+
+    private static func profileCacheDate(for tag: String) -> Date? {
+        UserDefaults.standard.object(forKey: "\(profileCacheKey(tag)).date") as? Date
+    }
+
+    private static func loadProfileLiveCache(profileTag: String) -> [Bike]? {
+        guard let data = UserDefaults.standard.data(forKey: profileCacheKey(profileTag)) else { return nil }
+        guard let records = try? JSONDecoder().decode([BikeRecord].self, from: data) else { return nil }
+        return records.map(\.bike)
+    }
+
+    private static func persistProfileLiveCache(bikes: [Bike], profileTag: String) {
+        let records = bikes.map(BikeRecord.init)
+        guard let data = try? JSONEncoder().encode(records) else { return }
+        let key = profileCacheKey(profileTag)
+        UserDefaults.standard.set(data, forKey: key)
+        UserDefaults.standard.set(Date(), forKey: "\(key).date")
+    }
+
+    public var liveCatalogEnabled: Bool { flags.useLiveCatalog }
+    public var brandedUIEnabled: Bool { flags.useBrandedUIV2 }
+    public var freshnessTTLMinutes: Int { 60 }
+
+    public func bootstrap() async {
+        if let cached = await repository.loadCached(maxAgeMinutes: freshnessTTLMinutes) {
+            bikes = cached.bikes
+            sourceID = cached.sourceID
+            lastUpdated = cached.refreshedAt
+            sourceStatus = "Cached snapshot"
+            fallbackReason = nil
+            hasCriticalAudits = cached.audits.contains(where: { $0.severity == .critical })
+        } else if let staleCached = await repository.loadCached() {
+            bikes = staleCached.bikes
+            sourceID = "\(staleCached.sourceID)-stale-cache"
+            lastUpdated = staleCached.refreshedAt
+            sourceStatus = "Stale cached snapshot"
+            fallbackReason = "Cache is older than \(freshnessTTLMinutes) minutes; refreshing live."
+            hasCriticalAudits = staleCached.audits.contains(where: { $0.severity == .critical })
+        } else {
+            bikes = BIKES
+            sourceID = "embedded-static"
+            lastUpdated = .now
+            sourceStatus = "Static fallback"
+            fallbackReason = "No cached snapshot available."
+            hasCriticalAudits = false
+        }
+
+        guard flags.useLiveCatalog else { return }
+        await refresh()
+    }
 
     @discardableResult
     public func refresh(requireLiveResult: Bool = false) async -> Bool {
-        refreshRequestToken += 1
-        return true
-    }
+        guard !isRefreshing else { return false }
+        isRefreshing = true
+        defer { isRefreshing = false }
 
-    // MARK: - Seeding & loading
-
-    private func seedIfNeeded() {
-        guard let ctx = modelContext else { return }
-        let desc = FetchDescriptor<CachedBike>(predicate: #Predicate<CachedBike> { $0.profileTag == "" })
-        let count = (try? ctx.fetchCount(desc)) ?? 0
-        guard count == 0 else { return }
-        for bike in BIKES {
-            ctx.insert(CachedBike(record: BikeRecord(bike), profileTag: "", fetchedAt: .distantPast))
-        }
-        try? ctx.save()
-    }
-
-    private func reloadBikes() {
-        guard let ctx = modelContext else { return }
-
-        let seedDesc = FetchDescriptor<CachedBike>(predicate: #Predicate<CachedBike> { $0.profileTag == "" })
-        let seeds = (try? ctx.fetch(seedDesc))?.compactMap(\.bike) ?? []
-
-        var profileBikes: [Bike] = []
-        let tag = currentProfileTag
-        if !tag.isEmpty {
-            let profDesc = FetchDescriptor<CachedBike>(predicate: #Predicate<CachedBike> { $0.profileTag == tag })
-            profileBikes = (try? ctx.fetch(profDesc))?.compactMap(\.bike) ?? []
+        guard flags.useLiveCatalog else { return false }
+        let result = await repository.refresh()
+        bikes = result.bikes
+        sourceID = result.sourceID
+        lastUpdated = result.refreshedAt
+        hasCriticalAudits = result.audits.contains(where: { $0.severity == .critical })
+        if sourceID.contains("cache") {
+            sourceStatus = "Cached fallback"
+            fallbackReason = "Live source fetch failed, using cached snapshot."
+        } else if sourceID.contains("public-feed") || sourceID.contains("official") {
+            sourceStatus = hasCriticalAudits ? "Live source (audit warning)" : "Live source"
+            fallbackReason = hasCriticalAudits ? "Live payload failed quality audit checks." : nil
+            lastSuccessfulLiveSource = sourceID
+        } else if sourceID == "bundle-catalog" {
+            sourceStatus = "Bundled live fallback"
+            fallbackReason = "Remote feed unavailable, using bundled catalog snapshot."
+        } else {
+            sourceStatus = "Static fallback"
+            fallbackReason = "Live and cache unavailable."
         }
 
-        // Profile bikes take priority over seeds for the same bikeId
-        var seenIds = Set<Int>()
-        var merged: [Bike] = []
-        for bike in profileBikes where seenIds.insert(bike.id).inserted { merged.append(bike) }
-        for bike in seeds where seenIds.insert(bike.id).inserted { merged.append(bike) }
-
-        bikes = merged
-        if lastUpdated == nil { lastUpdated = .now }
-
-        let hasProfileData = !profileBikes.isEmpty
-        sourceID = hasProfileData ? "live-cache" : "seed"
-        sourceStatus = hasProfileData ? "Live source" : "Seed data"
-        fallbackReason = hasProfileData ? nil : "Run a live search to build your profile's bike library."
+        if requireLiveResult && sourceStatus != "Live source" {
+            fallbackReason = "Live search unavailable right now. Showing best available cached/static results."
+        }
+        return sourceStatus == "Live source"
     }
 
-    // Legacy no-op kept for any callers not yet migrated
-    public func bootstrap() async {}
+    private static func makeRepository() -> BikeCatalogRepository {
+        var providers: [any BikeCatalogProvider] = PublicCatalogSources.sources.map { source in
+            PublicJSONCatalogProvider(source: source)
+        }
+        providers.append(BundledCatalogProvider())
+        providers.append(StaticCatalogProvider(source: PublicCatalogSources.staticFallback, bikes: BIKES))
+        return BikeCatalogRepository(providers: providers, cacheFilename: "rippers-live-catalog-cache.json")
+    }
+}
+
+private struct BundledCatalogProvider: BikeCatalogProvider {
+    let source = CatalogSource(
+        id: "bundle-catalog",
+        name: "Bundled catalog snapshot",
+        type: .staticFallback,
+        endpoint: nil,
+        ttlSeconds: 0,
+        enabled: true
+    )
+
+    func fetchCatalog() async throws -> CatalogFetchPayload {
+        guard let url = Bundle.main.url(forResource: "catalog", withExtension: "json"),
+              let data = try? Data(contentsOf: url) else {
+            throw NSError(domain: "Catalog", code: 12, userInfo: [NSLocalizedDescriptionKey: "Bundled catalog not found"])
+        }
+        let bikes = try JSONDecoder().decode([BikeRecord].self, from: data).map(\.bike)
+        guard !bikes.isEmpty else {
+            throw NSError(domain: "Catalog", code: 13, userInfo: [NSLocalizedDescriptionKey: "Bundled catalog is empty"])
+        }
+        let audits = CatalogValidator.validate(sourceID: source.id, bikes: bikes)
+        return CatalogFetchPayload(source: source, bikes: bikes, audits: audits)
+    }
 }

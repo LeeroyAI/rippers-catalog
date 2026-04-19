@@ -28,7 +28,7 @@ final class BikeFilterEngineTests: XCTestCase {
 
         let filtered = BikeFilterEngine.apply(bikes: BIKES, filters: filters)
         XCTAssertFalse(filtered.isEmpty)
-        XCTAssertTrue(filtered.allSatisfy { ($0.bestPrice ?? .greatestFiniteMagnitude) <= 5000 })
+        XCTAssertTrue(filtered.allSatisfy { ($0.displayBestPrice ?? .greatestFiniteMagnitude) <= 5000 })
     }
 
     func testWheelFilterAndActiveWheelChips() {

@@ -24,8 +24,8 @@ public enum BikeFilterEngine {
         let isHardtail = bike.suspension == "Hardtail"
         switch style {
         case .gravity:
-            // Gravity disciplines should never return hardtails.
-            return !isHardtail && (bike.category == "Enduro" || travel >= 160)
+            // Gravity / downhill: long-travel bikes; many listings use Enduro or Downhill category.
+            return !isHardtail && (bike.category == "Enduro" || bike.category == "Downhill" || travel >= 160)
         case .trail:
             return bike.category == "Trail" || bike.category == "eBike" || (isHardtail && travel <= 140)
         case .crossCountry:
@@ -73,8 +73,8 @@ public enum BikeFilterEngine {
 
     static func matchesBudget(_ bike: Bike, filters: FilterState) -> Bool {
         guard let maxBudget = filters.maxBudget else { return true }
-        guard let bestPrice = bike.bestPrice else { return false }
-        return bestPrice <= maxBudget
+        guard let price = bike.displayBestPrice else { return false }
+        return price <= maxBudget
     }
 
     static func matchesEbikeMode(_ bike: Bike, filters: FilterState) -> Bool {
@@ -143,7 +143,7 @@ public enum BikeFilterEngine {
         }
 
         if let budgetCap = filters.profileBudgetCap, budgetCap > 0 {
-            guard let best = bike.bestPrice, best <= budgetCap else { return false }
+            guard let best = bike.displayBestPrice, best <= budgetCap else { return false }
         }
 
         return true
@@ -154,22 +154,22 @@ public enum BikeFilterEngine {
         case .bestMatch:
             // Falls back to price when used outside of ranked context
             return { lhs, rhs in
-                let l = lhs.bestPrice ?? .greatestFiniteMagnitude
-                let r = rhs.bestPrice ?? .greatestFiniteMagnitude
+                let l = lhs.displayBestPrice ?? .greatestFiniteMagnitude
+                let r = rhs.displayBestPrice ?? .greatestFiniteMagnitude
                 if l == r { return lhs.id < rhs.id }
                 return l < r
             }
         case .priceLowToHigh:
             return { lhs, rhs in
-                let l = lhs.bestPrice ?? .greatestFiniteMagnitude
-                let r = rhs.bestPrice ?? .greatestFiniteMagnitude
+                let l = lhs.displayBestPrice ?? .greatestFiniteMagnitude
+                let r = rhs.displayBestPrice ?? .greatestFiniteMagnitude
                 if l == r { return lhs.id < rhs.id }
                 return l < r
             }
         case .priceHighToLow:
             return { lhs, rhs in
-                let l = lhs.bestPrice ?? 0
-                let r = rhs.bestPrice ?? 0
+                let l = lhs.displayBestPrice ?? 0
+                let r = rhs.displayBestPrice ?? 0
                 if l == r { return lhs.id < rhs.id }
                 return l > r
             }
@@ -195,7 +195,7 @@ public enum BikeFilterEngine {
             .map { bike in (bike: bike, score: matchScore(for: bike, filters: filters)) }
             .sorted {
                 if $0.score == $1.score {
-                    return ($0.bike.bestPrice ?? .greatestFiniteMagnitude) < ($1.bike.bestPrice ?? .greatestFiniteMagnitude)
+                    return ($0.bike.displayBestPrice ?? .greatestFiniteMagnitude) < ($1.bike.displayBestPrice ?? .greatestFiniteMagnitude)
                 }
                 return $0.score > $1.score
             }
@@ -222,7 +222,7 @@ public enum BikeFilterEngine {
                     break
                 }
 
-            if let cap = filters.profileBudgetCap, cap > 0, let price = bike.bestPrice {
+            if let cap = filters.profileBudgetCap, cap > 0, let price = bike.displayBestPrice {
                 if price <= cap {
                     let headroom = max(0, cap - price)
                     score += min(20, Int(headroom / 400))
@@ -232,7 +232,7 @@ public enum BikeFilterEngine {
             }
         }
 
-        if let maxBudget = filters.maxBudget, let best = bike.bestPrice {
+        if let maxBudget = filters.maxBudget, let best = bike.displayBestPrice {
             if best <= maxBudget { score += 8 } else { score -= 8 }
         }
 
@@ -261,7 +261,12 @@ public enum BikeFilterEngine {
                 case .trail:
                     reasons.append(isSuitable(bike, for: .trail) ? "Trail style aligned" : "Trail style mismatch")
                 case .gravity:
-                    reasons.append(isSuitable(bike, for: .gravity) ? "Gravity style aligned" : "Gravity style mismatch")
+                    let ok = isSuitable(bike, for: .gravity)
+                    if let hint = filters.profileStyleHint?.lowercased(), hint.contains("downhill") {
+                        reasons.append(ok ? "Downhill / gravity bike (long travel, stable geometry)" : "Not a downhill / gravity match (too light or XC-oriented)")
+                    } else {
+                        reasons.append(ok ? "Gravity style aligned (enduro / long travel)" : "Gravity style mismatch")
+                    }
                 case .crossCountry:
                     reasons.append(isSuitable(bike, for: .crossCountry) ? "XC style aligned" : "XC style mismatch")
                 case .jump:
@@ -270,7 +275,7 @@ public enum BikeFilterEngine {
                     break
                 }
 
-            if let cap = filters.profileBudgetCap, cap > 0, let price = bike.bestPrice {
+            if let cap = filters.profileBudgetCap, cap > 0, let price = bike.displayBestPrice {
                 if price <= cap {
                     reasons.append("Within profile budget cap")
                 } else {
@@ -279,7 +284,7 @@ public enum BikeFilterEngine {
             }
         }
 
-        if let best = bike.bestPrice {
+        if let best = bike.displayBestPrice {
             reasons.append("Best available price: \(Int(best)) AUD")
         }
         if let savings = bike.savings, savings > 0 {
@@ -322,7 +327,7 @@ public enum BikeFilterEngine {
                 factors.append(.init(id: "profile-rider-size", title: "Rider size fit", points: adultFit ? 8 : -20, note: adultFit ? "Bike size aligns with adult rider height" : "Likely youth/kids sizing for this rider"))
             }
 
-            if let cap = filters.profileBudgetCap, cap > 0, let price = bike.bestPrice {
+            if let cap = filters.profileBudgetCap, cap > 0, let price = bike.displayBestPrice {
                 if price <= cap {
                     let headroom = max(0, cap - price)
                     let points = min(20, Int(headroom / 400))
@@ -333,7 +338,7 @@ public enum BikeFilterEngine {
             }
         }
 
-        if let maxBudget = filters.maxBudget, let best = bike.bestPrice {
+        if let maxBudget = filters.maxBudget, let best = bike.displayBestPrice {
             factors.append(.init(id: "active-budget", title: "Active budget filter", points: best <= maxBudget ? 8 : -8, note: best <= maxBudget ? "Within current budget filter" : "Outside current budget filter"))
         }
 

@@ -32,7 +32,7 @@ struct WatchlistView: View {
                                             Text("\(bike.brand) \(bike.model)")
                                                 .font(.subheadline.weight(.semibold))
                                                 .foregroundStyle(.primary)
-                                            Text("Best \(Formatting.currency(bike.bestPrice)) · Target \(Formatting.currency(item.targetPrice))")
+                                            Text("Best \(Formatting.currency(bike.displayBestPrice)) · Target \(Formatting.currency(item.targetPrice))")
                                                 .font(.caption)
                                                 .foregroundStyle(.secondary)
                                         }
@@ -77,7 +77,7 @@ struct WatchlistView: View {
                                                 Text("\(bike.brand) \(bike.model)")
                                                     .font(.headline)
                                                     .foregroundStyle(.primary)
-                                                Text("Best: \(Formatting.currency(bike.bestPrice))")
+                                                Text("Best: \(Formatting.currency(bike.displayBestPrice))")
                                                     .font(.subheadline.weight(.semibold))
                                                     .foregroundStyle(Color.rGreen)
                                                 Text("Target: \(Formatting.currency(item.targetPrice))")
@@ -112,7 +112,7 @@ struct WatchlistView: View {
                                         }
                                         .buttonStyle(.bordered)
 
-                                        Button("Record today's price") {
+                                        Button("Snapshot Price") {
                                             snapshotCurrentPrice(for: item, bike: bike)
                                         }
                                         .buttonStyle(.bordered)
@@ -219,7 +219,7 @@ struct WatchlistView: View {
 
     private var alertItems: [WatchlistItem] {
         sortedItems.filter { item in
-            guard let current = bike(for: item)?.bestPrice else { return false }
+            guard let current = bike(for: item)?.displayBestPrice else { return false }
             return current <= item.targetPrice
         }
     }
@@ -259,7 +259,7 @@ struct WatchlistView: View {
     }
 
     private func snapshotCurrentPrice(for item: WatchlistItem, bike: Bike) {
-        if let best = bike.bestPrice {
+        if let best = bike.displayBestPrice {
             item.priceHistory.append(best)
             if item.priceHistory.count > 20 {
                 item.priceHistory = Array(item.priceHistory.suffix(20))

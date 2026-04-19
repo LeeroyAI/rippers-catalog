@@ -86,20 +86,30 @@ struct BikeCardView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 8))
             }
 
-            if let price = bike.bestPrice {
-                Text("Best: \(Formatting.currency(price))")
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(Color.rGreen)
-            } else {
-                Text("See retailer for pricing")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
+            Text("Best: \(Formatting.currency(bike.displayBestPrice))")
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(Color.rGreen)
 
-            if !sortedRetailerPrices.isEmpty {
-                Text("\(sortedRetailerPrices.count) retailer\(sortedRetailerPrices.count == 1 ? "" : "s") · tap for details")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+            VStack(spacing: 6) {
+                ForEach(bike.retailerPriceLines, id: \.id) { row in
+                    HStack {
+                        Text(row.displayName)
+                            .font(.caption)
+                        if let r = row.retailer, !r.isAustralian {
+                            Text("INTL")
+                                .font(.caption2.weight(.semibold))
+                                .foregroundStyle(Color.rBadgeForeground)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color.rBlueBg)
+                                .clipShape(Capsule())
+                        }
+                        Spacer()
+                        Text(Formatting.currency(row.price))
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(row.price == bike.displayBestPrice ? Color.rGreen : Color.primary)
+                    }
+                }
             }
 
             Text("Sizes: \(bike.sizes.joined(separator: ", "))")
@@ -117,9 +127,9 @@ struct BikeCardView: View {
 
                 Spacer()
 
-                if let bestRow = sortedRetailerPrices.first,
-                   let directURL = bestRow.retailer.directURL(for: bike) {
-                    Link(destination: directURL) {
+                if let bestRow = bike.retailerPriceLines.first,
+                   let dealURL = bestDealURL(for: bestRow) {
+                    Link(destination: dealURL) {
                         HStack(spacing: 4) {
                             Text("Best Deal")
                             Image(systemName: "arrow.up.right")
@@ -247,15 +257,10 @@ struct BikeCardView: View {
         }
     }
 
-    private var sortedRetailerPrices: [(retailer: Retailer, price: Double)] {
-        bike.prices
-            .compactMap { key, value in
-                guard let retailer = RETAILERS.first(where: { $0.id == key }) else { return nil }
-                return (retailer, value)
-            }
-            .sorted(by: { $0.price < $1.price })
-            .prefix(3)
-            .map { $0 }
+    private func bestDealURL(for row: (id: String, displayName: String, price: Double, retailer: Retailer?)) -> URL? {
+        if let r = row.retailer, let u = r.dealURL(for: bike) { return u }
+        if let u = URL(string: bike.sourceUrl), !bike.sourceUrl.isEmpty { return u }
+        return nil
     }
 
     private func toggleWatch() {
@@ -264,8 +269,8 @@ struct BikeCardView: View {
         } else {
             modelContext.insert(WatchlistItem(
                 bikeId: bike.id,
-                targetPrice: bike.bestPrice ?? 0,
-                priceHistory: [bike.bestPrice ?? 0]
+                targetPrice: bike.displayBestPrice ?? 0,
+                priceHistory: [bike.displayBestPrice ?? 0]
             ))
         }
     }
@@ -292,6 +297,7 @@ struct BikeResolvedImageView<Placeholder: View>: View {
                             .resizable()
                             .aspectRatio(contentMode: contentMode)
                             .padding(imagePadding)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
                     case .failure:
                         placeholder()
                     @unknown default:
@@ -302,6 +308,8 @@ struct BikeResolvedImageView<Placeholder: View>: View {
                 progressPlaceholder
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .clipped()
         .task(id: bike.imageCacheKey) {
             await resolve()
         }

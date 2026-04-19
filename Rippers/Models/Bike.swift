@@ -28,9 +28,6 @@ public struct Bike: Identifiable, Hashable, Sendable {
     public let range: String?
     public let ageRange: String?
     public let imageUrl: String?
-    // Per-retailer verified product page URLs, keyed by retailer ID.
-    // When present these are used instead of sourceUrl or search fallbacks.
-    public let retailerUrls: [String: String]
 
     public init(
         id: Int,
@@ -59,8 +56,7 @@ public struct Bike: Identifiable, Hashable, Sendable {
         battery: String? = nil,
         range: String? = nil,
         ageRange: String? = nil,
-        imageUrl: String? = nil,
-        retailerUrls: [String: String] = [:]
+        imageUrl: String? = nil
     ) {
         self.id = id
         self.brand = brand
@@ -89,17 +85,12 @@ public struct Bike: Identifiable, Hashable, Sendable {
         self.range = range
         self.ageRange = ageRange
         self.imageUrl = imageUrl
-        self.retailerUrls = retailerUrls
     }
 
     /// Fast local fallback only. Dynamic resolution happens via `BikeImageResolver`.
+    /// Prefer bundled catalog product shots over live `imageUrl` — the search API often attaches
+    /// lifestyle or image-search thumbnails that are not clean product photography.
     public var effectiveImageURL: URL? {
-        if let s = imageUrl,
-           !s.isEmpty,
-           let u = URL(string: s),
-           Self.isLikelyProductImageURL(u) {
-            return u
-        }
         if let s = BIKE_IMAGES[id],
            let u = URL(string: s),
            Self.isLikelyProductImageURL(u) {
@@ -119,6 +110,12 @@ public struct Bike: Identifiable, Hashable, Sendable {
            Self.isLikelyProductImageURL(u) {
             return u
         }
+        if let s = imageUrl,
+           !s.isEmpty,
+           let u = URL(string: s),
+           Self.isLikelyProductImageURL(u) {
+            return u
+        }
         return nil
     }
 
@@ -126,7 +123,21 @@ public struct Bike: Identifiable, Hashable, Sendable {
         "\(brand.lowercased())|\(model.lowercased())|\(year)"
     }
 
-    /// Lowest currently in-stock price across known retailers.
+    /// Embedded catalog row with the same brand + model (used when live/API omitted prices).
+    public var catalogTwin: Bike? {
+        BIKES.first {
+            $0.brand.caseInsensitiveCompare(brand) == .orderedSame &&
+            $0.model.caseInsensitiveCompare(model) == .orderedSame
+        }
+    }
+
+    /// Retailer → price for UI: live data first; if empty, fall back to the bundled catalog twin.
+    public var resolvedPrices: [String: Double] {
+        if !prices.isEmpty { return prices }
+        return catalogTwin?.prices ?? [:]
+    }
+
+    /// Lowest currently in-stock price across known retailers (live `prices` + `inStock` only).
     public var bestPrice: Double? {
         prices
             .filter { inStock.contains($0.key) }
@@ -134,26 +145,32 @@ public struct Bike: Identifiable, Hashable, Sendable {
             .min()
     }
 
+    /// Lowest listed price from any retailer in `resolvedPrices` (ignores in-stock flags).
+    public var lowestListedPrice: Double? {
+        guard !resolvedPrices.isEmpty else { return nil }
+        return resolvedPrices.values.min()
+    }
+
+    /// Price to use for discovery UI and profile matching when stock flags are missing.
+    public var displayBestPrice: Double? {
+        bestPrice ?? lowestListedPrice
+    }
+
+    /// Sorted lines for retailer tables — includes entries even when `inStock` is empty; unknown keys show raw label.
+    public var retailerPriceLines: [(id: String, displayName: String, price: Double, retailer: Retailer?)] {
+        resolvedPrices
+            .map { key, value in
+                let r = RETAILERS.first(where: { $0.id == key })
+                return (id: key, displayName: r?.name ?? key, price: value, retailer: r)
+            }
+            .sorted { $0.price < $1.price }
+    }
+
     public var bestRetailerId: String? {
         prices
             .filter { inStock.contains($0.key) }
             .min(by: { $0.value < $1.value })?
             .key
-    }
-
-    public var displayBestPrice: Double? { bestPrice }
-
-    public typealias RetailerPriceLine = (id: String, displayName: String, price: Double, retailer: Retailer?)
-
-    public var retailerPriceLines: [RetailerPriceLine] {
-        prices
-            .filter { inStock.contains($0.key) }
-            .compactMap { key, value -> RetailerPriceLine? in
-                let retailer = RETAILERS.first { $0.id == key }
-                let name = retailer?.name ?? key
-                return (id: key, displayName: name, price: value, retailer: retailer)
-            }
-            .sorted { $0.price < $1.price }
     }
 
     public var savings: Double? {
@@ -199,7 +216,8 @@ public struct Bike: Identifiable, Hashable, Sendable {
         let hasPositive = positiveTokens.contains { full.contains($0) }
 
         let strongNegativeTokens = [
-            "action", "lifestyle", "riding", "rider", "landscape", "scenic", "jump", "park", "banner"
+            "action", "lifestyle", "riding", "rider", "landscape", "scenic", "jump", "park", "banner",
+            "cyclist", "enduro-world", "world-cup", "race-run",
         ]
         let hasStrongNegative = strongNegativeTokens.contains { full.contains($0) }
 
@@ -219,7 +237,6 @@ public struct Bike: Identifiable, Hashable, Sendable {
             "commencal",
             "bikes.com",
             "forbiddenbike.com",
-            "vitalmtb.com",
             "bigcommerce.com",
             "trek.scene7.com",
             "specialized.com",
@@ -238,7 +255,7 @@ public struct Bike: Identifiable, Hashable, Sendable {
 actor BikeImageResolver {
     static let shared = BikeImageResolver()
 
-    private let cacheKey = "rippers.dynamicBikeImageCache.v3"
+    private let cacheKey = "rippers.dynamicBikeImageCache.v4"
     private var memoryCache: [String: URL] = [:]
     private var inFlight: [String: Task<URL?, Never>] = [:]
 
@@ -461,7 +478,6 @@ public struct BikeRecord: Codable, Sendable {
     public let range: String?
     public let ageRange: String?
     public let imageUrl: String?
-    public let retailerUrls: [String: String]?  // optional so old API responses decode without error
 
     public init(_ bike: Bike) {
         id = bike.id
@@ -491,7 +507,6 @@ public struct BikeRecord: Codable, Sendable {
         range = bike.range
         ageRange = bike.ageRange
         imageUrl = bike.imageUrl
-        retailerUrls = bike.retailerUrls.isEmpty ? nil : bike.retailerUrls
     }
 
     public var bike: Bike {
@@ -522,8 +537,7 @@ public struct BikeRecord: Codable, Sendable {
             battery: battery,
             range: range,
             ageRange: ageRange,
-            imageUrl: imageUrl,
-            retailerUrls: retailerUrls ?? [:]
+            imageUrl: imageUrl
         )
     }
 }

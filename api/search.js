@@ -231,47 +231,6 @@ async function braveSearch(query, country, cursor) {
 }
 
 // ---------------------------------------------------------------------------
-// Complete-bike guard — rejects components, accessories, apparel
-// ---------------------------------------------------------------------------
-
-const COMPONENT_BRANDS = new Set([
-  'rockshox', 'fox racing shox', 'fox', 'marzocchi', 'manitou', 'sr suntour',
-  'shimano', 'sram', 'campagnolo', 'microshift',
-  'maxxis', 'schwalbe', 'wtb', 'continental', 'michelin',
-  'crankbrothers', 'magura', 'hayes', 'formula', 'trp', 'hope',
-  'e*thirteen', 'race face', 'absoluteblack', 'oneup', 'wolf tooth',
-  'selle italia', 'fi\'zi:k', 'ergon',
-]);
-
-const COMPONENT_MODEL_KEYWORDS = [
-  'fork', 'frameset', ' frame', 'wheelset', 'wheel set',
-  'tyre', 'tire', 'inner tube', 'tube ',
-  'derailleur', 'cassette', 'crankset', 'crank arm', 'bottom bracket',
-  'handlebar', ' stem', 'seatpost', 'seat post', 'saddle',
-  'pedal', 'grip ', 'brake lever', 'rotor',
-  'shock absorber', 'rear shock', 'air spring',
-  'helmet', 'jersey', 'shorts', 'gloves', 'shoes', 'pads',
-  'pump', 'tool', 'bag ', 'pack',
-];
-
-const VALID_CATEGORIES = new Set([
-  'Trail', 'Enduro', 'XC / Cross-Country', 'Downhill',
-  'All-Mountain', 'Hardtail', 'eBike',
-]);
-
-function isCompleteBike(b) {
-  const brandLower = (b.brand || '').toLowerCase().trim();
-  if (COMPONENT_BRANDS.has(brandLower)) return false;
-
-  const nameLower = `${b.brand} ${b.model}`.toLowerCase();
-  if (COMPONENT_MODEL_KEYWORDS.some((kw) => nameLower.includes(kw))) return false;
-
-  if (b.category && !VALID_CATEGORIES.has(b.category)) return false;
-
-  return true;
-}
-
-// ---------------------------------------------------------------------------
 // Claude extraction — structures raw search snippets into BikeRecord JSON
 // ---------------------------------------------------------------------------
 
@@ -305,19 +264,6 @@ async function extractBikes(snippets, criteria) {
     .join("\n");
 
   const prompt = `You are a mountain bike product data specialist with comprehensive knowledge of MTB specifications for all major brands (Specialized, Trek, Giant, Santa Cruz, Yeti, Canyon, Orbea, Scott, Norco, Rocky Mountain, Intense, Pivot, etc.).
-
-CRITICAL RULE — COMPLETE BIKES ONLY:
-Only extract COMPLETE, RIDEABLE BICYCLES. Absolutely DO NOT include:
-- Forks (e.g. RockShox Pike, Fox 36, Marzocchi Bomber)
-- Frames or framesets
-- Rear shocks or air springs
-- Wheelsets, wheels, or tyres
-- Drivetrain components (derailleurs, cassettes, cranksets)
-- Brakes or brake components
-- Stems, handlebars, seatposts, saddles, grips
-- Helmets, pads, shoes, gloves, or any apparel
-- Accessories or bike parts of any kind
-If a snippet is about a component or accessory — skip it entirely.
 
 Your task has TWO PHASES:
 
@@ -355,8 +301,7 @@ For each bike return a JSON object with EXACTLY these fields:
   "prices": {"<retailer name>": <price as number in AUD>},
   "wasPrice": <original price if on sale, else null>,
   "inStock": ["<retailer name — only if snippet explicitly indicates in stock>"],
-  "sourceUrl": "<product page URL from the primary snippet>",
-  "retailerUrls": {"<retailer name>": "<direct product page URL for that retailer — only include if you have a real URL from the snippet, never guess>"},
+  "sourceUrl": "<product page URL from the snippet>",
   "isEbike": <true if electric, else false>,
   "motorBrand": <null or motor brand, e.g. "Shimano", "Bosch", "Brose", "TQ">,
   "motor": <null or motor model + torque, e.g. "EP8 RS 85Nm", "Performance CX 85Nm">,
@@ -376,10 +321,14 @@ MANDATORY SPEC RULES — violations are not acceptable:
 - description: MUST be 3 sentences, specific to this model — not generic filler.
 
 PRICE RULES:
-- Only include prices actually visible in the snippets
+- Only include prices actually visible in the snippets (title, description, or clearly tied to that product)
 - If price is in USD convert to AUD (×1.55); GBP ×2.0
 - Retailer names: short and recognisable — "99 Bikes", "Pushys", "Canyon AU", "Trek AU", "Specialized AU", "Giant AU", "JetBlack Cycling"
-- Do NOT invent prices — leave prices as {} if none shown
+- Do NOT invent or guess prices when no figure appears anywhere for that bike — leave prices as {} if none shown
+
+OUTPUT SIZE:
+- Include every distinct bike you can justify from the snippets, up to roughly 12–16 rows when the sources mention that many.
+- Do not artificially cap the list at a small number (e.g. 3) if more bikes are clearly present in the search results above.
 
 Return ONLY a valid JSON array, no markdown, no explanation.`;
 
@@ -400,7 +349,7 @@ Return ONLY a valid JSON array, no markdown, no explanation.`;
 
   const raw = JSON.parse(match[0]);
   return raw
-    .filter((b) => b && b.brand && b.model && isCompleteBike(b))
+    .filter((b) => b && b.brand && b.model)
     .map((b) => ({
       ...b,
       id: b.id || stableHash(b.brand + b.model + b.year),

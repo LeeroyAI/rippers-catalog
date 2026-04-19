@@ -76,15 +76,39 @@ struct SearchView: View {
         return decoded
     }
 
+    /// Up to five bikes that pass profile tailoring: prefer the live catalog, then fill from the embedded `BIKES` pool so Home always has picks when a profile exists.
     private var forYouTopPicks: [(bike: Bike, score: Int)] {
         guard let profile = activeProfile else { return [] }
+        return rankedProfilePicks(for: profile)
+    }
+
+    private func rankedProfilePicks(for profile: RiderProfile) -> [(bike: Bike, score: Int)] {
         var s = FilterState()
         s.tailorToProfile = true
-        s.profileCategoryHint = profile.preferredCategory == "Any" ? nil : profile.preferredCategory
+        s.profileCategoryHint = profile.categoryFilterHint
         s.profileStyleHint = profile.style
         s.profileBudgetCap = profile.budgetCap > 0 ? profile.budgetCap : nil
-        let inStock = filterStore.catalog.filter { !$0.inStock.isEmpty }
-        return Array(BikeFilterEngine.rank(bikes: inStock, filters: s).prefix(5))
+
+        let liveMatched = BikeFilterEngine.apply(bikes: filterStore.catalog, filters: s)
+        var rows = BikeFilterEngine.rank(bikes: liveMatched, filters: s)
+        var seen = Set(rows.map { $0.bike.id })
+
+        if rows.count < 5 {
+            let staticPool = BIKES.filter { !seen.contains($0.id) }
+            let staticMatched = BikeFilterEngine.apply(bikes: staticPool, filters: s)
+            let staticRows = BikeFilterEngine.rank(bikes: staticMatched, filters: s)
+            rows.append(contentsOf: staticRows)
+        }
+
+        rows.sort { lhs, rhs in
+            if lhs.score != rhs.score { return lhs.score > rhs.score }
+            let lp = lhs.bike.displayBestPrice ?? .greatestFiniteMagnitude
+            let rp = rhs.bike.displayBestPrice ?? .greatestFiniteMagnitude
+            if lp != rp { return lp < rp }
+            return lhs.bike.id < rhs.bike.id
+        }
+
+        return Array(rows.prefix(5))
     }
 
     private var currentSearchFingerprint: String {
@@ -258,14 +282,11 @@ struct SearchView: View {
                 .disabled(filterStore.isLiveSearching)
 
                 Button {
-                    filterStore.clearLiveResults()
-                    filterStore.state = FilterState()
-                    maxBudgetText = ""
                     appState.activeTab = .results
                 } label: {
                     HStack(spacing: 8) {
                         Image(systemName: "list.bullet")
-                        Text("Browse all \(filterStore.catalog.count) bikes")
+                        Text("Browse \(filterStore.catalog.count) bikes in catalog")
                     }
                     .frame(maxWidth: .infinity)
                     .font(.subheadline)
@@ -767,10 +788,6 @@ struct SearchView: View {
             filterStore.liveResults = result.bikes
             filterStore.liveResultSource = "Live · \(result.count) bikes from web"
             lastSearchFingerprint = currentSearchFingerprint
-            // Persist results for this profile — grows the local bike library
-            if let profileId = activeProfile?.id {
-                catalogStore.save(result.bikes, profileTag: profileId.uuidString)
-            }
         } catch {
             filterStore.liveSearchError = error.localizedDescription
             lastSearchFingerprint = currentSearchFingerprint
@@ -878,7 +895,7 @@ struct SearchView: View {
             weightKg: Int(profileWeightText) ?? 0,
             experience: profileExperience,
             style: profileStyle,
-            preferredCategory: inferredCategory(for: profileStyle),
+            preferredCategory: RiderProfile.inferredCategory(for: profileStyle),
             budgetCap: Double(profileBudgetText) ?? 0,
             avatarData: profileAvatarData
         )
@@ -896,7 +913,7 @@ struct SearchView: View {
             activeProfile.weightKg = Int(profileWeightText) ?? 0
             activeProfile.experience = profileExperience
             activeProfile.style = profileStyle
-            activeProfile.preferredCategory = inferredCategory(for: profileStyle)
+            activeProfile.preferredCategory = RiderProfile.inferredCategory(for: profileStyle)
             activeProfile.budgetCap = Double(profileBudgetText) ?? 0
             if let profileAvatarData { activeProfile.avatarData = profileAvatarData }
             photoUploadStatus = "Updated \(activeProfile.name)'s profile settings."
@@ -920,11 +937,15 @@ struct SearchView: View {
 
     private func applyProfileHints(_ profile: RiderProfile) {
         filterStore.state.tailorToProfile = true
-        let inferredCat = inferredCategory(for: profile.style)
+        let inferredCat = RiderProfile.inferredCategory(for: profile.style)
+        if profile.preferredCategory != inferredCat {
+            profile.preferredCategory = inferredCat
+        }
         filterStore.state.profileCategoryHint = inferredCat == "Any" ? nil : inferredCat
         filterStore.state.profileStyleHint = profile.style
         filterStore.state.profileHeightCm = profile.heightCm > 0 ? profile.heightCm : nil
         filterStore.state.profileBudgetCap = profile.budgetCap > 0 ? profile.budgetCap : nil
+        filterStore.state.category = inferredCat
         if profile.budgetCap > 0 {
             filterStore.state.maxBudget = profile.budgetCap
             maxBudgetText = String(Int(profile.budgetCap))
@@ -957,18 +978,8 @@ struct SearchView: View {
         profileBudgetText = profile.budgetCap > 0 ? String(Int(profile.budgetCap)) : ""
         profileExperience = profile.experience
         profileStyle = profile.style
-        profileCategory = inferredCategory(for: profile.style)
+        profileCategory = RiderProfile.inferredCategory(for: profile.style)
         profileAvatarData = profile.avatarData
-    }
-
-    private func inferredCategory(for style: String) -> String {
-        switch style.lowercased() {
-        case "trail", "all-mountain", "all mountain": return "Trail"
-        case "enduro", "downhill", "freeride", "gravity": return "Enduro"
-        case "cross-country", "cross country", "xc": return "XC / Cross-Country"
-        case "dirt jump / pump track", "dirt jump", "pump track", "slopestyle": return "Hardtail"
-        default: return "Any"
-        }
     }
 
     private func clearProfileDraft() {
@@ -991,7 +1002,7 @@ struct SearchView: View {
 
     @ViewBuilder
     private var welcomeHero: some View {
-        if let profile = activeProfile, !forYouTopPicks.isEmpty {
+        if let profile = activeProfile {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 3) {
@@ -1001,29 +1012,38 @@ struct SearchView: View {
                             .font(.caption).foregroundStyle(.secondary)
                     }
                     Spacer()
-                    Button {
-                        appState.activeTab = .results
-                    } label: {
-                        HStack(spacing: 2) {
-                            Text("See all").font(.caption.weight(.semibold))
-                            Image(systemName: "chevron.right").font(.caption2.weight(.semibold))
+                    if !forYouTopPicks.isEmpty {
+                        Button {
+                            appState.activeTab = .results
+                        } label: {
+                            HStack(spacing: 2) {
+                                Text("See all").font(.caption.weight(.semibold))
+                                Image(systemName: "chevron.right").font(.caption2.weight(.semibold))
+                            }
                         }
+                        .foregroundStyle(Color.rOrange)
                     }
-                    .foregroundStyle(Color.rOrange)
                 }
 
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 10) {
-                        ForEach(forYouTopPicks, id: \.bike.id) { row in
-                            Button {
-                                selectedForYouBike = row.bike
-                            } label: {
-                                forYouBikeCard(bike: row.bike, score: row.score)
+                if forYouTopPicks.isEmpty {
+                    Text("No bikes match every detail of your profile yet. Try setting category to Any or raising the budget cap, then pull to refresh or run a live search.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                } else {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 10) {
+                            ForEach(forYouTopPicks, id: \.bike.id) { row in
+                                Button {
+                                    selectedForYouBike = row.bike
+                                } label: {
+                                    forYouBikeCard(bike: row.bike, score: row.score)
+                                }
+                                .buttonStyle(.plain)
                             }
-                            .buttonStyle(.plain)
                         }
+                        .padding(.vertical, 2)
                     }
-                    .padding(.vertical, 2)
                 }
             }
             .padding(14)
@@ -1073,7 +1093,7 @@ struct SearchView: View {
                     .font(.caption.weight(.semibold)).foregroundStyle(.primary).lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
                 HStack(spacing: 4) {
-                    Text(Formatting.currency(bike.bestPrice))
+                    Text(Formatting.currency(bike.displayBestPrice))
                         .font(.caption2.weight(.bold)).foregroundStyle(Color.rGreen)
                     Spacer()
                     Text("\(score)%")
@@ -1158,7 +1178,7 @@ struct SearchView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("What is the catalog?")
                             .font(.headline)
-                        Text("The catalog is your personal bike library — it starts with ~48 AU mountain bikes and grows every time you run a Live Search. Results are saved to your profile and persist between sessions.\n\nLive Search fetches fresh stock, specs, and pricing from AU retailer websites in real time using Brave Search and Claude AI. Tap Refresh to run a new search now.")
+                        Text("The catalog is a curated set of ~48 AU mountain bikes loaded from a hosted JSON file and refreshed hourly. It powers the Results, Sizing, Budget, and Trip pages.\n\nLive Search goes beyond the catalog — it fetches fresh stock, specs, and pricing directly from AU retailer websites in real time using Brave Search and Claude AI.")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
@@ -1167,7 +1187,10 @@ struct SearchView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 14))
 
                     Button {
-                        Task { await catalogStore.refresh() }
+                        Task {
+                            await catalogStore.bootstrap()
+                            filterStore.catalog = catalogStore.bikes
+                        }
                         showCatalogInfo = false
                     } label: {
                         HStack(spacing: 8) {
@@ -1213,7 +1236,7 @@ struct SearchView: View {
                 statCard(activeProfile != nil ? "Profile Matches" : "Bikes Found", "\(filterStore.filteredBikes.count)") {
                     appState.activeTab = .results
                 }
-                statCard("Best Price", Formatting.currency(filterStore.filteredBikes.compactMap(\.bestPrice).min())) {
+                statCard("Best Price", Formatting.currency(filterStore.filteredBikes.compactMap(\.displayBestPrice).min())) {
                     appState.activeTab = .results
                 }
                 statCard("Retailers", "\(RETAILERS.count)") {
