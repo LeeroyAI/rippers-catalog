@@ -1,6 +1,5 @@
 import SwiftUI
 import SwiftData
-import UIKit
 
 struct ContentView: View {
     @EnvironmentObject private var appState: AppState
@@ -14,24 +13,9 @@ struct ContentView: View {
     private var activeProfile: RiderProfile? { profiles.first(where: { $0.isActive }) }
     private var activeProfileTag: String { activeProfile?.id.uuidString ?? "" }
 
-    @ViewBuilder
     private var profileTabItemContent: some View {
-        if let data = activeProfile?.avatarData,
-           let uiImage = UIImage(data: data),
-           uiImage.size.width > 0 {
-            Label {
-                Text("Profile")
-            } icon: {
-                Image(uiImage: uiImage)
-                    .renderingMode(.original)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: 26, height: 26)
-                    .clipShape(Circle())
-            }
-        } else {
-            Label("Profile", systemImage: "person.crop.circle")
-        }
+        let hasAvatar = activeProfile?.avatarData != nil
+        return Label("Profile", systemImage: hasAvatar ? "person.crop.circle.fill" : "person.crop.circle")
     }
 
     var body: some View {
