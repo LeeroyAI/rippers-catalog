@@ -143,20 +143,15 @@ public struct Bike: Identifiable, Hashable, Sendable {
 
     public var displayBestPrice: Double? { bestPrice }
 
-    public struct RetailerPriceLine: Identifiable {
-        public let id: String
-        public let displayName: String
-        public let price: Double
-        public let retailer: Retailer?
-    }
+    public typealias RetailerPriceLine = (id: String, displayName: String, price: Double, retailer: Retailer?)
 
     public var retailerPriceLines: [RetailerPriceLine] {
         prices
             .filter { inStock.contains($0.key) }
-            .compactMap { key, value in
+            .compactMap { key, value -> RetailerPriceLine? in
                 let retailer = RETAILERS.first { $0.id == key }
                 let name = retailer?.name ?? key
-                return RetailerPriceLine(id: key, displayName: name, price: value, retailer: retailer)
+                return (id: key, displayName: name, price: value, retailer: retailer)
             }
             .sorted { $0.price < $1.price }
     }

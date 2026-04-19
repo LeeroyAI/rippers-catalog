@@ -61,7 +61,7 @@ struct BikeDetailView: View {
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         } else {
-                            ForEach(bike.retailerPriceLines, id: \.id) { row in
+                            ForEach(Array(bike.retailerPriceLines.enumerated()), id: \.offset) { _, row in
                                 HStack {
                                     VStack(alignment: .leading) {
                                         Text(row.displayName)
@@ -157,7 +157,7 @@ struct BikeDetailView: View {
         return retailer.isAustralian ? "AU" : "INTL"
     }
 
-    private func openDealURL(for row: Bike.RetailerPriceLine) {
+    private func openDealURL(for row: (id: String, displayName: String, price: Double, retailer: Retailer?)) {
         if let retailer = row.retailer, let url = retailer.dealURL(for: bike) {
             openURL(url)
         } else if let url = URL(string: bike.sourceUrl), !bike.sourceUrl.isEmpty {
