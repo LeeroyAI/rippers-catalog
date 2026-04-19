@@ -1018,9 +1018,8 @@ struct SearchView: View {
                             .font(.subheadline).foregroundStyle(.secondary)
                     }
                     Spacer()
-                    Image(systemName: "figure.outdoor.cycle")
-                        .font(.largeTitle.weight(.bold))
-                        .foregroundStyle(Color.rOrange)
+                    RippersLogoMark()
+                        .frame(width: 72, height: 72)
                 }
                 Button {
                     showCreateProfileSheet = true

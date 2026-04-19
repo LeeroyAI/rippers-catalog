@@ -72,7 +72,7 @@ struct SplashView: View {
     }
 }
 
-private struct RippersLogoMark: View {
+struct RippersLogoMark: View {
     var body: some View {
         ZStack {
             Circle()
@@ -116,7 +116,7 @@ private struct RippersLogoMark: View {
     }
 }
 
-private struct Triangle: Shape {
+struct Triangle: Shape {
     func path(in rect: CGRect) -> Path {
         var path = Path()
         path.move(to: CGPoint(x: rect.midX, y: rect.minY))
