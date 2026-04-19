@@ -365,10 +365,32 @@ Return ONLY a valid JSON array, no markdown, no explanation.`;
 // Brave Image Search — fetches a high-quality product image for a bike
 // ---------------------------------------------------------------------------
 
+// Domains that reliably host clean product/studio shots
+const PRODUCT_DOMAINS = new Set([
+  "specialized.com", "trekbikes.com", "giant-bicycles.com", "santacruzbicycles.com",
+  "yeticycles.com", "canyon.com", "orbea.com", "scott-sports.com", "norco.com",
+  "bikes.com", "transitionbikes.com", "ibiscycles.com", "cannondale.com",
+  "konaworld.com", "merida-bikes.com", "nukeproof.com", "commencal.com",
+  "pivotcycles.com", "evil-bikes.com", "devinci.com", "forbiddenbike.com",
+  "yt-industries.com", "intensecycles.com", "intense.com",
+  "bikeonline.com.au", "pushys.com.au", "maddogcycles.com.au", "anacyclery.com.au",
+  "99bikes.com.au", "chainreactioncycles.com", "wiggle.com", "bikeexchange.com.au",
+]);
+
+// Sources that frequently serve action/lifestyle shots — deprioritise
+const ACTION_DOMAINS = new Set([
+  "pinkbike.com", "singletracks.com", "mtbr.com", "redbull.com",
+  "instagram.com", "pinterest.com", "facebook.com", "youtube.com",
+  "vitalbmx.com", "dirt.cc", "mbr.co.uk",
+]);
+
+// URL path fragments that suggest a non-product shot
+const ACTION_PATH_HINTS = ["lifestyle", "action", "riding", "rider", "trail", "-in-action", "athlete"];
+
 async function braveImageSearch(query, country = "AU") {
   const url = new URL("https://api.search.brave.com/res/v1/images/search");
   url.searchParams.set("q", query);
-  url.searchParams.set("count", "5");
+  url.searchParams.set("count", "10");
   url.searchParams.set("country", country === "AU" ? "AU" : "ALL");
   url.searchParams.set("search_lang", "en");
   url.searchParams.set("safesearch", "strict");
@@ -385,14 +407,31 @@ async function braveImageSearch(query, country = "AU") {
   if (!response.ok) return null;
   const data = await response.json();
 
-  // Prefer full-size source image, fall back to thumbnail
+  let best = null;
+  let bestScore = -99;
+
   for (const result of data.results || []) {
     const img = result.properties?.url || result.thumbnail?.original || result.thumbnail?.src;
-    if (img && img.startsWith("http") && !img.includes("logo") && !img.includes("favicon")) {
-      return img;
-    }
+    if (!img || !img.startsWith("http")) continue;
+    const imgLower = img.toLowerCase();
+    if (imgLower.includes("logo") || imgLower.includes("favicon")) continue;
+
+    let score = 0;
+    const sourceDomain = (() => { try { return new URL(result.url || "").hostname.replace("www.", ""); } catch { return ""; } })();
+    const imgDomain = (() => { try { return new URL(img).hostname.replace("www.", ""); } catch { return ""; } })();
+
+    // Strong boost for known product-image sources
+    if (PRODUCT_DOMAINS.has(sourceDomain) || PRODUCT_DOMAINS.has(imgDomain)) score += 15;
+    // Penalise known action/lifestyle sources
+    if (ACTION_DOMAINS.has(sourceDomain) || ACTION_DOMAINS.has(imgDomain)) score -= 20;
+    // Penalise action-shot path hints in the image URL
+    if (ACTION_PATH_HINTS.some((h) => imgLower.includes(h))) score -= 10;
+    // Prefer full-size source images over thumbnails
+    if (result.properties?.url) score += 3;
+
+    if (score > bestScore) { bestScore = score; best = img; }
   }
-  return null;
+  return best;
 }
 
 // Official brand website domains — used to target product images directly
@@ -424,31 +463,37 @@ const BRAND_DOMAINS = {
   "yt": "yt-industries.com",
 };
 
-// After extraction, fetch official brand product images for bikes missing one.
-// Tries the brand's own website first; falls back to a general product search.
+// Fetch a clean product-style image for every bike.
+// Always tries the brand's own site first (guarantees a studio/product shot).
+// If found, it replaces any snippet thumbnail (which may be an action shot).
+// Falls back to a product-specific image search if the brand site yields nothing.
 // Runs up to 8 in parallel to stay within the 60s function budget.
 async function enrichWithImages(bikes, country) {
-  const missing = bikes.filter((b) => !b.imageUrl || b.imageUrl === "");
-  if (missing.length === 0) return bikes;
-
   const imageMap = new Map();
   await Promise.allSettled(
-    missing.slice(0, 8).map(async (bike) => {
+    bikes.slice(0, 8).map(async (bike) => {
       const brandKey = bike.brand.toLowerCase();
       const domain = BRAND_DOMAINS[brandKey];
 
       let img = null;
-      // 1st choice: brand's own site (gives showroom-quality product images)
+      // 1st choice: brand's own site — always a clean product/studio shot
       if (domain) {
         img = await braveImageSearch(
           `"${bike.brand} ${bike.model}" site:${domain}`,
           country
         );
       }
-      // 2nd choice: general product search (retailer/review site product shots)
+      // 2nd choice: product-specific image search (retailer/manufacturer product shots only)
       if (!img) {
         img = await braveImageSearch(
-          `"${bike.brand} ${bike.model}" ${bike.year} mountain bike`,
+          `"${bike.brand} ${bike.model}" ${bike.year} bicycle "product" -rider -trail -action`,
+          country
+        );
+      }
+      // 3rd choice: broader search, still product-oriented
+      if (!img) {
+        img = await braveImageSearch(
+          `${bike.brand} ${bike.model} ${bike.year} mountain bike studio`,
           country
         );
       }
@@ -458,7 +503,9 @@ async function enrichWithImages(bikes, country) {
 
   return bikes.map((b) => ({
     ...b,
-    imageUrl: b.imageUrl && b.imageUrl !== "" ? b.imageUrl : imageMap.get(b.id) || "",
+    // Brand-site or product-search result overrides the snippet thumbnail.
+    // Fall back to snippet thumbnail only if enrichment found nothing.
+    imageUrl: imageMap.get(b.id) || b.imageUrl || "",
   }));
 }
 
