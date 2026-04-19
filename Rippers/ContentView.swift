@@ -19,16 +19,18 @@ struct ContentView: View {
         if let data = activeProfile?.avatarData,
            let uiImage = UIImage(data: data),
            uiImage.size.width > 0 {
-            Image(uiImage: uiImage)
-                .renderingMode(.original)
-                .resizable()
-                .scaledToFill()
-                .frame(width: 26, height: 26)
-                .clipShape(Circle())
-            Text("Profile")
+            Label {
+                Text("Profile")
+            } icon: {
+                Image(uiImage: uiImage)
+                    .renderingMode(.original)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 26, height: 26)
+                    .clipShape(Circle())
+            }
         } else {
-            Image(systemName: "person.crop.circle")
-            Text("Profile")
+            Label("Profile", systemImage: "person.crop.circle")
         }
     }
 
