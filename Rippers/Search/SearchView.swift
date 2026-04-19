@@ -1321,9 +1321,9 @@ struct SearchView: View {
 
     private func presetIcon(_ preset: SearchPreset) -> String {
         switch preset {
-        case .trailBudget: return "figure.outdoor.cycle"
-        case .gravity: return "mountain.2.fill"
-        case .ebike: return "bolt.fill"
+        case .trailBudget: return "bicycle"
+        case .gravity: return "chevron.down.circle.fill"
+        case .ebike: return "bolt.circle.fill"
         case .kids24: return "figure.child"
         }
     }
