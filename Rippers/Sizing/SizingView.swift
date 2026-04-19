@@ -3,6 +3,7 @@ import SwiftData
 
 struct SizingView: View {
     @EnvironmentObject private var filterStore: FilterStore
+    @EnvironmentObject private var appState: AppState
     @Query private var profiles: [RiderProfile]
     @State private var manualHeightText: String = ""
     @State private var manualStyle: RidingStyle = .trail
@@ -387,6 +388,17 @@ struct SizingView: View {
                 }
             }
             .clipShape(RoundedRectangle(cornerRadius: 10))
+            Button {
+                filterStore.state.wheel = "24\""
+                filterStore.state.category = "Any"
+                appState.activeTab = .results
+            } label: {
+                Label("Browse 24\" bikes in catalog", systemImage: "list.bullet")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(Color.rOrange)
+            .padding(.top, 4)
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)

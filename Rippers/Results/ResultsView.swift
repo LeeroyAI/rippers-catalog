@@ -249,6 +249,7 @@ private struct ResultsAIChatModal: View {
     @Environment(\.dismiss) private var dismiss
     @State private var input = ""
     @State private var messages: [ChatMessage] = []
+    @State private var isChatLoading = false
 
     var body: some View {
         NavigationStack {
@@ -295,10 +296,15 @@ private struct ResultsAIChatModal: View {
                 HStack(spacing: 8) {
                     TextField("Ask about bikes, budget, filters...", text: $input)
                         .textFieldStyle(.roundedBorder)
-                    Button("Send") { sendInput() }
-                        .buttonStyle(.borderedProminent)
-                        .tint(Color.rOrange)
-                        .disabled(input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        .disabled(isChatLoading)
+                    if isChatLoading {
+                        ProgressView().tint(Color.rOrange)
+                    } else {
+                        Button("Send") { Task { await sendInput() } }
+                            .buttonStyle(.borderedProminent)
+                            .tint(Color.rOrange)
+                            .disabled(input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    }
                 }
                 .padding(.horizontal, 12)
                 .padding(.bottom, 10)
@@ -322,17 +328,42 @@ private struct ResultsAIChatModal: View {
     private func quickAsk(_ prompt: String) -> some View {
         Button(prompt) {
             input = prompt
-            sendInput()
+            Task { await sendInput() }
         }
         .buttonStyle(.bordered)
+        .disabled(isChatLoading)
     }
 
-    private func sendInput() {
+    private func sendInput() async {
         let question = input.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !question.isEmpty else { return }
+        guard !question.isEmpty, !isChatLoading else { return }
         messages.append(.user(question))
         input = ""
-        messages.append(.assistant(reply(for: question)))
+        isChatLoading = true
+        defer { isChatLoading = false }
+
+        let context = buildContext()
+        let apiMessages = messages.map {
+            AIChatMessage(role: $0.role == .user ? "user" : "assistant", content: $0.text)
+        }
+        do {
+            let aiReply = try await AIChatService.shared.send(messages: apiMessages, context: context)
+            messages.append(.assistant(aiReply))
+        } catch {
+            messages.append(.assistant(reply(for: question)))
+        }
+    }
+
+    private func buildContext() -> String {
+        var parts: [String] = []
+        if !bikes.isEmpty {
+            let top3 = bikes.prefix(3).map { "\($0.brand) \($0.model) (\(Formatting.currency($0.bestPrice)))" }
+            parts.append("Current results (\(bikes.count) bikes). Top 3: \(top3.joined(separator: ", "))")
+        }
+        if !activeFilterLabels.isEmpty {
+            parts.append("Active filters: \(activeFilterLabels.joined(separator: ", "))")
+        }
+        return parts.joined(separator: ". ")
     }
 
     private func reply(for question: String) -> String {
