@@ -39,3 +39,32 @@ public final class RiderProfile {
         self.isActive = false
     }
 }
+
+extension RiderProfile {
+    /// Maps riding style to a catalog category for filters. Downhill / freeride / gravity use **Any** so results are driven by style rules (long-travel gravity bikes), not a single category label that mislabels Enduro vs Downhill.
+    public static func inferredCategory(for style: String) -> String {
+        let s = style.lowercased()
+        if s.contains("downhill") || s.contains("freeride") || s.contains("gravity") {
+            return "Any"
+        }
+        if s.contains("trail") || s.contains("all-mountain") || s.contains("all mountain") {
+            return "Trail"
+        }
+        if s.contains("enduro") {
+            return "Enduro"
+        }
+        if s.contains("cross-country") || s.contains("cross country") || s.contains("xc") {
+            return "XC / Cross-Country"
+        }
+        if s.contains("dirt jump") || s.contains("pump") || s.contains("slopestyle") {
+            return "Hardtail"
+        }
+        return "Any"
+    }
+
+    /// `nil` means no category bar — same as "Any".
+    public var categoryFilterHint: String? {
+        let c = Self.inferredCategory(for: style)
+        return c == "Any" ? nil : c
+    }
+}

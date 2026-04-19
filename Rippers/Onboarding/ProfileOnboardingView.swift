@@ -297,7 +297,7 @@ struct ProfileOnboardingView: View {
             weightKg: Int(weightText) ?? 0,
             experience: experience,
             style: style,
-            preferredCategory: inferredCategory(for: style),
+            preferredCategory: RiderProfile.inferredCategory(for: style),
             budgetCap: Double(budgetText) ?? 0
         )
         profile.isActive = true
@@ -311,18 +311,4 @@ struct ProfileOnboardingView: View {
             .foregroundStyle(.secondary)
     }
 
-    private func inferredCategory(for style: String) -> String {
-        switch RidingDisciplineKind.from(style) {
-        case .trail:
-            return "Trail"
-        case .gravity:
-            return "Enduro"
-        case .crossCountry:
-            return "XC / Cross-Country"
-        case .jump:
-            return "Hardtail"
-        case .other:
-            return "Any"
-        }
-    }
 }

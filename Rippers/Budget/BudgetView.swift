@@ -240,7 +240,7 @@ struct BudgetView: View {
         guard !candidates.isEmpty else { return filterStore.catalog.first?.id }
         guard let activeProfile else { return candidates.first?.id }
 
-        let preferredCategory = activeProfile.preferredCategory
+        let preferredCategory = RiderProfile.inferredCategory(for: activeProfile.style)
         let profileStyle = RidingDiscipline.from(activeProfile.style)
         let budgetCap = activeProfile.budgetCap
 

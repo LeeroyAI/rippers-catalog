@@ -34,7 +34,8 @@ struct TripPlannerView: View {
     var activeProfile: RiderProfile? { profiles.first(where: { $0.isActive }) }
     private var activeProfileSummary: String {
         guard let profile = activeProfile else { return "No active profile" }
-        let category = profile.preferredCategory == "Any" ? "Any category" : profile.preferredCategory
+        let inferredCat = RiderProfile.inferredCategory(for: profile.style)
+        let category = inferredCat == "Any" ? "Any category" : inferredCat
         let budget = profile.budgetCap > 0 ? "Budget \(Formatting.currency(profile.budgetCap))" : "No budget cap"
         return "\(profile.name) · \(profile.style) · \(category) · \(budget)"
     }
@@ -131,10 +132,11 @@ struct TripPlannerView: View {
             let locationOnlyBikes = bikes
             var profiledBikes = bikes
 
-            if profile.preferredCategory != "Any" {
+            let categoryFromStyle = RiderProfile.inferredCategory(for: profile.style)
+            if categoryFromStyle != "Any" {
                 profiledBikes = profiledBikes.filter { bike in
-                    bike.category == profile.preferredCategory ||
-                    (profile.preferredCategory == "Hardtail" && bike.suspension == "Hardtail")
+                    bike.category == categoryFromStyle ||
+                    (categoryFromStyle == "Hardtail" && bike.suspension == "Hardtail")
                 }
             }
             if profile.budgetCap > 0 {
@@ -144,7 +146,7 @@ struct TripPlannerView: View {
             if style == .gravity {
                 profiledBikes = profiledBikes.filter {
                     $0.suspension != "Hardtail" &&
-                    ($0.category == "Enduro" || $0.travelMM >= 160)
+                    ($0.category == "Enduro" || $0.category == "Downhill" || $0.travelMM >= 160)
                 }
             } else if style == .crossCountry {
                 profiledBikes = profiledBikes.filter { $0.category == "XC / Cross-Country" || $0.suspension == "Hardtail" }
@@ -265,7 +267,7 @@ struct TripPlannerView: View {
                         if let profile = activeProfile {
                             HStack(spacing: 8) {
                                 Label(profile.style, systemImage: "person.fill")
-                                Label(profile.preferredCategory == "Any" ? "Any category" : profile.preferredCategory, systemImage: "line.3.horizontal.decrease.circle")
+                                Label(RiderProfile.inferredCategory(for: profile.style) == "Any" ? "Any category" : RiderProfile.inferredCategory(for: profile.style), systemImage: "line.3.horizontal.decrease.circle")
                                 Label(profile.budgetCap > 0 ? Formatting.currency(profile.budgetCap) : "No budget cap", systemImage: "dollarsign.circle")
                             }
                             .font(.caption2.weight(.semibold))

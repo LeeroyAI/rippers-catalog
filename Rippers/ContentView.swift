@@ -93,7 +93,8 @@ struct ContentView: View {
         var state = FilterState()
         if let profile = activeProfile {
             state.tailorToProfile = true
-            state.profileCategoryHint = profile.preferredCategory == "Any" ? nil : profile.preferredCategory
+            let inferredCat = RiderProfile.inferredCategory(for: profile.style)
+            state.profileCategoryHint = inferredCat == "Any" ? nil : inferredCat
             state.profileStyleHint = profile.style
             state.profileBudgetCap = profile.budgetCap > 0 ? profile.budgetCap : nil
         }
