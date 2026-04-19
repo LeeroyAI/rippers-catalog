@@ -76,12 +76,14 @@ struct BikeDetailView: View {
                                 Text(Formatting.currency(row.price))
                                     .font(.subheadline.weight(.bold))
                                     .foregroundStyle(row.price == bike.bestPrice ? Color.rGreen : .primary)
-                                Button("Deal") {
+                                let isVerified = row.retailer.hasVerifiedURL(for: bike)
+                                Button(isVerified ? "Deal →" : "Search →") {
                                     if let url = row.retailer.dealURL(for: bike) {
                                         openURL(url)
                                     }
                                 }
                                 .buttonStyle(.bordered)
+                                .tint(isVerified ? Color.rOrange : .secondary)
                             }
                             .padding(10)
                             .background(Color.rCard)

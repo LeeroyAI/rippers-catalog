@@ -71,14 +71,14 @@ public struct Retailer: Identifiable, Hashable, Sendable {
         return components.url
     }
 
-    public func dealURL(for bike: Bike) -> URL? {
-        if let direct = directProductURL(for: bike) {
-            return direct
+    /// Returns a verified product page URL for this retailer, or nil if none exists.
+    /// Only returns URLs that point directly to the bike's product page on this retailer's site.
+    public func directURL(for bike: Bike) -> URL? {
+        // 1. Per-retailer URL extracted by the search pipeline (most reliable)
+        if let raw = bike.retailerUrls[id], let url = URL(string: raw) {
+            return url
         }
-        return searchURL(for: bike.searchQuery)
-    }
-
-    private func directProductURL(for bike: Bike) -> URL? {
+        // 2. sourceUrl domain match (one retailer gets this per live result)
         guard let url = URL(string: bike.sourceUrl),
               let host = url.host?.lowercased() else { return nil }
         let canonicalHost = domain.lowercased()
@@ -86,6 +86,16 @@ public struct Retailer: Identifiable, Hashable, Sendable {
             return url
         }
         return nil
+    }
+
+    /// Returns the best available URL: direct product page if verified, search page otherwise.
+    public func dealURL(for bike: Bike) -> URL? {
+        directURL(for: bike) ?? searchURL(for: bike.searchQuery)
+    }
+
+    /// True when we have a verified direct product page URL for this bike on this retailer.
+    public func hasVerifiedURL(for bike: Bike) -> Bool {
+        directURL(for: bike) != nil
     }
 }
 

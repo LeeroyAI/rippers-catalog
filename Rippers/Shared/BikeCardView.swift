@@ -128,8 +128,8 @@ struct BikeCardView: View {
                 Spacer()
 
                 if let bestRow = sortedRetailerPrices.first,
-                   let dealURL = bestRow.retailer.dealURL(for: bike) {
-                    Link(destination: dealURL) {
+                   let directURL = bestRow.retailer.directURL(for: bike) {
+                    Link(destination: directURL) {
                         HStack(spacing: 4) {
                             Text("Best Deal")
                             Image(systemName: "arrow.up.right")
