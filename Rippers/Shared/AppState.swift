@@ -2,6 +2,25 @@ import Foundation
 import SwiftUI
 import SwiftData
 
+@Model
+final class CachedBike {
+    var bikeId: Int
+    var profileTag: String
+    var fetchedAt: Date
+    var recordData: Data
+
+    init(record: BikeRecord, profileTag: String, fetchedAt: Date = .now) {
+        self.bikeId = record.id
+        self.profileTag = profileTag
+        self.fetchedAt = fetchedAt
+        self.recordData = (try? JSONEncoder().encode(record)) ?? Data()
+    }
+
+    var bike: Bike? {
+        (try? JSONDecoder().decode(BikeRecord.self, from: recordData))?.bike
+    }
+}
+
 public enum AppTab: Hashable {
     case search
     case results
