@@ -82,6 +82,12 @@ struct SearchView: View {
         return rankedProfilePicks(for: profile)
     }
 
+    /// All profile-matched bikes for "See all" — same logic, no limit.
+    private var allForYouPicks: [Bike] {
+        guard let profile = activeProfile else { return [] }
+        return allRankedProfilePicks(for: profile)
+    }
+
     private func rankedProfilePicks(for profile: RiderProfile) -> [(bike: Bike, score: Int)] {
         var s = FilterState()
         s.tailorToProfile = true
@@ -109,6 +115,28 @@ struct SearchView: View {
         }
 
         return Array(rows.prefix(5))
+    }
+
+    private func allRankedProfilePicks(for profile: RiderProfile) -> [Bike] {
+        var s = FilterState()
+        s.tailorToProfile = true
+        s.profileCategoryHint = profile.categoryFilterHint
+        s.profileStyleHint = profile.style
+        s.profileBudgetCap = profile.budgetCap > 0 ? profile.budgetCap : nil
+
+        let catalogMatched = BikeFilterEngine.apply(bikes: filterStore.catalog, filters: s)
+        var catalogRanked = BikeFilterEngine.rank(bikes: catalogMatched, filters: s)
+        let seen = Set(catalogRanked.map { $0.bike.id })
+
+        let staticMatched = BikeFilterEngine.apply(bikes: BIKES.filter { !seen.contains($0.id) }, filters: s)
+        let staticRanked = BikeFilterEngine.rank(bikes: staticMatched, filters: s)
+        catalogRanked.append(contentsOf: staticRanked)
+
+        catalogRanked.sort { lhs, rhs in
+            if lhs.score != rhs.score { return lhs.score > rhs.score }
+            return (lhs.bike.displayBestPrice ?? .greatestFiniteMagnitude) < (rhs.bike.displayBestPrice ?? .greatestFiniteMagnitude)
+        }
+        return catalogRanked.map(\.bike)
     }
 
     private var currentSearchFingerprint: String {
@@ -1016,10 +1044,14 @@ struct SearchView: View {
                     Spacer()
                     if !forYouTopPicks.isEmpty {
                         Button {
+                            let all = allForYouPicks
+                            filterStore.liveResults = all
+                            filterStore.liveResultSource = "Profile picks · \(all.count) bikes"
                             appState.activeTab = .results
                         } label: {
                             HStack(spacing: 2) {
-                                Text("See all").font(.caption.weight(.semibold))
+                                Text("See all \(allForYouPicks.count)")
+                                    .font(.caption.weight(.semibold))
                                 Image(systemName: "chevron.right").font(.caption2.weight(.semibold))
                             }
                         }

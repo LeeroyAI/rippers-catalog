@@ -3,6 +3,8 @@ import SwiftData
 
 struct SizingView: View {
     @EnvironmentObject private var filterStore: FilterStore
+    @EnvironmentObject private var appState: AppState
+    @Environment(\.dismiss) private var dismiss
     @Query private var profiles: [RiderProfile]
     @State private var manualHeightText: String = ""
     @State private var manualStyle: RidingStyle = .trail
@@ -85,12 +87,27 @@ struct SizingView: View {
                         }
                     }
 
-                    if let fitSummary {
+                    if let fitSummary, let rec = recommendation {
                         VStack(alignment: .leading, spacing: 6) {
-                            HStack(spacing: 8) {
-                                fitBadge("Direct fit", "\(fitSummary.fullFitCount)", color: Color.rGreen)
-                                fitBadge("Nearby", "\(fitSummary.partialFitCount)", color: Color.rYellow)
-                                fitBadge("No fit", "\(fitSummary.noFitCount)", color: Color.rRed.opacity(0.7))
+                            let fittingCount = fitSummary.fullFitCount + fitSummary.partialFitCount
+                            if fittingCount > 0 {
+                                Button {
+                                    dismiss()
+                                    appState.activeTab = .results
+                                } label: {
+                                    HStack(spacing: 4) {
+                                        Text("\(fittingCount) bike\(fittingCount == 1 ? "" : "s") fit your size \(rec.primary)")
+                                            .font(.caption.weight(.semibold))
+                                        Image(systemName: "chevron.right")
+                                            .font(.caption2.weight(.semibold))
+                                    }
+                                    .foregroundStyle(Color.rGreen)
+                                }
+                                .buttonStyle(.plain)
+                            } else {
+                                Text("No catalog bikes match your size yet")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
                             }
                             Text(fitSummary.confidenceLabel)
                                 .font(.caption2.weight(.semibold))
@@ -153,15 +170,7 @@ struct SizingView: View {
             .clipShape(Capsule())
     }
 
-    private func fitBadge(_ title: String, _ value: String, color: Color) -> some View {
-        VStack(spacing: 1) {
-            Text(value).font(.caption.weight(.bold)).foregroundStyle(color)
-            Text(title).font(.caption2).foregroundStyle(.secondary)
-        }
-        .padding(.horizontal, 8).padding(.vertical, 4)
-        .background(color.opacity(0.1))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-    }
+
 
     private func avatarView(data: Data?) -> some View {
         Group {
