@@ -24,9 +24,6 @@ final class LiveSearchService {
             URLQueryItem(name: "country", value: "AU")
         ]
 
-        if let searchText = criteria.searchText {
-            items.append(URLQueryItem(name: "q", value: searchText))
-        }
         if let category = criteria.category, category != "Any" {
             items.append(URLQueryItem(name: "category", value: category))
         }
@@ -84,7 +81,6 @@ final class LiveSearchService {
 // ---------------------------------------------------------------------------
 
 struct LiveSearchCriteria {
-    var searchText: String?
     var category: String?
     var budget: Double?
     var wheel: String?
@@ -108,10 +104,8 @@ struct LiveSearchCriteria {
         }
 
         let effectiveBudget = state.maxBudget ?? (state.tailorToProfile ? state.profileBudgetCap : nil)
-        let text = state.searchText.trimmingCharacters(in: .whitespacesAndNewlines)
 
         return LiveSearchCriteria(
-            searchText: text.isEmpty ? nil : text,
             category: effectiveCategory,
             budget: effectiveBudget,
             wheel: state.wheel == "Any" ? nil : state.wheel,
@@ -161,9 +155,6 @@ private func normalizeRetailerKeys(_ bike: Bike) -> Bike {
         uniqueKeysWithValues: bike.prices.map { (normalizeRetailerId($0.key), $0.value) }
     )
     let inStock = bike.inStock.map { normalizeRetailerId($0) }
-    let retailerUrls = Dictionary(
-        uniqueKeysWithValues: bike.retailerUrls.map { (normalizeRetailerId($0.key), $0.value) }
-    )
     return Bike(
         id: bike.id, brand: bike.brand, model: bike.model, year: bike.year,
         category: bike.category, wheel: bike.wheel, travel: bike.travel,
@@ -173,8 +164,7 @@ private func normalizeRetailerKeys(_ bike: Bike) -> Bike {
         prices: prices, wasPrice: bike.wasPrice, inStock: inStock,
         sourceUrl: bike.sourceUrl, isEbike: bike.isEbike,
         motorBrand: bike.motorBrand, motor: bike.motor, battery: bike.battery,
-        range: bike.range, ageRange: bike.ageRange, imageUrl: bike.imageUrl,
-        retailerUrls: retailerUrls
+        range: bike.range, ageRange: bike.ageRange, imageUrl: bike.imageUrl
     )
 }
 
@@ -216,17 +206,16 @@ private func enrich(_ live: Bike, from catalog: [Bike]) -> Bike {
         description: pick(live.description, known.description),
         sizes:       live.sizes.isEmpty     ? known.sizes    : live.sizes,
         prices:      live.prices.isEmpty    ? known.prices   : live.prices,
-        wasPrice:     live.wasPrice          ?? known.wasPrice,
-        inStock:      live.inStock.isEmpty   ? known.inStock  : live.inStock,
-        sourceUrl:    pick(live.sourceUrl,   known.sourceUrl),
-        isEbike:      live.isEbike,
-        motorBrand:   pickOpt(live.motorBrand, known.motorBrand),
-        motor:        pickOpt(live.motor,      known.motor),
-        battery:      pickOpt(live.battery,    known.battery),
-        range:        pickOpt(live.range,      known.range),
-        ageRange:     pickOpt(live.ageRange,   known.ageRange),
-        imageUrl:     live.imageUrl ?? known.imageUrl,
-        retailerUrls: live.retailerUrls.isEmpty ? known.retailerUrls : live.retailerUrls
+        wasPrice:    live.wasPrice          ?? known.wasPrice,
+        inStock:     live.inStock.isEmpty   ? known.inStock  : live.inStock,
+        sourceUrl:   pick(live.sourceUrl,   known.sourceUrl),
+        isEbike:     live.isEbike,
+        motorBrand:  pickOpt(live.motorBrand, known.motorBrand),
+        motor:       pickOpt(live.motor,      known.motor),
+        battery:     pickOpt(live.battery,    known.battery),
+        range:       pickOpt(live.range,      known.range),
+        ageRange:    pickOpt(live.ageRange,   known.ageRange),
+        imageUrl:    live.imageUrl ?? known.imageUrl
     )
 }
 

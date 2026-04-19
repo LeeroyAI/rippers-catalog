@@ -41,14 +41,12 @@ struct ContentView: View {
                         showSplash = false
                     }
                 }
-                    .transition(.opacity)
-                    .zIndex(2)
+                .transition(.opacity)
+                .zIndex(2)
             }
         }
         .task {
-            // Configure SwiftData-backed catalog store
             catalogStore.configure(context: modelContext, profileTag: activeProfileTag)
-            // Trigger silent daily refresh if profile data is stale
             await silentRefreshIfStale()
         }
         .onChange(of: activeProfile?.id) { _, _ in
@@ -56,7 +54,6 @@ struct ContentView: View {
             Task { await silentRefreshIfStale() }
         }
         .onChange(of: catalogStore.refreshRequestToken) { _, _ in
-            // Manual "Refresh Catalog Now" — run a foreground search
             Task { await silentRefreshIfStale(force: true) }
         }
         .onReceive(catalogStore.$bikes) { bikes in
@@ -69,8 +66,6 @@ struct ContentView: View {
         }
     }
 
-    // Runs a live search for the active profile if data is > 24h old (or force = true).
-    // Runs silently — no UI overlay. Results are merged into the catalog automatically.
     private func silentRefreshIfStale(force: Bool = false) async {
         let tag = activeProfileTag
         guard !tag.isEmpty else { return }

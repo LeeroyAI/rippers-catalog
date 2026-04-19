@@ -27,7 +27,6 @@ struct TripPlannerView: View {
     @State private var isSearchingDestination: Bool = false
     @State private var destinationPlacemark: MKPlacemark?
     @AppStorage("rippers.tripPlannerRecentSearches") private var recentSearchesData: String = "[]"
-    @AppStorage("rippers.tripShopRadius") private var shopSearchRadiusKM: Int = 80
     @State private var selectedTripBike: Bike?
     @AppStorage("rippers.ownedGearIds") private var ownedGearIdsData: String = "[]"
     @Query private var watchlistItems: [WatchlistItem]
@@ -290,18 +289,6 @@ struct TripPlannerView: View {
                             .tint(Color.rOrange)
                             .disabled(isSearchingDestination || destination.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                         }
-                        HStack(spacing: 8) {
-                            Text("Shop radius")
-                                .font(.caption2.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                            Picker("Shop radius", selection: $shopSearchRadiusKM) {
-                                Text("25 km").tag(25)
-                                Text("50 km").tag(50)
-                                Text("100 km").tag(100)
-                                Text("200 km").tag(200)
-                            }
-                            .pickerStyle(.segmented)
-                        }
                         if showAutocomplete {
                             VStack(alignment: .leading, spacing: 6) {
                                 Text("Suggestions")
@@ -506,7 +493,7 @@ struct TripPlannerView: View {
                                 HStack(spacing: 10) {
                                     Image(systemName: "bicycle")
                                         .foregroundStyle(.secondary)
-                                    Text("No bike shops found within \(shopSearchRadiusKM) km of this location.")
+                                    Text("No bike shops found within 80km of this location.")
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
                                 }
@@ -926,10 +913,9 @@ struct TripPlannerView: View {
         let combined = await r1 + r2 + r3
         let rentals = await rent1 + rent2 + rent3
 
-        let radius = Double(shopSearchRadiusKM)
-        let rentalSanitized = sanitizeNearbyResults(rentals, around: coordinate, maxDistanceKM: radius)
+        let rentalSanitized = sanitizeNearbyResults(rentals, around: coordinate, maxDistanceKM: 80)
         rentalShopKeys = Set(rentalSanitized.compactMap { rentalKey(for: $0) })
-        nearbyShops = sanitizeNearbyResults(combined + rentals, around: coordinate, maxDistanceKM: radius)
+        nearbyShops = sanitizeNearbyResults(combined + rentals, around: coordinate, maxDistanceKM: 80)
     }
 
     private func distanceText(for shop: MKMapItem) -> String? {

@@ -28,9 +28,6 @@ public struct Bike: Identifiable, Hashable, Sendable {
     public let range: String?
     public let ageRange: String?
     public let imageUrl: String?
-    // Per-retailer verified product page URLs, keyed by retailer ID.
-    // When present these are used instead of sourceUrl or search fallbacks.
-    public let retailerUrls: [String: String]
 
     public init(
         id: Int,
@@ -59,8 +56,7 @@ public struct Bike: Identifiable, Hashable, Sendable {
         battery: String? = nil,
         range: String? = nil,
         ageRange: String? = nil,
-        imageUrl: String? = nil,
-        retailerUrls: [String: String] = [:]
+        imageUrl: String? = nil
     ) {
         self.id = id
         self.brand = brand
@@ -89,7 +85,6 @@ public struct Bike: Identifiable, Hashable, Sendable {
         self.range = range
         self.ageRange = ageRange
         self.imageUrl = imageUrl
-        self.retailerUrls = retailerUrls
     }
 
     /// Fast local fallback only. Dynamic resolution happens via `BikeImageResolver`.
@@ -446,7 +441,6 @@ public struct BikeRecord: Codable, Sendable {
     public let range: String?
     public let ageRange: String?
     public let imageUrl: String?
-    public let retailerUrls: [String: String]?  // optional so old API responses decode without error
 
     public init(_ bike: Bike) {
         id = bike.id
@@ -476,7 +470,6 @@ public struct BikeRecord: Codable, Sendable {
         range = bike.range
         ageRange = bike.ageRange
         imageUrl = bike.imageUrl
-        retailerUrls = bike.retailerUrls.isEmpty ? nil : bike.retailerUrls
     }
 
     public var bike: Bike {
@@ -507,8 +500,7 @@ public struct BikeRecord: Codable, Sendable {
             battery: battery,
             range: range,
             ageRange: ageRange,
-            imageUrl: imageUrl,
-            retailerUrls: retailerUrls ?? [:]
+            imageUrl: imageUrl
         )
     }
 }

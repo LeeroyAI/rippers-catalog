@@ -925,7 +925,6 @@ struct SearchView: View {
         filterStore.state.profileStyleHint = profile.style
         filterStore.state.profileHeightCm = profile.heightCm > 0 ? profile.heightCm : nil
         filterStore.state.profileBudgetCap = profile.budgetCap > 0 ? profile.budgetCap : nil
-        if inferredCat != "Any" { filterStore.state.category = inferredCat }
         if profile.budgetCap > 0 {
             filterStore.state.maxBudget = profile.budgetCap
             maxBudgetText = String(Int(profile.budgetCap))

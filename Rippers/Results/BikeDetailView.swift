@@ -48,37 +48,32 @@ struct BikeDetailView: View {
                         DetailRow(label: "Sizes", value: bike.sizes.joined(separator: ", "))
                     }
 
+                    Text("— indicates spec not available from retailer data")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                        .padding(.top, 2)
+
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Retailer Prices")
                             .font(.headline)
                         ForEach(priceRows, id: \.retailer.id) { row in
                             HStack {
-                                VStack(alignment: .leading, spacing: 2) {
+                                VStack(alignment: .leading) {
                                     Text(row.retailer.name)
                                         .font(.subheadline.weight(.semibold))
-                                    HStack(spacing: 4) {
-                                        Text(row.retailer.isAustralian ? "AU" : "INTL")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                        if !bike.inStock.isEmpty && !row.inStock {
-                                            Text("Check stock")
-                                                .font(.caption2.weight(.semibold))
-                                                .foregroundStyle(Color.rYellow)
-                                        }
-                                    }
+                                    Text(row.retailer.isAustralian ? "AU" : "INTL")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
                                 }
                                 Spacer()
                                 Text(Formatting.currency(row.price))
                                     .font(.subheadline.weight(.bold))
-                                    .foregroundStyle(row.price == bike.bestPrice ? Color.rGreen : .primary)
-                                let isVerified = row.retailer.hasVerifiedURL(for: bike)
-                                Button(isVerified ? "Deal →" : "Search →") {
+                                Button("Deal") {
                                     if let url = row.retailer.dealURL(for: bike) {
                                         openURL(url)
                                     }
                                 }
                                 .buttonStyle(.bordered)
-                                .tint(isVerified ? Color.rOrange : Color.primary)
                             }
                             .padding(10)
                             .background(Color.rCard)
@@ -153,17 +148,14 @@ struct BikeDetailView: View {
         }
     }
 
-    private var priceRows: [(retailer: Retailer, price: Double, inStock: Bool)] {
-        let hasStockData = !bike.inStock.isEmpty
-        return bike.prices
+    private var priceRows: [(retailer: Retailer, price: Double)] {
+        bike.prices
             .compactMap { key, value in
-                guard let retailer = RETAILERS.first(where: { $0.id == key }) else { return nil }
-                return (retailer, value, bike.inStock.contains(key))
+                guard bike.inStock.contains(key),
+                      let retailer = RETAILERS.first(where: { $0.id == key }) else { return nil }
+                return (retailer, value)
             }
-            .sorted { a, b in
-                if hasStockData && a.inStock != b.inStock { return a.inStock }
-                return a.price < b.price
-            }
+            .sorted(by: { $0.price < $1.price })
     }
 }
 

@@ -3,7 +3,6 @@ import SwiftData
 
 struct SizingView: View {
     @EnvironmentObject private var filterStore: FilterStore
-    @EnvironmentObject private var appState: AppState
     @Query private var profiles: [RiderProfile]
     @State private var manualHeightText: String = ""
     @State private var manualStyle: RidingStyle = .trail
@@ -54,13 +53,16 @@ struct SizingView: View {
     private var profileHeroCard: some View {
         Group {
             if let profile = activeProfile {
-                VStack(alignment: .leading, spacing: 10) {
-                    // Name + size badge
+                VStack(alignment: .leading, spacing: 12) {
                     HStack(alignment: .top, spacing: 12) {
                         avatarView(data: profile.avatarData)
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: 4) {
                             Text(profile.name)
                                 .font(.title3.weight(.bold))
+                            HStack(spacing: 6) {
+                                sizingPill(profile.experience, color: Color.rOrange)
+                                sizingPill(profile.style, color: Color.rOrangeDark)
+                            }
                             Text("\(profile.heightCm) cm  ·  \(profile.weightKg) kg")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
@@ -83,26 +85,19 @@ struct SizingView: View {
                         }
                     }
 
-                    // Pills on their own row — no crowding
-                    HStack(spacing: 6) {
-                        sizingPill(profile.experience, color: Color.rOrange)
-                        sizingPill(profile.style, color: Color.rOrangeDark)
-                    }
-
-                    // Fit badges + confidence label on separate line
                     if let fitSummary {
                         HStack(spacing: 8) {
                             fitBadge("Direct fit", "\(fitSummary.fullFitCount)", color: Color.rGreen)
                             fitBadge("Nearby", "\(fitSummary.partialFitCount)", color: Color.rYellow)
                             fitBadge("No fit", "\(fitSummary.noFitCount)", color: Color.rRed.opacity(0.7))
+                            Spacer()
+                            Text(fitSummary.confidenceLabel)
+                                .font(.caption2.weight(.semibold))
+                                .padding(.horizontal, 8).padding(.vertical, 4)
+                                .background(fitSummary.confidenceColor.opacity(0.14))
+                                .foregroundStyle(fitSummary.confidenceColor)
+                                .clipShape(Capsule())
                         }
-                        Text(fitSummary.confidenceLabel)
-                            .font(.caption2.weight(.semibold))
-                            .lineLimit(1)
-                            .padding(.horizontal, 8).padding(.vertical, 4)
-                            .background(fitSummary.confidenceColor.opacity(0.14))
-                            .foregroundStyle(fitSummary.confidenceColor)
-                            .clipShape(Capsule())
                     }
                 }
                 .padding(14)
@@ -151,7 +146,6 @@ struct SizingView: View {
     private func sizingPill(_ label: String, color: Color) -> some View {
         Text(label)
             .font(.caption2.weight(.bold))
-            .lineLimit(1)
             .padding(.horizontal, 8).padding(.vertical, 3)
             .background(color.opacity(0.15))
             .foregroundStyle(color)
@@ -393,17 +387,6 @@ struct SizingView: View {
                 }
             }
             .clipShape(RoundedRectangle(cornerRadius: 10))
-            Button {
-                filterStore.state.wheel = "24\""
-                filterStore.state.category = "Any"
-                appState.activeTab = .results
-            } label: {
-                Label("Browse 24\" bikes in catalog", systemImage: "list.bullet")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(Color.rOrange)
-            .padding(.top, 4)
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)

@@ -36,7 +36,6 @@
 		C29D6A44450BB3E7EA5CB6A6 /* PublicJSONCatalogProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A772E79393AEB20842620118 /* PublicJSONCatalogProvider.swift */; };
 		CA0017FBDF682700E7578ABE /* StaticCatalogProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57F8531CF29C7991747C465 /* StaticCatalogProvider.swift */; };
 		CB83F08F0B2151E5A030181C /* TripPlannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 022ABDFB49A0CAC379C90AC8 /* TripPlannerView.swift */; };
-		D08185E985D893FA8939E169 /* CachedBike.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C31B74703B99C052D806DF8 /* CachedBike.swift */; };
 		DA764EC3EED09F6AF3E2F266 /* RippersApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C31849E63E9D48179C98487 /* RippersApp.swift */; };
 		DCA7187C3F1C84FD430F66F8 /* SplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65F6E62FDA0181DF5691EAF9 /* SplashView.swift */; };
 		E006DDAD349697217933FC4C /* CatalogModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93384C89FF82A4CF0ABFA305 /* CatalogModels.swift */; };
@@ -48,18 +47,14 @@
 		F2B48A7AEF3A1CCC37C18FB5 /* BikeCatalogProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50E649D022F32F2C0AB51196 /* BikeCatalogProvider.swift */; };
 		F326A7B5AD9A20D1E3CC4FD7 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F2854DF9711430D99661C661 /* Foundation.framework */; };
 		F48E629F2522284B2C44D519 /* RiderProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB4D9F4F4B9E6F5559C6C549 /* RiderProfile.swift */; };
-		F5881568BE6169CDB798EED6 /* AIChatService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C3438769605E0B8645DF57 /* AIChatService.swift */; };
-		F7858DDE737CF86A26D5249A /* ProfileTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00A690FCB0A4DFB7B827F114 /* ProfileTabView.swift */; };
 		FDA7799698D6C0354DF6D251 /* WatchlistItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8841B34A776AF2EAEADFE78D /* WatchlistItem.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		00A690FCB0A4DFB7B827F114 /* ProfileTabView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ProfileTabView.swift; path = ../Rippers/Profile/ProfileTabView.swift; sourceTree = "<group>"; };
 		022ABDFB49A0CAC379C90AC8 /* TripPlannerView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = TripPlannerView.swift; path = TripPlanner/TripPlannerView.swift; sourceTree = "<group>"; };
 		02B40196D17C9E4F2032737A /* BudgetView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BudgetView.swift; path = Budget/BudgetView.swift; sourceTree = "<group>"; };
 		03061AFA243E4429C924503B /* LiveSearchService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = LiveSearchService.swift; path = ../Rippers/Services/LiveSearchService.swift; sourceTree = "<group>"; };
 		070DD36ADADA647D522EC66B /* Bikes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = Bikes.swift; path = Data/Bikes.swift; sourceTree = "<group>"; };
-		0C31B74703B99C052D806DF8 /* CachedBike.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CachedBike.swift; path = ../Rippers/Models/CachedBike.swift; sourceTree = "<group>"; };
 		1601D1975848B92F50D54847 /* BrandSystem.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BrandSystem.swift; path = Shared/BrandSystem.swift; sourceTree = "<group>"; };
 		31AC9660F6114E26A188D7AB /* HelpView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = HelpView.swift; path = Help/HelpView.swift; sourceTree = "<group>"; };
 		420F37138D9EA194590256B9 /* WatchlistView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WatchlistView.swift; path = Watchlist/WatchlistView.swift; sourceTree = "<group>"; };
@@ -85,7 +80,6 @@
 		9FB87E91502D43B218E1F1C8 /* FilterState.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = FilterState.swift; path = Models/FilterState.swift; sourceTree = "<group>"; };
 		A014C5BE0F3046A8191134F6 /* BikeCardView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BikeCardView.swift; path = Shared/BikeCardView.swift; sourceTree = "<group>"; };
 		A57F8531CF29C7991747C465 /* StaticCatalogProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = StaticCatalogProvider.swift; path = Catalog/Providers/StaticCatalogProvider.swift; sourceTree = "<group>"; };
-		A5C3438769605E0B8645DF57 /* AIChatService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AIChatService.swift; path = ../Rippers/Services/AIChatService.swift; sourceTree = "<group>"; };
 		A772E79393AEB20842620118 /* PublicJSONCatalogProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PublicJSONCatalogProvider.swift; path = Catalog/Providers/PublicJSONCatalogProvider.swift; sourceTree = "<group>"; };
 		ABDE6F551F7F5971FA8BDFB9 /* BikeFilterEngine.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BikeFilterEngine.swift; path = Search/BikeFilterEngine.swift; sourceTree = "<group>"; };
 		B429254C12111076FC6667FB /* BikeDetailView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BikeDetailView.swift; path = Results/BikeDetailView.swift; sourceTree = "<group>"; };
@@ -119,15 +113,6 @@
 				F2854DF9711430D99661C661 /* Foundation.framework */,
 			);
 			name = iOS;
-			sourceTree = "<group>";
-		};
-		43817A23F0A08D6B531319A4 /* Services */ = {
-			isa = PBXGroup;
-			children = (
-				A5C3438769605E0B8645DF57 /* AIChatService.swift */,
-			);
-			name = Services;
-			path = Services;
 			sourceTree = "<group>";
 		};
 		69869BE2102618DC8D4773C0 /* Rippers */ = {
@@ -176,24 +161,6 @@
 			path = Rippers;
 			sourceTree = "<group>";
 		};
-		7254106670FD343EC265E258 /* Models */ = {
-			isa = PBXGroup;
-			children = (
-				0C31B74703B99C052D806DF8 /* CachedBike.swift */,
-			);
-			name = Models;
-			path = Models;
-			sourceTree = "<group>";
-		};
-		92A67EC6CFE04A4FF08FBB7D /* Profile */ = {
-			isa = PBXGroup;
-			children = (
-				00A690FCB0A4DFB7B827F114 /* ProfileTabView.swift */,
-			);
-			name = Profile;
-			path = Profile;
-			sourceTree = "<group>";
-		};
 		CD4A30AD778DC2F20A269245 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
@@ -225,9 +192,6 @@
 				CD4A30AD778DC2F20A269245 /* Frameworks */,
 				69869BE2102618DC8D4773C0 /* Rippers */,
 				D9E17BFC90EB01EC6CF3D56D /* Services */,
-				43817A23F0A08D6B531319A4 /* Services */,
-				7254106670FD343EC265E258 /* Models */,
-				92A67EC6CFE04A4FF08FBB7D /* Profile */,
 			);
 			sourceTree = "<group>";
 		};
@@ -334,9 +298,6 @@
 				5A19B2A52D3C4E2F9AA71234 /* ProfileOnboardingView.swift in Sources */,
 				5EACEA8C4E274CBCAAA7300B /* HelpView.swift in Sources */,
 				0929A720BDBCB1A0EC0B9804 /* LiveSearchService.swift in Sources */,
-				F5881568BE6169CDB798EED6 /* AIChatService.swift in Sources */,
-				D08185E985D893FA8939E169 /* CachedBike.swift in Sources */,
-				F7858DDE737CF86A26D5249A /* ProfileTabView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
