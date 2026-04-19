@@ -212,12 +212,7 @@ struct SearchView: View {
                     if let data = try? await newValue.loadTransferable(type: Data.self) {
                         await MainActor.run {
                             profileAvatarData = data
-                            if let activeProfile {
-                                activeProfile.avatarData = data
-                                photoUploadStatus = "Updated \(activeProfile.name)'s profile image."
-                            } else {
-                                photoUploadStatus = "Image selected for new profile."
-                            }
+                            photoUploadStatus = activeProfile != nil ? "Image ready — tap Update Profile to save." : "Image selected for new profile."
                         }
                     } else {
                         await MainActor.run {
