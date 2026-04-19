@@ -11,13 +11,13 @@ struct SearchView: View {
     @Query private var profiles: [RiderProfile]
 
     @State private var maxBudgetText: String = ""
-    @State private var profileName: String = ""
-    @State private var profileAgeText: String = ""
-    @State private var profileHeightText: String = ""
-    @State private var profileWeightText: String = ""
-    @State private var profileBudgetText: String = ""
-    @State private var profileExperience: String = "Beginner"
-    @State private var profileStyle: String = "Trail"
+    @AppStorage("rippers.draft.profileName") private var profileName: String = ""
+    @AppStorage("rippers.draft.profileAge") private var profileAgeText: String = ""
+    @AppStorage("rippers.draft.profileHeight") private var profileHeightText: String = ""
+    @AppStorage("rippers.draft.profileWeight") private var profileWeightText: String = ""
+    @AppStorage("rippers.draft.profileBudget") private var profileBudgetText: String = ""
+    @AppStorage("rippers.draft.profileExperience") private var profileExperience: String = "Beginner"
+    @AppStorage("rippers.draft.profileStyle") private var profileStyle: String = "Trail"
     @State private var profileCategory: String = "Any"
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var profileAvatarData: Data?
@@ -169,6 +169,11 @@ struct SearchView: View {
                     populateDraft(from: activeProfile)
                 } else {
                     clearProfileDraft()
+                }
+            }
+            .onChange(of: currentSearchFingerprint) { _, _ in
+                if filterStore.liveResults != nil {
+                    filterStore.clearLiveResults()
                 }
             }
             .onChange(of: selectedPhotoItem) { _, newValue in

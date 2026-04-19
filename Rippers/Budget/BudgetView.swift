@@ -6,8 +6,22 @@ struct BudgetView: View {
     @Query private var profiles: [RiderProfile]
     @State private var selectedBikeId: Int = 0
     @State private var tier: GearTier = .mid
-    @State private var selectedOptionalIds: Set<String> = []
+    @AppStorage("rippers.budget.optionalGear") private var optionalGearData: String = "[]"
     @State private var expandedExampleIds: Set<String> = []
+
+    private var selectedOptionalIds: Set<String> {
+        guard let data = optionalGearData.data(using: .utf8),
+              let arr = try? JSONDecoder().decode([String].self, from: data) else { return [] }
+        return Set(arr)
+    }
+
+    private func toggleOptionalId(_ id: String) {
+        var ids = selectedOptionalIds
+        if ids.contains(id) { ids.remove(id) } else { ids.insert(id) }
+        guard let data = try? JSONEncoder().encode(Array(ids).sorted()),
+              let str = String(data: data, encoding: .utf8) else { return }
+        optionalGearData = str
+    }
 
     private var selectedBike: Bike? { filterStore.catalog.first(where: { $0.id == selectedBikeId }) }
     private var activeProfile: RiderProfile? { profiles.first(where: { $0.isActive }) }
@@ -155,8 +169,7 @@ struct BudgetView: View {
                                 required: false,
                                 selected: selectedOptionalIds.contains(item.id)
                             ) {
-                                if selectedOptionalIds.contains(item.id) { selectedOptionalIds.remove(item.id) }
-                                else { selectedOptionalIds.insert(item.id) }
+                                toggleOptionalId(item.id)
                             }
                         }
                     }

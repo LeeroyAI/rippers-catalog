@@ -10,6 +10,7 @@ struct WatchlistView: View {
     @State private var targetPriceText: String = ""
     @State private var pendingDeletion: WatchlistItem?
     @State private var recentlyDeleted: DeletedWatchlistSnapshot?
+    @EnvironmentObject private var appState: AppState
     @State private var selectedBike: Bike?
 
     var body: some View {
@@ -48,9 +49,22 @@ struct WatchlistView: View {
 
                 Section("All Watched Bikes") {
                     if watchlistItems.isEmpty {
-                        Text("No bikes in your watchlist yet. Tap the bell icon on any result to start tracking.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("No bikes in your watchlist yet.")
+                                .font(.subheadline.weight(.semibold))
+                            Text("Tap the bell icon on any bike card to start tracking price changes.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Button {
+                                appState.activeTab = .results
+                            } label: {
+                                Label("Browse Bikes", systemImage: "list.bullet")
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(Color.rOrange)
+                            .padding(.top, 2)
+                        }
+                        .padding(.vertical, 6)
                     } else {
                         ForEach(sortedItems, id: \.persistentModelID) { item in
                             if let bike = bike(for: item) {

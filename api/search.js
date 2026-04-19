@@ -26,7 +26,6 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "GET only" });
 
   const {
-    q,
     category,
     budget,
     wheel,
@@ -50,7 +49,6 @@ export default async function handler(req, res) {
 
   try {
     const criteria = {
-      q: q || null,
       category,
       budget: budget ? Number(budget) : null,
       wheel,
@@ -92,7 +90,6 @@ export default async function handler(req, res) {
 
 function buildQueries(criteria) {
   const {
-    q,
     category,
     budget,
     wheel,
@@ -107,14 +104,7 @@ function buildQueries(criteria) {
 
   const baseTerms = [];
 
-  // Free-text search drives the primary query when provided
-  if (q) {
-    baseTerms.push(q);
-    // Always append "mountain bike" for context unless the query already implies it
-    if (!/mountain bike|mtb|ebike|e-bike/i.test(q)) {
-      baseTerms.push("mountain bike");
-    }
-  } else if (ebike) {
+  if (ebike) {
     baseTerms.push("electric mountain bike eMTB");
   } else if (ageRange && ageRange.toLowerCase().includes("kids")) {
     baseTerms.push("kids mountain bike youth bicycle");
@@ -123,7 +113,6 @@ function buildQueries(criteria) {
   }
 
   if (
-    !q &&
     category &&
     category !== "Any" &&
     category !== "eBike" &&
@@ -155,11 +144,6 @@ function buildQueries(criteria) {
   // If specific brands requested, generate one query per brand
   if (brands && brands.length > 0) {
     return brands.map((b) => `${b} ${base}`);
-  }
-
-  // Free-text: run the exact query + a "buy" variant
-  if (q) {
-    return [...new Set([base, `buy ${base}`])].slice(0, 4);
   }
 
   // Otherwise generate several covering different price/style angles
@@ -247,7 +231,6 @@ async function extractBikes(snippets, criteria) {
     .join("\n\n");
 
   const criteriaDesc = [
-    criteria.q ? `Search query: "${criteria.q}"` : null,
     criteria.category && criteria.category !== "Any"
       ? `Category: ${criteria.category}`
       : null,

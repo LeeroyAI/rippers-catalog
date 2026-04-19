@@ -60,12 +60,37 @@ struct ResultsView: View {
                 }
 
                 if displayRows.isEmpty {
-                    ContentUnavailableView(
-                        "No Bikes Match",
-                        systemImage: "magnifyingglass",
-                        description: Text("Try clearing filters or expanding budget/category.")
-                    )
+                    VStack(spacing: 14) {
+                        Image(systemName: "magnifyingglass")
+                            .font(.system(size: 44, weight: .light))
+                            .foregroundStyle(.secondary)
+                        Text("No Bikes Match")
+                            .font(.title3.weight(.semibold))
+                        Text("Try widening your budget or category, or switch to Live Search to find bikes beyond the catalog.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                        HStack(spacing: 10) {
+                            Button {
+                                filterStore.state = .init()
+                                filterStore.clearLiveResults()
+                            } label: {
+                                Label("Reset Filters", systemImage: "xmark.circle")
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(Color.rOrange)
+                            Button {
+                                appState.activeTab = .search
+                            } label: {
+                                Label("Back to Search", systemImage: "house")
+                            }
+                            .buttonStyle(.bordered)
+                            .tint(Color.rOrange)
+                        }
+                    }
                     .padding(.top, 80)
+                    .padding(.horizontal, 32)
+                    .frame(maxWidth: .infinity)
                 } else {
                     if !randomQuote.isEmpty {
                         Text("\"\(randomQuote)\"")
@@ -85,7 +110,8 @@ struct ResultsView: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .topLeading)
                     .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
+                    .padding(.top, 8)
+                    .padding(.bottom, appState.compareSet.isEmpty ? 8 : 72)
                 }
             }
             .background(Color.rBackground.ignoresSafeArea())

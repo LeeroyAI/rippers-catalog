@@ -24,6 +24,7 @@ struct TripPlannerView: View {
     @State private var nearbyShops: [MKMapItem] = []
     @State private var rentalShopKeys: Set<String> = []
     @State private var lastSearchedDestination: MKMapItem?
+    @State private var isSearchingDestination: Bool = false
     @State private var destinationPlacemark: MKPlacemark?
     @AppStorage("rippers.tripPlannerRecentSearches") private var recentSearchesData: String = "[]"
     @State private var selectedTripBike: Bike?
@@ -273,11 +274,20 @@ struct TripPlannerView: View {
                         HStack {
                             TextField("Destination", text: $destination)
                                 .textFieldStyle(.roundedBorder)
-                            Button("Search") {
+                                .disabled(isSearchingDestination)
+                            Button {
                                 Task { await searchDestination() }
+                            } label: {
+                                if isSearchingDestination {
+                                    ProgressView()
+                                        .tint(.white)
+                                } else {
+                                    Text("Search")
+                                }
                             }
                             .buttonStyle(.borderedProminent)
                             .tint(Color.rOrange)
+                            .disabled(isSearchingDestination || destination.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                         }
                         if showAutocomplete {
                             VStack(alignment: .leading, spacing: 6) {
@@ -828,6 +838,8 @@ struct TripPlannerView: View {
     }
 
     private func searchDestination(query: String? = nil, displayName: String? = nil, expectedSubtitle: String? = nil) async {
+        isSearchingDestination = true
+        defer { isSearchingDestination = false }
         var effectiveQuery = query
         var effectiveDisplayName = displayName
         var effectiveSubtitle = expectedSubtitle
@@ -904,6 +916,13 @@ struct TripPlannerView: View {
         let rentalSanitized = sanitizeNearbyResults(rentals, around: coordinate, maxDistanceKM: 80)
         rentalShopKeys = Set(rentalSanitized.compactMap { rentalKey(for: $0) })
         nearbyShops = sanitizeNearbyResults(combined + rentals, around: coordinate, maxDistanceKM: 80)
+    }
+
+    private func distanceText(for shop: MKMapItem) -> String? {
+        guard let destLocation = destinationPlacemark?.location else { return nil }
+        let shopLoc = CLLocation(latitude: shop.placemark.coordinate.latitude, longitude: shop.placemark.coordinate.longitude)
+        let km = destLocation.distance(from: shopLoc) / 1000
+        return km < 1 ? "\(Int(km * 1000)) m away" : String(format: "%.1f km away", km)
     }
 
     private func rentalKey(for item: MKMapItem) -> String? {
@@ -1050,6 +1069,11 @@ struct TripPlannerView: View {
                         Text(address)
                             .font(.caption)
                             .foregroundStyle(.secondary)
+                    }
+                    if let dist = distanceText(for: shop) {
+                        Text(dist)
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(Color.rOrangeDark)
                     }
                 }
                 Spacer()
