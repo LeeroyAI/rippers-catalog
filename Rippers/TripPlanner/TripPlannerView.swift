@@ -22,6 +22,7 @@ struct TripPlannerView: View {
     @State private var trailforksTrails: [TrailforksTrail] = []
     @State private var trailforksStatus: String?
     @State private var nearbyShops: [MKMapItem] = []
+    @State private var rentalShopKeys: Set<String> = []
     @State private var lastSearchedDestination: MKMapItem?
     @State private var destinationPlacemark: MKPlacemark?
     @AppStorage("rippers.tripPlannerRecentSearches") private var recentSearchesData: String = "[]"
@@ -893,8 +894,29 @@ struct TripPlannerView: View {
         async let r1 = fetchMapItems(query: "bike shop", region: region, resultTypes: .pointOfInterest)
         async let r2 = fetchMapItems(query: "bicycle shop", region: region, resultTypes: .pointOfInterest)
         async let r3 = fetchMapItems(query: "cycling store", region: region, resultTypes: .pointOfInterest)
+        async let rent1 = fetchMapItems(query: "mountain bike hire", region: region, resultTypes: .pointOfInterest)
+        async let rent2 = fetchMapItems(query: "bike rental", region: region, resultTypes: .pointOfInterest)
+        async let rent3 = fetchMapItems(query: "bicycle hire", region: region, resultTypes: .pointOfInterest)
+
         let combined = await r1 + r2 + r3
-        nearbyShops = sanitizeNearbyResults(combined, around: coordinate, maxDistanceKM: 80)
+        let rentals = await rent1 + rent2 + rent3
+
+        let rentalSanitized = sanitizeNearbyResults(rentals, around: coordinate, maxDistanceKM: 80)
+        rentalShopKeys = Set(rentalSanitized.compactMap { rentalKey(for: $0) })
+        nearbyShops = sanitizeNearbyResults(combined + rentals, around: coordinate, maxDistanceKM: 80)
+    }
+
+    private func rentalKey(for item: MKMapItem) -> String? {
+        guard let name = item.name else { return nil }
+        let lat = (item.placemark.coordinate.latitude * 100).rounded() / 100
+        let lon = (item.placemark.coordinate.longitude * 100).rounded() / 100
+        return "\(name.lowercased().filter { $0.isLetter || $0.isNumber })-\(lat)-\(lon)"
+    }
+
+    private func isRentalShop(_ shop: MKMapItem) -> Bool {
+        if let key = rentalKey(for: shop), rentalShopKeys.contains(key) { return true }
+        let name = (shop.name ?? "").lowercased()
+        return name.contains("hire") || name.contains("rental") || name.contains("rent")
     }
 
     private func searchNearbyRidingAreas(around coordinate: CLLocationCoordinate2D) async {
@@ -1008,11 +1030,22 @@ struct TripPlannerView: View {
     }
 
     private func shopCard(_ shop: MKMapItem) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        let offersRentals = isRentalShop(shop)
+        return VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(shop.name ?? "Bike Shop")
-                        .font(.subheadline.weight(.semibold))
+                    HStack(spacing: 6) {
+                        Text(shop.name ?? "Bike Shop")
+                            .font(.subheadline.weight(.semibold))
+                        if offersRentals {
+                            Text("Rentals")
+                                .font(.caption2.weight(.bold))
+                                .padding(.horizontal, 7).padding(.vertical, 3)
+                                .background(Color.rGreen.opacity(0.18))
+                                .foregroundStyle(Color.rGreen)
+                                .clipShape(Capsule())
+                        }
+                    }
                     if let address = shop.placemark.title, !address.isEmpty {
                         Text(address)
                             .font(.caption)

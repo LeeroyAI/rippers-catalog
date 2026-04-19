@@ -24,6 +24,8 @@ struct SearchView: View {
     @State private var photoUploadStatus: String?
     @State private var showAdvancedFilters: Bool = false
     @State private var showProfileEditor: Bool = false
+    @State private var showProfileFilters: Bool = false
+    @State private var showCatalogInfo: Bool = false
     @State private var lastSearchFingerprint: String = ""
     @State private var showClearProfileConfirmation = false
     @State private var savedSearchFlash = false
@@ -224,6 +226,12 @@ struct SearchView: View {
     private var profileSearchCard: some View {
         sectionCard("Search") {
             VStack(spacing: 10) {
+                TextField("Search by brand, model, or type…", text: Binding(
+                    get: { filterStore.state.searchText },
+                    set: { filterStore.state.searchText = $0 }
+                ))
+                .textFieldStyle(.roundedBorder)
+
                 Button {
                     Task { await performLiveSearch() }
                 } label: {
@@ -250,6 +258,44 @@ struct SearchView: View {
                 }
                 .buttonStyle(.bordered)
                 .tint(Color.rOrange)
+
+                DisclosureGroup(isExpanded: $showProfileFilters) {
+                    VStack(spacing: 8) {
+                        HStack(spacing: 10) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Category")
+                                    .font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
+                                Picker("Category", selection: Binding(
+                                    get: { filterStore.state.category },
+                                    set: { filterStore.state.category = $0 }
+                                )) { ForEach(categories, id: \.self, content: Text.init) }
+                            }
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Wheel")
+                                    .font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
+                                Picker("Wheel", selection: Binding(
+                                    get: { filterStore.state.wheel },
+                                    set: { filterStore.state.wheel = $0 }
+                                )) { ForEach(wheels, id: \.self, content: Text.init) }
+                            }
+                        }
+                        .font(.caption)
+
+                        TextField("Max budget (AUD)", text: $maxBudgetText)
+                            .textFieldStyle(.roundedBorder)
+                            .keyboardType(.numberPad)
+                            .onChange(of: maxBudgetText) { _, newValue in
+                                let digits = newValue.filter(\.isNumber)
+                                if digits != newValue { maxBudgetText = digits }
+                                filterStore.state.maxBudget = Double(digits)
+                            }
+                    }
+                    .padding(.top, 4)
+                } label: {
+                    Text("Refine filters")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                }
 
                 if !savedSearches.isEmpty {
                     Divider()
@@ -703,7 +749,8 @@ struct SearchView: View {
 
     private func searchDescription(for criteria: LiveSearchCriteria) -> String {
         var parts: [String] = []
-        if let cat = criteria.category { parts.append(cat) }
+        if let text = criteria.searchText, !text.isEmpty { parts.append(text) }
+        else if let cat = criteria.category { parts.append(cat) }
         else if criteria.ebike { parts.append("eBikes") }
         else { parts.append("Mountain bikes") }
         if !criteria.brands.isEmpty { parts.append(criteria.brands.prefix(2).joined(separator: " & ")) }
@@ -1024,21 +1071,114 @@ struct SearchView: View {
     }
 
     private var catalogStatusBanner: some View {
-        HStack(spacing: 8) {
-            Circle()
-                .fill(catalogStore.sourceStatus == "Live source" ? Color.rGreen : Color.rOrange)
-                .frame(width: 8, height: 8)
-            Text(catalogStore.sourceStatus)
-                .font(.caption.weight(.semibold))
-            if let fallbackReason = catalogStore.fallbackReason, !fallbackReason.isEmpty {
-                Text("· \(fallbackReason)")
-                    .font(.caption).foregroundStyle(.secondary).lineLimit(2)
+        Button {
+            showCatalogInfo = true
+        } label: {
+            HStack(spacing: 8) {
+                Circle()
+                    .fill(catalogStore.sourceStatus == "Live source" ? Color.rGreen : Color.rOrange)
+                    .frame(width: 8, height: 8)
+                Text(catalogStore.sourceStatus)
+                    .font(.caption.weight(.semibold))
+                if let fallbackReason = catalogStore.fallbackReason, !fallbackReason.isEmpty {
+                    Text("· \(fallbackReason)")
+                        .font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                }
+                Spacer()
+                Text("\(filterStore.catalog.count) bikes")
+                    .font(.caption).foregroundStyle(.secondary)
+                Image(systemName: "info.circle")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 10).padding(.vertical, 8)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.rCard)
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+        }
+        .buttonStyle(.plain)
+        .sheet(isPresented: $showCatalogInfo) {
+            catalogInfoSheet
+        }
+    }
+
+    private var catalogInfoSheet: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    HStack(spacing: 10) {
+                        Circle()
+                            .fill(catalogStore.sourceStatus == "Live source" ? Color.rGreen : Color.rOrange)
+                            .frame(width: 12, height: 12)
+                        Text(catalogStore.sourceStatus)
+                            .font(.title3.weight(.bold))
+                    }
+
+                    VStack(alignment: .leading, spacing: 10) {
+                        infoRow(icon: "bicycle", title: "Total bikes", value: "\(filterStore.catalog.count) in catalog")
+                        infoRow(icon: "checkmark.circle.fill", title: "In stock", value: "\(filterStore.catalog.filter { !$0.inStock.isEmpty }.count) bikes with stock")
+                        infoRow(icon: "storefront", title: "Retailers", value: "\(RETAILERS.count) AU stores tracked")
+                        if let reason = catalogStore.fallbackReason, !reason.isEmpty {
+                            infoRow(icon: "exclamationmark.triangle", title: "Note", value: reason)
+                        }
+                    }
+                    .padding()
+                    .background(Color.rCard)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("What is the catalog?")
+                            .font(.headline)
+                        Text("The catalog is a curated set of ~48 AU mountain bikes loaded from a hosted JSON file and refreshed hourly. It powers the Results, Sizing, Budget, and Trip pages.\n\nLive Search goes beyond the catalog — it fetches fresh stock, specs, and pricing directly from AU retailer websites in real time using Brave Search and Claude AI.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding()
+                    .background(Color.rCard)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+
+                    Button {
+                        Task {
+                            await catalogStore.bootstrap()
+                            filterStore.catalog = catalogStore.bikes
+                        }
+                        showCatalogInfo = false
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "arrow.clockwise")
+                            Text("Refresh Catalog Now")
+                                .fontWeight(.semibold)
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(Color.rOrange)
+                }
+                .frame(maxWidth: .infinity, alignment: .topLeading)
+                .padding()
+            }
+            .background(Color.rBackground.ignoresSafeArea())
+            .navigationTitle("Catalog")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { showCatalogInfo = false }
+                }
             }
         }
-        .padding(.horizontal, 10).padding(.vertical, 8)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.rCard)
-        .clipShape(RoundedRectangle(cornerRadius: 10))
+    }
+
+    private func infoRow(icon: String, title: String, value: String) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: icon)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Color.rOrange)
+                .frame(width: 22)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(title).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                Text(value).font(.subheadline.weight(.semibold))
+            }
+        }
     }
 
     private var statsRow: some View {
