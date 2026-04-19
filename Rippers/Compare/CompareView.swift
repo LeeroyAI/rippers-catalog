@@ -142,12 +142,15 @@ struct CompareView: View {
 
     @ViewBuilder
     private func compareBikeImage(_ bike: Bike) -> some View {
-        BikeResolvedImageView(
-            bike: bike,
-            contentMode: .fill,
-            imagePadding: EdgeInsets(),
-            placeholder: { compareImagePlaceholder }
-        )
+        ZStack {
+            Color.rCard
+            BikeResolvedImageView(
+                bike: bike,
+                contentMode: .fit,
+                imagePadding: EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8),
+                placeholder: { compareImagePlaceholder }
+            )
+        }
     }
 
     private var compareImagePlaceholder: some View {
