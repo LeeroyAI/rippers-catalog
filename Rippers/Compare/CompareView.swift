@@ -14,11 +14,26 @@ struct CompareView: View {
     var body: some View {
         NavigationStack {
             if compared.isEmpty {
-                ContentUnavailableView(
-                    "No Bikes Selected",
-                    systemImage: "arrow.left.arrow.right",
-                    description: Text("Select up to 3 bikes in Results to compare.")
-                )
+                VStack(spacing: 16) {
+                    Image(systemName: "arrow.left.arrow.right")
+                        .font(.system(size: 44, weight: .light))
+                        .foregroundStyle(Color.rOrange)
+                    Text("No Bikes Selected")
+                        .font(.title3.weight(.semibold))
+                    Text("Select up to 3 bikes in Results to compare side-by-side.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                    Button {
+                        appState.activeTab = .results
+                    } label: {
+                        Label("Browse Results", systemImage: "list.bullet")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(Color.rOrange)
+                }
+                .padding(32)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 14) {
@@ -65,74 +80,62 @@ struct CompareView: View {
     private var bikeHeroRow: some View {
         HStack(spacing: 10) {
             ForEach(compared) { bike in
-                ZStack(alignment: .bottomLeading) {
-                    compareBikeImage(bike)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                VStack(spacing: 0) {
+                    ZStack {
+                        Color.rCard
+                        BikeResolvedImageView(
+                            bike: bike,
+                            contentMode: .fit,
+                            imagePadding: EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8),
+                            placeholder: { compareImagePlaceholder }
+                        )
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 130)
 
-                    LinearGradient(
-                        colors: [.clear, Color.black.opacity(0.7)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
+                    Divider()
 
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack {
-                            Text(bike.brand.uppercased())
-                                .font(.caption2.weight(.bold))
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 4)
-                                .background(Color.rCard.opacity(0.2))
-                                .clipShape(Capsule())
-                            Spacer()
-                            Button {
-                                appState.toggleCompare(bike.id)
-                            } label: {
-                                Image(systemName: "xmark")
-                                    .font(.caption.weight(.bold))
-                                    .padding(8)
-                                    .background(Color.black.opacity(0.35))
-                                    .clipShape(Circle())
-                            }
-                            .foregroundStyle(.white)
-                        }
-
-                        Spacer()
-
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(bike.brand.uppercased())
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(.secondary)
                         Text(bike.model)
-                            .font(.title3.weight(.bold))
-                            .foregroundStyle(.white)
+                            .font(.footnote.weight(.bold))
                             .lineLimit(2)
-                        HStack(alignment: .lastTextBaseline) {
-                            Text(Formatting.currency(bike.bestPrice))
-                                .font(.title2.weight(.heavy))
-                                .foregroundStyle(Color.rOrangeLight)
-                            Text("Best price")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.white.opacity(0.75))
+                            .minimumScaleFactor(0.8)
+                        if let price = bike.bestPrice {
+                            Text(Formatting.currency(price))
+                                .font(.footnote.weight(.heavy))
+                                .foregroundStyle(Color.rGreen)
+                        } else {
+                            Text("See retailer")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
                         }
                     }
-                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 8)
+                    .background(Color.rCard)
                 }
-                .frame(maxWidth: .infinity, minHeight: 220, maxHeight: 220)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .stroke(Color.white.opacity(0.35), lineWidth: 1)
-                )
-                .shadow(color: Color.black.opacity(0.12), radius: 8, x: 0, y: 4)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .overlay(alignment: .topTrailing) {
+                    Button {
+                        appState.toggleCompare(bike.id)
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 9, weight: .bold))
+                            .padding(6)
+                            .background(.ultraThinMaterial)
+                            .clipShape(Circle())
+                    }
+                    .foregroundStyle(.primary)
+                    .padding(8)
+                }
+                .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.rBorder, lineWidth: 1))
+                .shadow(color: Color.black.opacity(0.08), radius: 6, x: 0, y: 3)
             }
         }
-    }
-
-    @ViewBuilder
-    private func compareBikeImage(_ bike: Bike) -> some View {
-        BikeResolvedImageView(
-            bike: bike,
-            contentMode: .fill,
-            imagePadding: EdgeInsets(),
-            placeholder: { compareImagePlaceholder }
-        )
     }
 
     private var compareImagePlaceholder: some View {
@@ -158,7 +161,7 @@ struct CompareView: View {
             HStack(alignment: .top, spacing: 10) {
                 ForEach(compared) { bike in
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(bike.brand)
+                        Text(shortLabel(for: bike))
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
@@ -181,6 +184,11 @@ struct CompareView: View {
             RoundedRectangle(cornerRadius: 12)
                 .stroke(Color.rBorder, lineWidth: 1)
         )
+    }
+
+    private func shortLabel(for bike: Bike) -> String {
+        let m = bike.model
+        return m.count > 14 ? String(m.prefix(13)) + "…" : m
     }
 
     private func sectionTitle(_ text: String) -> some View {

@@ -260,11 +260,12 @@ struct BikeCardView: View {
     private var sortedRetailerPrices: [(retailer: Retailer, price: Double)] {
         bike.prices
             .compactMap { key, value in
-                guard bike.inStock.contains(key),
-                      let retailer = RETAILERS.first(where: { $0.id == key }) else { return nil }
+                guard let retailer = RETAILERS.first(where: { $0.id == key }) else { return nil }
                 return (retailer, value)
             }
             .sorted(by: { $0.price < $1.price })
+            .prefix(3)
+            .map { $0 }
     }
 
     private func toggleWatch() {

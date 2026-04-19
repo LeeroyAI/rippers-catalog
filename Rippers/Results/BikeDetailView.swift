@@ -58,16 +58,24 @@ struct BikeDetailView: View {
                             .font(.headline)
                         ForEach(priceRows, id: \.retailer.id) { row in
                             HStack {
-                                VStack(alignment: .leading) {
+                                VStack(alignment: .leading, spacing: 2) {
                                     Text(row.retailer.name)
                                         .font(.subheadline.weight(.semibold))
-                                    Text(row.retailer.isAustralian ? "AU" : "INTL")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
+                                    HStack(spacing: 4) {
+                                        Text(row.retailer.isAustralian ? "AU" : "INTL")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                        if !bike.inStock.isEmpty && !row.inStock {
+                                            Text("Check stock")
+                                                .font(.caption2.weight(.semibold))
+                                                .foregroundStyle(Color.rYellow)
+                                        }
+                                    }
                                 }
                                 Spacer()
                                 Text(Formatting.currency(row.price))
                                     .font(.subheadline.weight(.bold))
+                                    .foregroundStyle(row.price == bike.bestPrice ? Color.rGreen : .primary)
                                 Button("Deal") {
                                     if let url = row.retailer.dealURL(for: bike) {
                                         openURL(url)
@@ -148,14 +156,17 @@ struct BikeDetailView: View {
         }
     }
 
-    private var priceRows: [(retailer: Retailer, price: Double)] {
-        bike.prices
+    private var priceRows: [(retailer: Retailer, price: Double, inStock: Bool)] {
+        let hasStockData = !bike.inStock.isEmpty
+        return bike.prices
             .compactMap { key, value in
-                guard bike.inStock.contains(key),
-                      let retailer = RETAILERS.first(where: { $0.id == key }) else { return nil }
-                return (retailer, value)
+                guard let retailer = RETAILERS.first(where: { $0.id == key }) else { return nil }
+                return (retailer, value, bike.inStock.contains(key))
             }
-            .sorted(by: { $0.price < $1.price })
+            .sorted { a, b in
+                if hasStockData && a.inStock != b.inStock { return a.inStock }
+                return a.price < b.price
+            }
     }
 }
 
