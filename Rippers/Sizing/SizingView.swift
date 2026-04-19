@@ -86,11 +86,12 @@ struct SizingView: View {
                     }
 
                     if let fitSummary {
-                        HStack(spacing: 8) {
-                            fitBadge("Direct fit", "\(fitSummary.fullFitCount)", color: Color.rGreen)
-                            fitBadge("Nearby", "\(fitSummary.partialFitCount)", color: Color.rYellow)
-                            fitBadge("No fit", "\(fitSummary.noFitCount)", color: Color.rRed.opacity(0.7))
-                            Spacer()
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack(spacing: 8) {
+                                fitBadge("Direct fit", "\(fitSummary.fullFitCount)", color: Color.rGreen)
+                                fitBadge("Nearby", "\(fitSummary.partialFitCount)", color: Color.rYellow)
+                                fitBadge("No fit", "\(fitSummary.noFitCount)", color: Color.rRed.opacity(0.7))
+                            }
                             Text(fitSummary.confidenceLabel)
                                 .font(.caption2.weight(.semibold))
                                 .padding(.horizontal, 8).padding(.vertical, 4)
