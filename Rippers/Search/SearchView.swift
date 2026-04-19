@@ -764,6 +764,10 @@ struct SearchView: View {
             filterStore.liveResults = result.bikes
             filterStore.liveResultSource = "Live · \(result.count) bikes from web"
             lastSearchFingerprint = currentSearchFingerprint
+            // Persist results for this profile — grows the local bike library
+            if let profileId = activeProfile?.id {
+                catalogStore.save(result.bikes, profileTag: profileId.uuidString)
+            }
         } catch {
             filterStore.liveSearchError = error.localizedDescription
             lastSearchFingerprint = currentSearchFingerprint
