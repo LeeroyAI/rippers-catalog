@@ -6,6 +6,7 @@ struct SizingView: View {
     @Query private var profiles: [RiderProfile]
     @State private var manualHeightText: String = ""
     @State private var manualStyle: RidingStyle = .trail
+    @State private var selectedSizingBike: Bike? = nil
 
     private var activeProfile: RiderProfile? { profiles.first(where: { $0.isActive }) }
     private var effectiveHeight: Int? { activeProfile?.heightCm ?? Int(manualHeightText) }
@@ -26,8 +27,7 @@ struct SizingView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 12) {
-                    introCard
-                    inputCard
+                    profileHeroCard
                     recommendationCard
                     wheelGuidanceCard
                     kidsYouthSizingCard
@@ -44,52 +44,137 @@ struct SizingView: View {
             .background(Color.rBackground.ignoresSafeArea())
             .navigationTitle("Sizing")
             .navigationBarTitleDisplayMode(.inline)
-        }
-    }
-
-    private var introCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Sizing Assistant").font(.headline)
-            Text("Get a frame-size recommendation based on height and riding style, then see which bikes in the catalog actually stock that size.")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-        }
-        .padding()
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.rCard)
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-    }
-
-    private var inputCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Rider Inputs").font(.headline)
-            if let activeProfile {
-                Text("Using active profile: \(activeProfile.name) (\(activeProfile.heightCm) cm, \(effectiveStyle.label))")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            } else {
-                Text("No active profile selected. Enter height and style to calculate fit.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                TextField("Height (cm)", text: $manualHeightText)
-                    .textFieldStyle(.roundedBorder)
-                    .keyboardType(.numberPad)
-                    .onChange(of: manualHeightText) { _, newValue in
-                        let digits = newValue.filter(\.isNumber)
-                        if digits != newValue { manualHeightText = digits }
-                    }
-
-                Picker("Riding style", selection: $manualStyle) {
-                    ForEach(RidingStyle.allCases, id: \.self) { style in
-                        Text(style.label).tag(style)
-                    }
-                }
-                .pickerStyle(.segmented)
+            .sheet(item: $selectedSizingBike) { bike in
+                BikeDetailView(bike: bike)
             }
         }
-        .padding()
-        .background(Color.rCard)
-        .clipShape(RoundedRectangle(cornerRadius: 14))
+    }
+
+    private var profileHeroCard: some View {
+        Group {
+            if let profile = activeProfile {
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(alignment: .top, spacing: 12) {
+                        avatarView(data: profile.avatarData)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(profile.name)
+                                .font(.title3.weight(.bold))
+                            HStack(spacing: 6) {
+                                sizingPill(profile.experience, color: Color.rOrange)
+                                sizingPill(profile.style, color: Color.rOrangeDark)
+                            }
+                            Text("\(profile.heightCm) cm  ·  \(profile.weightKg) kg")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        if let rec = recommendation {
+                            VStack(alignment: .trailing, spacing: 2) {
+                                Text("Your size")
+                                    .font(.caption2.weight(.semibold))
+                                    .foregroundStyle(.secondary)
+                                Text(rec.primary)
+                                    .font(.system(size: 34, weight: .bold))
+                                    .foregroundStyle(Color.rOrange)
+                                if let sec = rec.secondary {
+                                    Text("or \(sec)")
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+                    }
+
+                    if let fitSummary {
+                        HStack(spacing: 8) {
+                            fitBadge("Direct fit", "\(fitSummary.fullFitCount)", color: Color.rGreen)
+                            fitBadge("Nearby", "\(fitSummary.partialFitCount)", color: Color.rYellow)
+                            fitBadge("No fit", "\(fitSummary.noFitCount)", color: Color.rRed.opacity(0.7))
+                            Spacer()
+                            Text(fitSummary.confidenceLabel)
+                                .font(.caption2.weight(.semibold))
+                                .padding(.horizontal, 8).padding(.vertical, 4)
+                                .background(fitSummary.confidenceColor.opacity(0.14))
+                                .foregroundStyle(fitSummary.confidenceColor)
+                                .clipShape(Capsule())
+                        }
+                    }
+                }
+                .padding(14)
+                .background(LinearGradient(colors: [Color.rCard, Color.rOrangeLight], startPoint: .topLeading, endPoint: .bottomTrailing))
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.rBorder, lineWidth: 1))
+            } else {
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(alignment: .top) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Sizing Assistant")
+                                .font(.title3.weight(.bold))
+                            Text("Enter your height and riding style below to get a frame size and catalog fit report.")
+                                .font(.subheadline).foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Image(systemName: "ruler")
+                            .font(.title2.weight(.bold))
+                            .foregroundStyle(Color.rOrange)
+                    }
+                    TextField("Height (cm)", text: $manualHeightText)
+                        .textFieldStyle(.roundedBorder)
+                        .keyboardType(.numberPad)
+                        .onChange(of: manualHeightText) { _, newValue in
+                            let digits = newValue.filter(\.isNumber)
+                            if digits != newValue { manualHeightText = digits }
+                        }
+                    if !manualHeightText.isEmpty, !(100...220).contains(Int(manualHeightText) ?? 0) {
+                        Text("Enter a height between 100 and 220 cm.")
+                            .font(.caption)
+                            .foregroundStyle(Color.rRed)
+                    }
+                    Picker("Riding style", selection: $manualStyle) {
+                        ForEach(RidingStyle.allCases, id: \.self) { Text($0.label).tag($0) }
+                    }
+                    .pickerStyle(.segmented)
+                }
+                .padding(14)
+                .background(LinearGradient(colors: [Color.rCard, Color.rOrangeLight], startPoint: .topLeading, endPoint: .bottomTrailing))
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.rBorder, lineWidth: 1))
+            }
+        }
+    }
+
+    private func sizingPill(_ label: String, color: Color) -> some View {
+        Text(label)
+            .font(.caption2.weight(.bold))
+            .padding(.horizontal, 8).padding(.vertical, 3)
+            .background(color.opacity(0.15))
+            .foregroundStyle(color)
+            .clipShape(Capsule())
+    }
+
+    private func fitBadge(_ title: String, _ value: String, color: Color) -> some View {
+        VStack(spacing: 1) {
+            Text(value).font(.caption.weight(.bold)).foregroundStyle(color)
+            Text(title).font(.caption2).foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 8).padding(.vertical, 4)
+        .background(color.opacity(0.1))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+
+    private func avatarView(data: Data?) -> some View {
+        Group {
+            if let data, let image = UIImage(data: data) {
+                Image(uiImage: image).resizable().scaledToFill()
+            } else {
+                ZStack {
+                    Circle().fill(Color.rOrangeLight)
+                    Image(systemName: "person.fill").foregroundStyle(Color.rOrange)
+                }
+            }
+        }
+        .frame(width: 48, height: 48)
+        .clipShape(Circle())
     }
 
     private var recommendationCard: some View {
@@ -166,31 +251,45 @@ struct SizingView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Catalog Fit Coverage").font(.headline)
             if let recommendation, let fitSummary {
-                HStack(spacing: 8) {
-                    statPill("Direct fit", "\(fitSummary.fullFitCount)")
-                    statPill("Nearby fit", "\(fitSummary.partialFitCount)")
-                    statPill("No fit", "\(fitSummary.noFitCount)")
-                }
-                Text("Based on bikes currently in your catalog for size \(recommendation.label).")
+                Text("Bikes in the catalog that stock size \(recommendation.label) — tap any to see full details.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
-                ForEach(fitSummary.topMatches.prefix(6), id: \.id) { bike in
-                    HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("\(bike.brand) \(bike.model)")
-                                .font(.subheadline.weight(.semibold))
-                                .lineLimit(1)
-                            Text("Sizes: \(bike.sizes.joined(separator: ", "))")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                if fitSummary.topMatches.isEmpty {
+                    Text("No catalog bikes currently stock your size. Try Live Search on the Home tab.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(fitSummary.topMatches.prefix(8), id: \.id) { bike in
+                        Button {
+                            selectedSizingBike = bike
+                        } label: {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("\(bike.brand) \(bike.model)")
+                                        .font(.subheadline.weight(.semibold))
+                                        .foregroundStyle(.primary)
+                                        .lineLimit(1)
+                                    Text("Sizes: \(bike.sizes.joined(separator: ", "))  ·  \(bike.category)")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                VStack(alignment: .trailing, spacing: 2) {
+                                    Text(Formatting.currency(bike.bestPrice))
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundStyle(Color.rGreen)
+                                    Image(systemName: "chevron.right")
+                                        .font(.caption2.weight(.semibold))
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                            .padding(10)
+                            .background(Color.rBackground.opacity(0.6))
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
                         }
-                        Spacer()
-                        Text(Formatting.currency(bike.bestPrice))
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(Color.rGreen)
+                        .buttonStyle(.plain)
                     }
-                    .padding(.vertical, 4)
                 }
             } else {
                 Text("Enter rider details to evaluate which bikes match your size.")
@@ -349,17 +448,6 @@ struct SizingView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.rCard)
         .clipShape(RoundedRectangle(cornerRadius: 14))
-    }
-
-    private func statPill(_ title: String, _ value: String) -> some View {
-        VStack(spacing: 2) {
-            Text(value).font(.caption.weight(.bold))
-            Text(title).font(.caption2).foregroundStyle(.secondary)
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        .background(Color.rOrangeLight.opacity(0.45))
-        .clipShape(Capsule())
     }
 
     private func buildRecommendation(heightCm: Int, style: RidingStyle) -> SizeRecommendation {
