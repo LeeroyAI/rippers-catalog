@@ -187,6 +187,13 @@ struct SearchView: View {
                     populateDraft(from: activeProfile)
                 }
             }
+            .onChange(of: showProfileEditor) { _, isOpen in
+                if isOpen {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        focusedField = .name
+                    }
+                }
+            }
             .onChange(of: activeProfile?.id) { _, _ in
                 if let activeProfile {
                     populateDraft(from: activeProfile)

@@ -82,6 +82,13 @@ struct ProfileOnboardingView: View {
                     walkthroughOverlay
                 }
             }
+            .onChange(of: walkthroughCompleted) { _, completed in
+                if completed {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                        focusedField = .name
+                    }
+                }
+            }
         }
     }
 
