@@ -476,10 +476,24 @@ struct TripPlannerView: View {
                         }
                     }
 
-                    if !nearbyShops.isEmpty {
-                        sectionCard(title: "Nearby Bike Shops") {
-                            ForEach(nearbyShops.prefix(6), id: \.self) { shop in
-                                shopCard(shop)
+                    if lastSearchedDestination != nil {
+                        sectionCard(title: "Bike Shops Near \(destination)") {
+                            if nearbyShops.isEmpty {
+                                HStack(spacing: 10) {
+                                    Image(systemName: "bicycle")
+                                        .foregroundStyle(.secondary)
+                                    Text("No bike shops found within 80km of this location.")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                .padding(10)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(Color.rBackground.opacity(0.55))
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                            } else {
+                                ForEach(nearbyShops.prefix(8), id: \.self) { shop in
+                                    shopCard(shop)
+                                }
                             }
                         }
                     }
@@ -691,6 +705,39 @@ struct TripPlannerView: View {
         .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 
+    private func trailforksTrailCard(_ trail: TrailforksTrail) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(trail.name)
+                    .font(.subheadline.weight(.semibold))
+                if let difficulty = trail.difficulty, !difficulty.isEmpty {
+                    Text("Difficulty: \(difficulty)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            Spacer()
+            if let url = trail.linkURL {
+                Link(destination: url) {
+                    HStack(spacing: 4) {
+                        Text("Trailforks")
+                            .font(.caption.weight(.semibold))
+                        Image(systemName: "arrow.up.right")
+                            .font(.caption2.weight(.bold))
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(Color.rOrange.opacity(0.15))
+                    .foregroundStyle(Color.rOrange)
+                    .clipShape(Capsule())
+                }
+            }
+        }
+        .padding(10)
+        .background(Color.rBackground.opacity(0.55))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+    }
+
     private func trailforksURL(lat: Double, lon: Double) -> URL? {
         URL(string: "https://www.trailforks.com/trails/?lat=\(lat)&lon=\(lon)&context=region")
     }
@@ -839,23 +886,20 @@ struct TripPlannerView: View {
     }
 
     private func searchNearbyShops(around coordinate: CLLocationCoordinate2D) async {
-        let request = MKLocalSearch.Request()
-        request.naturalLanguageQuery = "bike shop"
-        request.resultTypes = .pointOfInterest
-        request.region = MKCoordinateRegion(center: coordinate, span: MKCoordinateSpan(latitudeDelta: 0.15, longitudeDelta: 0.15))
-        do {
-            let raw = try await MKLocalSearch(request: request).start().mapItems
-            nearbyShops = sanitizeNearbyResults(
-                raw,
-                around: coordinate,
-                maxDistanceKM: 60
-            )
-        } catch {
-            nearbyShops = []
-        }
+        let region = MKCoordinateRegion(
+            center: coordinate,
+            span: MKCoordinateSpan(latitudeDelta: 0.45, longitudeDelta: 0.45)
+        )
+        async let r1 = fetchMapItems(query: "bike shop", region: region, resultTypes: .pointOfInterest)
+        async let r2 = fetchMapItems(query: "bicycle shop", region: region, resultTypes: .pointOfInterest)
+        async let r3 = fetchMapItems(query: "cycling store", region: region, resultTypes: .pointOfInterest)
+        let combined = await r1 + r2 + r3
+        nearbyShops = sanitizeNearbyResults(combined, around: coordinate, maxDistanceKM: 80)
     }
 
     private func searchNearbyRidingAreas(around coordinate: CLLocationCoordinate2D) async {
+        await searchTrailforksTrails(around: coordinate)
+
         let region = MKCoordinateRegion(
             center: coordinate,
             span: MKCoordinateSpan(latitudeDelta: 0.6, longitudeDelta: 0.6)
@@ -890,6 +934,57 @@ struct TripPlannerView: View {
             return lTrail > rTrail
         }
         nearbyRidingAreas = Array(trailFirst.prefix(10))
+    }
+
+    private func searchTrailforksTrails(around coordinate: CLLocationCoordinate2D) async {
+        guard !TrailforksConfig.appID.isEmpty, !TrailforksConfig.appSecret.isEmpty else {
+            trailforksTrails = []
+            trailforksStatus = "Trailforks API keys not configured yet. Use the button below to browse trails on Trailforks."
+            return
+        }
+
+        var components = URLComponents(string: "https://www.trailforks.com/api/1/trails")
+        components?.queryItems = [
+            URLQueryItem(name: "app_id", value: TrailforksConfig.appID),
+            URLQueryItem(name: "app_secret", value: TrailforksConfig.appSecret),
+            URLQueryItem(name: "lat", value: String(coordinate.latitude)),
+            URLQueryItem(name: "lon", value: String(coordinate.longitude)),
+            URLQueryItem(name: "rows", value: "25"),
+            URLQueryItem(name: "scope", value: "full")
+        ]
+        guard let url = components?.url else {
+            trailforksTrails = []
+            trailforksStatus = "Unable to build Trailforks request."
+            return
+        }
+
+        do {
+            let (data, response) = try await URLSession.shared.data(from: url)
+            guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
+                trailforksTrails = []
+                trailforksStatus = "Trailforks request failed. You can still browse trails directly on Trailforks."
+                return
+            }
+            let decoded = try JSONDecoder().decode(TrailforksTrailResponse.self, from: data)
+            let mapped = (decoded.data ?? []).compactMap { item -> TrailforksTrail? in
+                let name = item.title ?? item.name
+                guard let name, !name.isEmpty else { return nil }
+                let link = item.url ?? item.alias.map { "https://www.trailforks.com/trails/\($0)/" }
+                return TrailforksTrail(
+                    id: item.trailID.map(String.init) ?? "\(name)-\(item.latitude ?? 0)-\(item.longitude ?? 0)",
+                    name: name,
+                    difficulty: item.difficulty,
+                    linkURL: link.flatMap(URL.init(string:)),
+                    latitude: item.latitude,
+                    longitude: item.longitude
+                )
+            }
+            trailforksTrails = mapped
+            trailforksStatus = mapped.isEmpty ? "Trailforks returned no nearby trails for this location." : nil
+        } catch {
+            trailforksTrails = []
+            trailforksStatus = "Unable to load trails from Trailforks right now."
+        }
     }
 
     private func fetchMapItems(query: String, region: MKCoordinateRegion, resultTypes: MKLocalSearch.ResultType) async -> [MKMapItem] {
@@ -1175,6 +1270,49 @@ private extension Double {
 private struct AreaBikeStyle: Identifiable {
     let id = UUID()
     let name: String
+}
+
+private enum TrailforksConfig {
+    // Configure with Trailforks API credentials when available.
+    static let appID = ""
+    static let appSecret = ""
+}
+
+private struct TrailforksTrail: Identifiable {
+    let id: String
+    let name: String
+    let difficulty: String?
+    let linkURL: URL?
+    let latitude: Double?
+    let longitude: Double?
+}
+
+private struct TrailforksTrailResponse: Decodable {
+    let error: Int?
+    let message: String?
+    let data: [TrailforksTrailDTO]?
+}
+
+private struct TrailforksTrailDTO: Decodable {
+    let trailID: Int?
+    let title: String?
+    let name: String?
+    let alias: String?
+    let url: String?
+    let difficulty: String?
+    let latitude: Double?
+    let longitude: Double?
+
+    enum CodingKeys: String, CodingKey {
+        case trailID = "trailid"
+        case title
+        case name
+        case alias
+        case url
+        case difficulty
+        case latitude = "lat"
+        case longitude = "lon"
+    }
 }
 
 private struct TripGearItem: Identifiable {
