@@ -43,17 +43,24 @@ skipped = 0
 swift_files.each do |abs_path|
   next if existing_paths.include?(abs_path)
 
-  rel_path = Pathname.new(abs_path).relative_path_from(Pathname.new(REPO_ROOT)).to_s
-  group_path = File.dirname(rel_path).split('/').drop(1) # drop 'Rippers' prefix
+  rel_path = Pathname.new(abs_path).relative_path_from(Pathname.new(SOURCE_ROOT)).to_s
+  group_path = File.dirname(rel_path).split('/')  # relative to Rippers/ already
 
-  # Navigate/create the group hierarchy in the Xcode project
-  group = project.main_group
+  # Find the existing Rippers source group (has path = 'Rippers')
+  rippers_group = project.main_group.children.find do |c|
+    c.is_a?(Xcodeproj::Project::Object::PBXGroup) && c.path == 'Rippers'
+  end
+  rippers_group ||= project.main_group  # fallback
+
+  # Navigate/create the group hierarchy inside the Rippers group
+  group = rippers_group
   group_path.each do |component|
+    next if component == '.'
     existing = group.children.find { |c| c.is_a?(Xcodeproj::Project::Object::PBXGroup) && c.name == component }
     group = existing || group.new_group(component, component)
   end
 
-  file_ref = group.new_file(abs_path)
+  file_ref = group.new_reference(abs_path)
   sources_phase.add_file_reference(file_ref)
   puts "  + #{rel_path}"
   added += 1
