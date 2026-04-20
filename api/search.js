@@ -38,6 +38,10 @@ export default async function handler(req, res) {
     ebike,
     country = "AU",
     cursor,
+    height,
+    weight,
+    age,
+    experience,
   } = req.query;
 
   const missing = [];
@@ -61,6 +65,10 @@ export default async function handler(req, res) {
       brands: brands ? brands.split(",") : [],
       ebike: ebike === "true",
       country,
+      height: height ? Number(height) : null,
+      weight: weight ? Number(weight) : null,
+      age: age ? Number(age) : null,
+      experience: experience || null,
     };
 
     const queries = buildQueries(criteria);
@@ -87,92 +95,158 @@ export default async function handler(req, res) {
 }
 
 // ---------------------------------------------------------------------------
-// Query builder — generates targeted search strings from criteria
+// Sizing helpers — height (cm) → frame size label and search terms
+// ---------------------------------------------------------------------------
+
+function frameSizeLabel(heightCm) {
+  if (heightCm < 155) return "XS";
+  if (heightCm < 163) return "S";
+  if (heightCm < 170) return "S/M";
+  if (heightCm < 178) return "M";
+  if (heightCm < 185) return "M/L";
+  if (heightCm < 192) return "L";
+  return "XL";
+}
+
+function sizeSearchTerms(heightCm) {
+  if (heightCm < 155) return "XS extra-small frame";
+  if (heightCm < 163) return "small frame size S";
+  if (heightCm < 170) return "small medium frame S M";
+  if (heightCm < 178) return "medium frame size M";
+  if (heightCm < 185) return "medium large frame M L";
+  if (heightCm < 192) return "large frame size L XL";
+  return "large XL extra-large frame";
+}
+
+// Top brands by riding style — used to generate a brand-sweep query
+function topBrandsForStyle(styleOrCat) {
+  const map = {
+    "Trail":             "Specialized Trek Norco Giant Orbea Canyon Kona Rocky Mountain",
+    "Enduro":            "Specialized Yeti Santa Cruz Transition Evil Canyon Commencal",
+    "XC / Cross-Country":"Trek Giant Specialized Scott Canyon Orbea Merida",
+    "Downhill":          "Santa Cruz Commencal Intense YT Industries Norco",
+    "Hardtail":          "Trek Specialized Giant Norco Canyon Kona Merida",
+    "eBike":             "Specialized Trek Giant Canyon Orbea Merida Scott Bosch",
+    "All-Mountain":      "Norco Rocky Mountain Kona Canyon Devinci Pivot",
+    "Gravity":           "Santa Cruz Yeti Intense Commencal YT Industries",
+  };
+  return map[styleOrCat] || "Specialized Trek Giant Norco Canyon Orbea Santa Cruz";
+}
+
+// Experience level → descriptive search adjectives
+function experienceTerms(experience) {
+  if (!experience) return "";
+  const e = experience.toLowerCase();
+  if (e.includes("beginner") || e.includes("newcomer")) return "beginner friendly progressive";
+  if (e.includes("advanced") || e.includes("expert")) return "aggressive performance high-end";
+  if (e.includes("intermed")) return "";
+  return "";
+}
+
+// ---------------------------------------------------------------------------
+// Query builder — generates 6–8 targeted search strings from criteria
 // ---------------------------------------------------------------------------
 
 function buildQueries(criteria) {
-  const {
-    q,
-    category,
-    budget,
-    wheel,
-    suspension,
-    style,
-    ageRange,
-    travel,
-    brands,
-    ebike,
-    country,
-  } = criteria;
+  const { q, category, budget, wheel, suspension, style, ageRange, travel,
+          brands, ebike, country, height, weight, age, experience } = criteria;
 
-  const baseTerms = [];
+  const locationTerm = country === "AU"
+    ? "Australia buy 2024 2025 price"
+    : "buy 2024 2025 price";
 
-  // Free-text search drives the primary query when provided
+  const sizeTerm   = height ? sizeSearchTerms(height) : "";
+  const expTerms   = experienceTerms(experience);
+
+  // Resolve riding style / category label
+  const styleOrCat = (style && style !== "Any") ? style
+    : (category && category !== "Any") ? category
+    : null;
+
+  // Core bike type phrase
+  const bikeTerm = ebike
+    ? "electric mountain bike eMTB"
+    : (ageRange?.toLowerCase().includes("kids"))
+      ? "kids youth mountain bike"
+      : styleOrCat
+        ? `${styleOrCat} mountain bike`
+        : "mountain bike";
+
+  // Suspension constraint
+  const suspTerm = (suspension === "Hardtail" || category === "Hardtail")
+    ? "hardtail"
+    : (!ebike && styleOrCat && !styleOrCat.includes("XC"))
+      ? "full suspension"
+      : "";
+
+  // Spec constraints
+  const specParts = [
+    wheel && wheel !== "Any" ? wheel.replace('"', " inch") : "",
+    suspTerm,
+    travel || "",
+  ].filter(Boolean).join(" ");
+
+  const budgetTerm  = budget ? `under $${budget} AUD` : "";
+  const brandNames  = topBrandsForStyle(styleOrCat);
+
+  // ── Free-text search: just run the query ─────────────────────────────────
   if (q) {
-    baseTerms.push(q);
-    // Always append "mountain bike" for context unless the query already implies it
-    if (!/mountain bike|mtb|ebike|e-bike/i.test(q)) {
-      baseTerms.push("mountain bike");
-    }
-  } else if (ebike) {
-    baseTerms.push("electric mountain bike eMTB");
-  } else if (ageRange && ageRange.toLowerCase().includes("kids")) {
-    baseTerms.push("kids mountain bike youth bicycle");
-  } else {
-    baseTerms.push("mountain bike");
+    const base = [q, !/mountain bike|mtb/i.test(q) ? "mountain bike" : "", locationTerm]
+      .filter(Boolean).join(" ");
+    return [...new Set([base, `buy ${base}`, `${base} price`])].slice(0, 4);
   }
 
-  if (
-    !q &&
-    category &&
-    category !== "Any" &&
-    category !== "eBike" &&
-    category !== "Hardtail"
-  ) {
-    baseTerms.push(category);
-  }
-  if (suspension === "Hardtail" || category === "Hardtail") {
-    baseTerms.push("hardtail");
-  }
-  if (wheel && wheel !== "Any") {
-    baseTerms.push(wheel.replace('"', " inch"));
-  }
-  if (travel) {
-    baseTerms.push(travel);
-  }
-  if (budget) {
-    baseTerms.push(`under $${budget}`);
-  }
-
-  const locationTerm =
-    country === "AU"
-      ? "Australia buy 2024 2025 price"
-      : "buy 2024 2025 price";
-  baseTerms.push(locationTerm);
-
-  const base = baseTerms.join(" ");
-
-  // If specific brands requested, generate one query per brand
+  // ── Brand-specific search ─────────────────────────────────────────────────
   if (brands && brands.length > 0) {
-    return brands.map((b) => `${b} ${base}`);
+    return brands
+      .map(b => [b, bikeTerm, specParts, sizeTerm, budgetTerm, locationTerm]
+        .filter(Boolean).join(" "))
+      .slice(0, 8);
   }
 
-  // Free-text: run the exact query + a "buy" variant
-  if (q) {
-    return [...new Set([base, `buy ${base}`])].slice(0, 4);
+  // ── Profile-driven search — 6-8 diverse queries ───────────────────────────
+  const queries = new Set();
+
+  // Q1 — Core: style + size + budget + location
+  queries.add([bikeTerm, specParts, sizeTerm, budgetTerm, locationTerm]
+    .filter(Boolean).join(" ").replace(/\s+/g, " ").trim());
+
+  // Q2 — Experience/skill angle
+  if (expTerms) {
+    queries.add([expTerms, bikeTerm, specParts, sizeTerm, locationTerm]
+      .filter(Boolean).join(" ").replace(/\s+/g, " ").trim());
   }
 
-  // Otherwise generate several covering different price/style angles
-  const queries = [base];
-  if (style && style !== "Any") {
-    queries.push(`${style} ${base}`);
-  }
-  if (!budget) {
-    queries.push(`${base} best value`);
-    queries.push(`${base} premium high end`);
+  // Q3 — Brand sweep for this style
+  queries.add([brandNames, bikeTerm, sizeTerm, "2025 Australia"]
+    .filter(Boolean).join(" ").replace(/\s+/g, " ").trim());
+
+  // Q4 — AU retailer-focused
+  queries.add([bikeTerm, specParts, sizeTerm, "99bikes pushys bikeonline chainreaction 2025 Australia price buy"]
+    .filter(Boolean).join(" ").replace(/\s+/g, " ").trim());
+
+  // Q5 — Budget range sweep (if budget set, show value range; else show value + premium)
+  if (budget) {
+    const low = Math.round(budget * 0.55 / 100) * 100;
+    queries.add([bikeTerm, specParts, `$${low} to $${budget} AUD`, "Australia 2025"]
+      .filter(Boolean).join(" ").replace(/\s+/g, " ").trim());
+  } else {
+    queries.add(["best value", bikeTerm, specParts, sizeTerm, locationTerm]
+      .filter(Boolean).join(" ").replace(/\s+/g, " ").trim());
+    queries.add(["premium high-end", bikeTerm, specParts, sizeTerm, locationTerm]
+      .filter(Boolean).join(" ").replace(/\s+/g, " ").trim());
   }
 
-  return [...new Set(queries)].slice(0, 4);
+  // Q6 — Alternative wheel / travel angle to widen net
+  const altWheel = (!wheel || wheel === "Any" || wheel === '29"') ? '27.5"' : '29"';
+  queries.add([bikeTerm, altWheel.replace('"', " inch"), suspTerm, sizeTerm, budgetTerm, locationTerm]
+    .filter(Boolean).join(" ").replace(/\s+/g, " ").trim());
+
+  // Q7 — "Best of" editorial sweep (review sites surface more models)
+  queries.add([`best ${styleOrCat || ""} mountain bikes 2025 Australia`, sizeTerm, budgetTerm]
+    .filter(Boolean).join(" ").replace(/\s+/g, " ").trim());
+
+  return [...queries].filter(Boolean).slice(0, 8);
 }
 
 // ---------------------------------------------------------------------------
@@ -202,7 +276,7 @@ async function searchAll(queries, country, cursor) {
     }
   }
 
-  return snippets.slice(0, 30);
+  return snippets.slice(0, 50);
 }
 
 async function braveSearch(query, country, cursor) {
@@ -246,22 +320,36 @@ async function extractBikes(snippets, criteria) {
     )
     .join("\n\n");
 
+  // Build rider profile context for the prompt
+  const hasProfile = criteria.height || criteria.age || criteria.experience || criteria.style;
+  const riderFrameSize = criteria.height ? frameSizeLabel(criteria.height) : null;
+
+  const riderContext = hasProfile ? `
+RIDER PROFILE (use this to prioritise and describe fit):
+${criteria.age ? `- Age: ${criteria.age} years old` : ""}
+${criteria.height ? `- Height: ${criteria.height}cm → recommended frame size: ${riderFrameSize} (${sizeSearchTerms(criteria.height)})` : ""}
+${criteria.weight ? `- Weight: ${criteria.weight}kg` : ""}
+${criteria.experience ? `- Experience level: ${criteria.experience}` : ""}
+${criteria.style ? `- Riding style: ${criteria.style}` : ""}
+${criteria.budget ? `- Budget: up to $${criteria.budget} AUD` : ""}
+`.trim() : "";
+
   const criteriaDesc = [
     criteria.q ? `Search query: "${criteria.q}"` : null,
-    criteria.category && criteria.category !== "Any"
-      ? `Category: ${criteria.category}`
-      : null,
+    criteria.category && criteria.category !== "Any" ? `Category: ${criteria.category}` : null,
     criteria.budget ? `Max budget: $${criteria.budget} AUD` : null,
-    criteria.wheel && criteria.wheel !== "Any"
-      ? `Wheel: ${criteria.wheel}`
-      : null,
+    criteria.wheel && criteria.wheel !== "Any" ? `Wheel: ${criteria.wheel}` : null,
     criteria.suspension ? `Suspension: ${criteria.suspension}` : null,
     criteria.style ? `Riding style: ${criteria.style}` : null,
     criteria.ebike ? "eBike / electric MTB only" : null,
     criteria.ageRange ? `Age range: ${criteria.ageRange}` : null,
-  ]
-    .filter(Boolean)
-    .join("\n");
+  ].filter(Boolean).join("\n");
+
+  const sizingInstruction = riderFrameSize ? `
+SIZING — for a ${criteria.height}cm rider the recommended frame is ${riderFrameSize}.
+In the description field, include one sentence stating which specific sizes (e.g. "M or L") fit this rider and whether this bike suits their experience and riding style.
+Exclude from the output any bike where the available sizes array does not include ${riderFrameSize.split("/").join(" or ")} — those bikes cannot physically fit this rider.
+` : "";
 
   const prompt = `You are a mountain bike product data specialist with comprehensive knowledge of MTB specifications for all major brands (Specialized, Trek, Giant, Santa Cruz, Yeti, Canyon, Orbea, Scott, Norco, Rocky Mountain, Intense, Pivot, etc.).
 
@@ -273,8 +361,12 @@ Identify every distinct mountain bike for sale in these web search results. Extr
 PHASE 2 — SPECS (use your training knowledge, not the snippets)
 For every bike identified in Phase 1, provide COMPLETE, ACCURATE specifications from your training data. Do not leave spec fields empty because the snippet omitted them — the snippets almost never have full specs. Use your knowledge of the exact brand + model + year + trim. If the year is unclear, use 2024 or 2025 and apply the spec set for that model year.
 
+${riderContext}
+
 Search criteria:
 ${criteriaDesc || "General mountain bikes"}
+
+${sizingInstruction}
 
 Web search results:
 ${snippetText}
@@ -296,7 +388,7 @@ For each bike return a JSON object with EXACTLY these fields:
   "shock": "<rear shock brand + full model name, e.g. Fox Float DPS, RockShox Super Deluxe Ultimate — empty string ONLY for hardtails — USE YOUR TRAINING KNOWLEDGE>",
   "weight": "<bike weight with rider-ready setup, e.g. 13.8kg — USE YOUR TRAINING KNOWLEDGE, provide a realistic estimate if exact figure not known>",
   "brakes": "<brake brand + model, e.g. Shimano Deore M6100 4-piston, SRAM Code Silver Stealth, TRP Quadiem — USE YOUR TRAINING KNOWLEDGE, must never be empty>",
-  "description": "<3 sentences: terrain this bike excels at, who it suits, standout features and what makes it special>",
+  "description": "<3 sentences: (1) terrain and riding style this bike excels at, (2) which frame sizes fit this rider and why it suits their experience level, (3) standout features and what makes it special>",
   "sizes": ["XS","S","M","L","XL"],
   "prices": {"<retailer name>": <price as number in AUD>},
   "wasPrice": <original price if on sale, else null>,
@@ -317,18 +409,19 @@ MANDATORY SPEC RULES — violations are not acceptable:
 - weight: MUST be filled. Provide your best knowledge-based estimate (e.g. "14.2kg") — never leave empty.
 - frame: MUST be filled — Aluminum, Carbon, Steel, or Titanium.
 - travel: MUST be filled in mm format (e.g. "140mm"). Never just say "Hardtail" unless it truly has no rear travel.
-- sizes: MUST be a realistic array — ["S","M","L","XL"] for most trail bikes, ["XS","S","M","L","XL"] for enduro, ["S","M","L"] for DH.
-- description: MUST be 3 sentences, specific to this model — not generic filler.
+- sizes: MUST be a realistic array for the specific model — ["S","M","L","XL"] for most trail bikes, ["XS","S","M","L","XL"] for enduro, ["S","M","L"] for DH.
+- description: MUST be 3 sentences per the template above — specific to this model, not generic filler.
 
 PRICE RULES:
 - Only include prices actually visible in the snippets (title, description, or clearly tied to that product)
 - If price is in USD convert to AUD (×1.55); GBP ×2.0
-- Retailer names: short and recognisable — "99 Bikes", "Pushys", "Canyon AU", "Trek AU", "Specialized AU", "Giant AU", "JetBlack Cycling"
+- Retailer names: short and recognisable — "99 Bikes", "Pushys", "Canyon AU", "Trek AU", "Specialized AU", "Giant AU", "JetBlack Cycling", "Bike Exchange"
 - Do NOT invent or guess prices when no figure appears anywhere for that bike — leave prices as {} if none shown
 
 OUTPUT SIZE:
-- Include every distinct bike you can justify from the snippets, up to roughly 12–16 rows when the sources mention that many.
-- Do not artificially cap the list at a small number (e.g. 3) if more bikes are clearly present in the search results above.
+- Include every distinct bike you can identify and justify from the snippets — aim for 20–25 bikes when sources support it.
+- Do not artificially cap the list. If 25 bikes are clearly referenced across the snippets, return all 25.
+- Skip duplicate trim levels of the same model (e.g. if Stumpjumper Comp and Expert both appear, include both; if the same trim appears twice from different snippets, deduplicate).
 
 Return ONLY a valid JSON array, no markdown, no explanation.`;
 
@@ -471,7 +564,7 @@ const BRAND_DOMAINS = {
 async function enrichWithImages(bikes, country) {
   const imageMap = new Map();
   await Promise.allSettled(
-    bikes.slice(0, 8).map(async (bike) => {
+    bikes.slice(0, 12).map(async (bike) => {
       const brandKey = bike.brand.toLowerCase();
       const domain = BRAND_DOMAINS[brandKey];
 

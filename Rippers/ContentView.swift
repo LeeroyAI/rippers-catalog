@@ -84,7 +84,7 @@ struct ContentView: View {
             state.profileStyleHint = profile.style
             state.profileBudgetCap = profile.budgetCap > 0 ? profile.budgetCap : nil
         }
-        let criteria = LiveSearchCriteria.from(state)
+        let criteria = LiveSearchCriteria.from(state, profile: activeProfile)
         if let result = try? await LiveSearchService.shared.search(criteria: criteria) {
             catalogStore.save(result.bikes, profileTag: tag)
         }

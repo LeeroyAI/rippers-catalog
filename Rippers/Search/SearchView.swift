@@ -702,7 +702,7 @@ struct SearchView: View {
     // ---------------------------------------------------------------------------
 
     private func performLiveSearch() async {
-        let criteria = LiveSearchCriteria.from(filterStore.state)
+        let criteria = LiveSearchCriteria.from(filterStore.state, profile: activeProfile)
 
         filterStore.isLiveSearching = true
         filterStore.liveSearchError = nil

@@ -48,6 +48,18 @@ final class LiveSearchService {
         if criteria.ebike {
             items.append(URLQueryItem(name: "ebike", value: "true"))
         }
+        if let height = criteria.heightCm, height > 0 {
+            items.append(URLQueryItem(name: "height", value: String(height)))
+        }
+        if let weight = criteria.weightKg, weight > 0 {
+            items.append(URLQueryItem(name: "weight", value: String(weight)))
+        }
+        if let age = criteria.age, age > 0 {
+            items.append(URLQueryItem(name: "age", value: String(age)))
+        }
+        if let experience = criteria.experience, !experience.isEmpty {
+            items.append(URLQueryItem(name: "experience", value: experience))
+        }
 
         components.queryItems = items
 
@@ -92,12 +104,14 @@ struct LiveSearchCriteria {
     var travel: String?
     var brands: [String]
     var ebike: Bool
+    var heightCm: Int?
+    var weightKg: Int?
+    var age: Int?
+    var experience: String?
 
-    static func from(_ state: FilterState) -> LiveSearchCriteria {
-        // Pick first travel range if multiple selected (API takes a single value)
+    static func from(_ state: FilterState, profile: RiderProfile? = nil) -> LiveSearchCriteria {
         let travel = state.activeTravelRanges.sorted().first
 
-        // Prefer explicit filter values; fall back to profile hints when tailoring is on
         let effectiveCategory: String?
         if state.category != "Any" {
             effectiveCategory = state.category
@@ -118,7 +132,11 @@ struct LiveSearchCriteria {
             style: state.profileStyleHint,
             travel: travel,
             brands: Array(state.activeBrands).sorted(),
-            ebike: state.activeEbikeFilter
+            ebike: state.activeEbikeFilter,
+            heightCm: profile?.heightCm,
+            weightKg: profile?.weightKg,
+            age: profile?.age,
+            experience: profile?.experience
         )
     }
 }
