@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <!--
+    Rippers mark — MTB rider mid-air above mountain drop.
+    Bold disc wheels + connected rider block + dramatic terrain.
+    Body-bottom slope matches frame-top slope so rider sits flush on frame.
+  -->
+
+  <g fill="white">
+
+    <!-- MOUNTAIN: bold peak, near-vertical right cliff -->
+    <path d="M 0,200 L 0,186 L 76,118 L 110,180 L 156,148 L 200,165 L 200,200 Z"/>
+
+    <!-- REAR WHEEL — solid disc (higher = nose-down attitude) -->
+    <circle cx="90" cy="76" r="21"/>
+
+    <!-- FRONT WHEEL — solid disc (lower) -->
+    <circle cx="154" cy="82" r="21"/>
+
+    <!--
+      FRAME: slanted bar connecting hubs.
+      Slope = (82-76)/(154-90) = 6/64 ≈ rise of 1px per 10.7px horizontal.
+    -->
+    <polygon points="90,67 154,73 154,87 90,85"/>
+
+    <!--
+      RIDER BODY: bottom edge has same slope as frame top
+      so the body sits flush on the frame — no gap.
+      Body bottom: (109,67) to (129,69) matches frame top at those x-values.
+    -->
+    <polygon points="104,47 124,41 129,69 109,67"/>
+
+    <!-- HEAD / HELMET -->
+    <circle cx="118" cy="31" r="14"/>
+
+  </g>
+
+  <!-- CLIFF SHADOW: depth on the steep face -->
+  <path d="M 76,118 L 110,180 L 76,180 Z" fill="black" opacity="0.22"/>
+
+</svg>
