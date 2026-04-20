@@ -78,17 +78,13 @@ struct SearchView: View {
         return decoded
     }
 
-    /// Up to five bikes that pass profile tailoring: prefer the live catalog, then fill from the embedded `BIKES` pool so Home always has picks when a profile exists.
+    /// All profile-matched bikes ranked for the home carousel and "See all" — catalog first, then static fallback.
     private var forYouTopPicks: [(bike: Bike, score: Int)] {
         guard let profile = activeProfile else { return [] }
         return rankedProfilePicks(for: profile)
     }
 
-    /// All profile-matched bikes for "See all" — same logic, no limit.
-    private var allForYouPicks: [Bike] {
-        guard let profile = activeProfile else { return [] }
-        return allRankedProfilePicks(for: profile)
-    }
+    private var allForYouPicks: [Bike] { forYouTopPicks.map(\.bike) }
 
     private func rankedProfilePicks(for profile: RiderProfile) -> [(bike: Bike, score: Int)] {
         var s = FilterState()
@@ -99,14 +95,11 @@ struct SearchView: View {
 
         let liveMatched = BikeFilterEngine.apply(bikes: filterStore.catalog, filters: s)
         var rows = BikeFilterEngine.rank(bikes: liveMatched, filters: s)
-        var seen = Set(rows.map { $0.bike.id })
+        let seen = Set(rows.map { $0.bike.id })
 
-        if rows.count < 5 {
-            let staticPool = BIKES.filter { !seen.contains($0.id) }
-            let staticMatched = BikeFilterEngine.apply(bikes: staticPool, filters: s)
-            let staticRows = BikeFilterEngine.rank(bikes: staticMatched, filters: s)
-            rows.append(contentsOf: staticRows)
-        }
+        let staticPool = BIKES.filter { !seen.contains($0.id) }
+        let staticMatched = BikeFilterEngine.apply(bikes: staticPool, filters: s)
+        rows.append(contentsOf: BikeFilterEngine.rank(bikes: staticMatched, filters: s))
 
         rows.sort { lhs, rhs in
             if lhs.score != rhs.score { return lhs.score > rhs.score }
@@ -116,29 +109,7 @@ struct SearchView: View {
             return lhs.bike.id < rhs.bike.id
         }
 
-        return Array(rows.prefix(5))
-    }
-
-    private func allRankedProfilePicks(for profile: RiderProfile) -> [Bike] {
-        var s = FilterState()
-        s.tailorToProfile = true
-        s.profileCategoryHint = profile.categoryFilterHint
-        s.profileStyleHint = profile.style
-        s.profileBudgetCap = profile.budgetCap > 0 ? profile.budgetCap : nil
-
-        let catalogMatched = BikeFilterEngine.apply(bikes: filterStore.catalog, filters: s)
-        var catalogRanked = BikeFilterEngine.rank(bikes: catalogMatched, filters: s)
-        let seen = Set(catalogRanked.map { $0.bike.id })
-
-        let staticMatched = BikeFilterEngine.apply(bikes: BIKES.filter { !seen.contains($0.id) }, filters: s)
-        let staticRanked = BikeFilterEngine.rank(bikes: staticMatched, filters: s)
-        catalogRanked.append(contentsOf: staticRanked)
-
-        catalogRanked.sort { lhs, rhs in
-            if lhs.score != rhs.score { return lhs.score > rhs.score }
-            return (lhs.bike.displayBestPrice ?? .greatestFiniteMagnitude) < (rhs.bike.displayBestPrice ?? .greatestFiniteMagnitude)
-        }
-        return catalogRanked.map(\.bike)
+        return rows
     }
 
     private var currentSearchFingerprint: String {
@@ -954,7 +925,7 @@ struct SearchView: View {
         if let profile = activeProfile {
             VStack(alignment: .leading, spacing: 12) {
                 HStack(spacing: 8) {
-                    RippersLogoMark()
+                    RippersLogoMark(onDark: false)
                         .frame(width: 40, height: 40)
                     Text("RIPPERS")
                         .font(.system(size: 16, weight: .black, design: .rounded))
@@ -1024,7 +995,7 @@ struct SearchView: View {
                             .font(.subheadline).foregroundStyle(.secondary)
                     }
                     Spacer()
-                    RippersLogoMark()
+                    RippersLogoMark(onDark: false)
                         .frame(width: 72, height: 72)
                 }
                 Button {
