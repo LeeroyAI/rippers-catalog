@@ -204,50 +204,43 @@ public struct Bike: Identifiable, Hashable, Sendable {
         let host = (url.host ?? "").lowercased()
         let full = url.absoluteString.lowercased()
 
-        // Reject obvious lifestyle/action imagery.
-        let negativeTokens = [
-            "action", "lifestyle", "riding", "rider", "trail", "landscape",
-            "background", "scenic", "jump", "park", "carousel", "banner"
-        ]
-        let positiveTokens = [
-            "side", "profile", "primary", "product", "bike", "studio", "front"
-        ]
-        let hasNegative = negativeTokens.contains { full.contains($0) }
-        let hasPositive = positiveTokens.contains { full.contains($0) }
-
+        // Only reject imagery that is clearly NOT a product shot.
+        // Note: "trail", "park", "riding" are intentionally excluded — they appear
+        // constantly in legitimate MTB product image paths (Canyon trail bikes,
+        // Pivot _trail.jpeg, bike park product shots, etc).
         let strongNegativeTokens = [
-            "action", "lifestyle", "riding", "rider", "landscape", "scenic", "jump", "park", "banner",
+            "lifestyle", "landscape", "scenic", "banner", "carousel",
             "cyclist", "enduro-world", "world-cup", "race-run",
         ]
-        let hasStrongNegative = strongNegativeTokens.contains { full.contains($0) }
-
-        if hasStrongNegative {
+        if strongNegativeTokens.contains(where: { full.contains($0) }) {
             return false
         }
-        if hasNegative && !hasPositive { return false }
 
-        // Common e-commerce/product CDN hosts used by bike brands and retailers.
+        let positiveTokens = [
+            "side", "profile", "primary", "product", "bike", "studio", "front",
+            "mtb", "mountain", "shop", "store", "cdn", "image", "photo", "pic",
+        ]
+        let hasPositive = positiveTokens.contains { full.contains($0) }
+
+        // Common e-commerce/product CDN hosts used by bike brands and AU retailers.
         let trustedHosts = [
-            "sefiles.net",
-            "shopify.com",
-            "santacruzbicycles.com",
-            "giant-bicycles.com",
-            "yt-industries.com",
-            "canyon.com",
-            "commencal",
-            "bikes.com",
-            "forbiddenbike.com",
-            "bigcommerce.com",
-            "trek.scene7.com",
-            "specialized.com",
-            "norco.com",
-            "merida-cdn.m-c-g.net"
+            "sefiles.net", "shopify.com", "myshopify.com",
+            "santacruzbicycles.com", "giant-bicycles.com", "yt-industries.com",
+            "canyon.com", "commencal", "bikes.com", "forbiddenbike.com",
+            "bigcommerce.com", "trek.scene7.com", "specialized.com", "norco.com",
+            "merida-cdn.m-c-g.net", "pivotcycles.com", "yeticycles.com",
+            "transitionbikes.com", "ibiscycles.com", "cannondale.com",
+            "konaworld.com", "nukeproof.com", "devinci.com",
+            // AU retailers
+            "99bikes.com.au", "pushys.com.au", "bikeonline.com.au",
+            "chainreactioncycles.com", "maddogcycles.com.au", "bikeexchange.com.au",
+            "ride.net.au", "anacyclery.com.au", "bicycleonline.com.au",
         ]
         if trustedHosts.contains(where: { host.contains($0) }) {
-            return hasPositive || !hasNegative
+            return true
         }
 
-        // For unknown hosts, require explicit product hints.
+        // For unknown hosts, require at least one explicit product/image hint.
         return hasPositive
     }
 }
