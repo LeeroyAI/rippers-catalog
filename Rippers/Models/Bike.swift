@@ -204,44 +204,58 @@ public struct Bike: Identifiable, Hashable, Sendable {
         let host = (url.host ?? "").lowercased()
         let full = url.absoluteString.lowercased()
 
-        // Only reject imagery that is clearly NOT a product shot.
-        // Note: "trail", "park", "riding" are intentionally excluded — they appear
-        // constantly in legitimate MTB product image paths (Canyon trail bikes,
-        // Pivot _trail.jpeg, bike park product shots, etc).
-        let strongNegativeTokens = [
-            "lifestyle", "landscape", "scenic", "banner", "carousel",
-            "cyclist", "enduro-world", "world-cup", "race-run",
+        // 1. Hard-block known media, editorial, and social domains — never product shots.
+        let blockedDomains = [
+            "pinkbike.com", "singletracks.com", "mtbr.com", "redbull.com",
+            "instagram.com", "pinterest.com", "facebook.com", "youtube.com",
+            "dirt.cc", "mbr.co.uk", "flow-mountain-bike.com", "vitalbmx.com",
+            "cyclingnews.com", "bikeradar.com", "trailforks.com",
+            "dma.canyon.com",   // Canyon campaign/marketing CDN (not product shots)
         ]
-        if strongNegativeTokens.contains(where: { full.contains($0) }) {
-            return false
-        }
+        if blockedDomains.contains(where: { host.contains($0) }) { return false }
 
-        let positiveTokens = [
-            "side", "profile", "primary", "product", "bike", "studio", "front",
-            "mtb", "mountain", "shop", "store", "cdn", "image", "photo", "pic",
+        // 2. Hard-block path tokens that clearly signal lifestyle/campaign content.
+        let blockedTokens = [
+            "campaign", "lifestyle", "in-action", "-in-action", "athlete",
+            "editorial", "race-run", "world-cup", "enduro-world",
+            "landscape", "scenic",
         ]
-        let hasPositive = positiveTokens.contains { full.contains($0) }
+        if blockedTokens.contains(where: { full.contains($0) }) { return false }
 
-        // Common e-commerce/product CDN hosts used by bike brands and AU retailers.
-        let trustedHosts = [
-            "sefiles.net", "shopify.com", "myshopify.com",
-            "santacruzbicycles.com", "giant-bicycles.com", "yt-industries.com",
-            "canyon.com", "commencal", "bikes.com", "forbiddenbike.com",
-            "bigcommerce.com", "trek.scene7.com", "specialized.com", "norco.com",
-            "merida-cdn.m-c-g.net", "pivotcycles.com", "yeticycles.com",
-            "transitionbikes.com", "ibiscycles.com", "cannondale.com",
-            "konaworld.com", "nukeproof.com", "devinci.com",
-            // AU retailers
-            "99bikes.com.au", "pushys.com.au", "bikeonline.com.au",
+        // 3. Retail e-commerce CDNs — always a clean product listing image.
+        let retailCDNs = [
+            "cdn.shopify.com", "shopify.com", "myshopify.com",
+            "bigcommerce.com", "sefiles.net", "scene7.com",
+        ]
+        if retailCDNs.contains(where: { host.contains($0) }) { return true }
+
+        // 4. AU retailer domains.
+        let auRetailers = [
+            "99bikes.com.au", "pushys.com.au", "bikeonline.com.au", "ride.net.au",
             "chainreactioncycles.com", "maddogcycles.com.au", "bikeexchange.com.au",
-            "ride.net.au", "anacyclery.com.au", "bicycleonline.com.au",
+            "anacyclery.com.au", "bicycleonline.com.au",
         ]
-        if trustedHosts.contains(where: { host.contains($0) }) {
-            return true
-        }
+        if auRetailers.contains(where: { host.contains($0) }) { return true }
 
-        // For unknown hosts, require at least one explicit product/image hint.
-        return hasPositive
+        // 5. Brand official product sites (campaign tokens already blocked above).
+        let brandSites = [
+            "specialized.com", "trekbikes.com", "giant-bicycles.com",
+            "santacruzbicycles.com", "yeticycles.com", "canyon.com",
+            "orbea.com", "scott-sports.com", "norco.com", "bikes.com",
+            "transitionbikes.com", "ibiscycles.com", "cannondale.com",
+            "konaworld.com", "nukeproof.com", "commencal.com", "pivotcycles.com",
+            "evil-bikes.com", "devinci.com", "forbiddenbike.com", "yt-industries.com",
+            "intensecycles.com", "merida-cdn.m-c-g.net",
+        ]
+        if brandSites.contains(where: { host.contains($0) }) { return true }
+
+        // 6. Unknown hosts: require explicit CDN/product path signals.
+        let productSignals = [
+            "/cdn/shop/", "/cdn/images/", "/media/catalog/", "/shop/files/",
+            "product-image", "product_image", "studio", "gallery",
+            "-side.", "_side.", "side-view", "front-view",
+        ]
+        return productSignals.contains { full.contains($0) }
     }
 }
 
@@ -364,7 +378,7 @@ actor BikeImageResolver {
         let strongBad = [
             "logo", "awards", "award", "badge", "icon", "favicon", "sprite",
             "watermark", "youtube", "instagram", "facebook", "linkedin",
-            "action", "riding", "rider", "landscape", "scenic", "jump", "trail"
+            "action", "riding", "rider", "landscape", "scenic", "campaign", "lifestyle",
         ]
         if strongBad.contains(where: { s.contains($0) }) {
             return -100

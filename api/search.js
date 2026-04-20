@@ -408,7 +408,7 @@ For each bike return a JSON object with EXACTLY these fields:
   "battery": <null or capacity, e.g. "504Wh", "750Wh", "360Wh">,
   "range": <null or estimated range, e.g. "80km", "120km">,
   "ageRange": <null or age range string for youth bikes, e.g. "Kids 8-12">,
-  "imageUrl": "<product image URL from the Image: line of the matching snippet, or empty string if none>"
+  "imageUrl": "<PRODUCT image URL only — must be from a retailer product listing CDN (Shopify /cdn/shop/, BigCommerce, brand .com product page). Leave empty string if the Image: URL is from a media site, has 'campaign', 'lifestyle', 'action', 'rider', 'riding', 'athlete' in the path, or looks like a lifestyle/editorial shot. When in doubt, leave empty.>"
 }
 
 MANDATORY SPEC RULES — violations are not acceptable:
@@ -482,15 +482,21 @@ const PRODUCT_DOMAINS = new Set([
   "99bikes.com.au", "chainreactioncycles.com", "wiggle.com", "bikeexchange.com.au",
 ]);
 
-// Sources that frequently serve action/lifestyle shots — deprioritise
+// Sources that serve action/lifestyle shots — hard reject
 const ACTION_DOMAINS = new Set([
   "pinkbike.com", "singletracks.com", "mtbr.com", "redbull.com",
   "instagram.com", "pinterest.com", "facebook.com", "youtube.com",
-  "vitalbmx.com", "dirt.cc", "mbr.co.uk",
+  "vitalbmx.com", "dirt.cc", "mbr.co.uk", "flow-mountain-bike.com",
+  "cyclingnews.com", "bikeradar.com", "trailforks.com",
+  "dma.canyon.com", // Canyon campaign/marketing CDN — not product shots
 ]);
 
-// URL path fragments that suggest a non-product shot
-const ACTION_PATH_HINTS = ["lifestyle", "action", "riding", "rider", "trail", "-in-action", "athlete"];
+// URL path tokens that indicate a lifestyle/action/campaign shot — hard reject
+const ACTION_PATH_HINTS = [
+  "campaign", "lifestyle", "in-action", "-in-action", "athlete",
+  "editorial", "race-run", "world-cup", "enduro-world",
+  "riding", "rider", "action",
+];
 
 async function braveImageSearch(query, country = "AU") {
   const url = new URL("https://api.search.brave.com/res/v1/images/search");
@@ -525,14 +531,17 @@ async function braveImageSearch(query, country = "AU") {
     const sourceDomain = (() => { try { return new URL(result.url || "").hostname.replace("www.", ""); } catch { return ""; } })();
     const imgDomain = (() => { try { return new URL(img).hostname.replace("www.", ""); } catch { return ""; } })();
 
+    // Hard reject: known action/editorial domains
+    if (ACTION_DOMAINS.has(sourceDomain) || ACTION_DOMAINS.has(imgDomain)) continue;
+    // Hard reject: action/lifestyle path tokens in the image URL
+    if (ACTION_PATH_HINTS.some((h) => imgLower.includes(h))) continue;
+
     // Strong boost for known product-image sources
     if (PRODUCT_DOMAINS.has(sourceDomain) || PRODUCT_DOMAINS.has(imgDomain)) score += 15;
-    // Penalise known action/lifestyle sources
-    if (ACTION_DOMAINS.has(sourceDomain) || ACTION_DOMAINS.has(imgDomain)) score -= 20;
-    // Penalise action-shot path hints in the image URL
-    if (ACTION_PATH_HINTS.some((h) => imgLower.includes(h))) score -= 10;
     // Prefer full-size source images over thumbnails
     if (result.properties?.url) score += 3;
+    // Require a positive score — never return an image with no product signals
+    if (score < 0) continue;
 
     if (score > bestScore) { bestScore = score; best = img; }
   }
