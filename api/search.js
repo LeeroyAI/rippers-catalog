@@ -427,28 +427,32 @@ PRICE RULES:
 - Do NOT invent or guess prices when no figure appears anywhere for that bike — leave prices as {} if none shown
 
 OUTPUT SIZE:
-- Include every distinct bike you can identify and justify from the snippets — aim for 20–25 bikes when sources support it.
-- Do not artificially cap the list. If 25 bikes are clearly referenced across the snippets, return all 25.
+- Return 10–15 distinct bikes. Quality over quantity — pick the best-matched, most clearly evidenced listings.
 - Skip duplicate trim levels of the same model (e.g. if Stumpjumper Comp and Expert both appear, include both; if the same trim appears twice from different snippets, deduplicate).
+- Do NOT exceed 15 bikes total — output must fit within the token budget.
 
 Return ONLY a valid JSON array, no markdown, no explanation.`;
 
   const msg = await client.messages.create({
     model: "claude-sonnet-4-6",
-    max_tokens: 4096,
+    max_tokens: 8192,
     messages: [{ role: "user", content: prompt }],
   });
 
   const text = msg.content[0].text.trim();
 
   // Extract JSON array even if Claude wraps it in markdown
-  const match = text.match(/\[[\s\S]*\]/);
+  const match = text.match(/\[[\s\S]*/);
   if (!match) {
     console.warn("Claude returned no JSON array:", text.slice(0, 300));
     return [];
   }
 
-  const raw = JSON.parse(match[0]);
+  const raw = parseJsonSafe(match[0]);
+  if (!raw) {
+    console.warn("Claude JSON parse failed:", text.slice(0, 300));
+    return [];
+  }
   return raw
     .filter((b) => b && b.brand && b.model)
     .map((b) => ({
@@ -608,6 +612,22 @@ async function enrichWithImages(bikes, country) {
     // Fall back to snippet thumbnail only if enrichment found nothing.
     imageUrl: imageMap.get(b.id) || b.imageUrl || "",
   }));
+}
+
+// Resilient JSON array parser — recovers partial results if Claude output is truncated
+function parseJsonSafe(text) {
+  // 1. Try to parse the full text as-is
+  try { return JSON.parse(text); } catch {}
+  // 2. Trim to the last complete object: find last '},' or '}' before end
+  const lastComma = text.lastIndexOf("},");
+  if (lastComma > 0) {
+    try { return JSON.parse(text.slice(0, lastComma + 1) + "]"); } catch {}
+  }
+  const lastBrace = text.lastIndexOf("}");
+  if (lastBrace > 0) {
+    try { return JSON.parse(text.slice(0, lastBrace + 1) + "]"); } catch {}
+  }
+  return null;
 }
 
 // Simple stable string hash → positive integer
