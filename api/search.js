@@ -52,6 +52,9 @@ export default async function handler(req, res) {
       .status(500)
       .json({ error: `Missing env vars: ${missing.join(", ")}` });
 
+  const startTime = Date.now();
+  const HARD_DEADLINE_MS = 75000; // leave 15s buffer before Vercel's 90s kill
+
   try {
     const criteria = {
       q: q || null,
@@ -74,7 +77,12 @@ export default async function handler(req, res) {
     const queries = buildQueries(criteria);
     const snippets = await searchAll(queries, country, cursor);
     const rawBikes = await extractBikes(snippets, criteria);
-    const bikes = await enrichWithImages(rawBikes, country);
+
+    // Only enrich with images if we have enough time left
+    const elapsed = Date.now() - startTime;
+    const bikes = elapsed < HARD_DEADLINE_MS - 10000
+      ? await enrichWithImages(rawBikes, country)
+      : rawBikes;
 
     // Cache for 1 hour on CDN, serve stale for 24 hours while revalidating
     res.setHeader(
@@ -276,7 +284,7 @@ async function searchAll(queries, country, cursor) {
     }
   }
 
-  return snippets.slice(0, 50);
+  return snippets.slice(0, 40);
 }
 
 async function braveSearch(query, country, cursor) {
@@ -427,7 +435,7 @@ Return ONLY a valid JSON array, no markdown, no explanation.`;
 
   const msg = await client.messages.create({
     model: "claude-sonnet-4-6",
-    max_tokens: 8192,
+    max_tokens: 4096,
     messages: [{ role: "user", content: prompt }],
   });
 
@@ -564,7 +572,7 @@ const BRAND_DOMAINS = {
 async function enrichWithImages(bikes, country) {
   const imageMap = new Map();
   await Promise.allSettled(
-    bikes.slice(0, 12).map(async (bike) => {
+    bikes.slice(0, 6).map(async (bike) => {
       const brandKey = bike.brand.toLowerCase();
       const domain = BRAND_DOMAINS[brandKey];
 

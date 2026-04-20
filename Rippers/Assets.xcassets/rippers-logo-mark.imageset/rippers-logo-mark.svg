@@ -1,41 +1,60 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
   <!--
-    Rippers mark — MTB rider mid-air above mountain drop.
-    Bold disc wheels + connected rider block + dramatic terrain.
-    Body-bottom slope matches frame-top slope so rider sits flush on frame.
+    Rippers mark v4 — fat MTB tyre ring framing a bold mountain drop.
+    Single dramatic peak with hard right cliff. Clean, no clutter.
+    Reads at 20px and looks great at 1024px.
+    Ring: outer r=88, inner r=68 (20-unit fat tyre cross-section).
   -->
 
-  <g fill="white">
+  <defs>
+    <clipPath id="wc">
+      <circle cx="100" cy="100" r="68"/>
+    </clipPath>
+  </defs>
 
-    <!-- MOUNTAIN: bold peak, near-vertical right cliff -->
-    <path d="M 0,200 L 0,186 L 76,118 L 110,180 L 156,148 L 200,165 L 200,200 Z"/>
-
-    <!-- REAR WHEEL — solid disc (higher = nose-down attitude) -->
-    <circle cx="90" cy="76" r="21"/>
-
-    <!-- FRONT WHEEL — solid disc (lower) -->
-    <circle cx="154" cy="82" r="21"/>
+  <!-- ── MOUNTAIN SCENE (inside wheel) ──────────────────── -->
+  <g clip-path="url(#wc)">
 
     <!--
-      FRAME: slanted bar connecting hubs.
-      Slope = (82-76)/(154-90) = 6/64 ≈ rise of 1px per 10.7px horizontal.
+      Terrain: left foothills rise to a dramatic off-centre peak,
+      then a near-vertical right cliff drops into a valley,
+      with a secondary ridge on the far right.
     -->
-    <polygon points="90,67 154,73 154,87 90,85"/>
+    <path fill="white"
+      d="M 0,200
+         L 0,145
+         L 42,115 L 64,138
+         L 94,46
+         L 132,130 L 162,108 L 200,124
+         L 200,200
+         Z"/>
 
-    <!--
-      RIDER BODY: bottom edge has same slope as frame top
-      so the body sits flush on the frame — no gap.
-      Body bottom: (109,67) to (129,69) matches frame top at those x-values.
-    -->
-    <polygon points="104,47 124,41 129,69 109,67"/>
-
-    <!-- HEAD / HELMET -->
-    <circle cx="118" cy="31" r="14"/>
+    <!-- Shadow on the steep right cliff face — depth and drama -->
+    <path fill="black" fill-opacity="0.20"
+      d="M 94,46 L 132,130 L 94,130 Z"/>
 
   </g>
 
-  <!-- CLIFF SHADOW: depth on the steep face -->
-  <path d="M 76,118 L 110,180 L 76,180 Z" fill="black" opacity="0.22"/>
+  <!-- ── FAT TYRE RING ───────────────────────────────────── -->
+  <!--
+    Outer path CW (0,1 sweep), inner path CCW (0,0 sweep).
+    fill-rule=evenodd subtracts inner from outer → clean ring.
+  -->
+  <path fill="white" fill-rule="evenodd"
+    d="
+      M 100,12
+      A 88,88 0 0,1 188,100
+      A 88,88 0 0,1 100,188
+      A 88,88 0 0,1 12,100
+      A 88,88 0 0,1 100,12
+      Z
+      M 100,32
+      A 68,68 0 0,0 32,100
+      A 68,68 0 0,0 100,168
+      A 68,68 0 0,0 168,100
+      A 68,68 0 0,0 100,32
+      Z
+    "/>
 
 </svg>

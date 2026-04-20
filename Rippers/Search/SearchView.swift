@@ -685,9 +685,10 @@ struct SearchView: View {
         let stageTask = Task<Void, Never> {
             let stages: [(nanoseconds: UInt64, message: String)] = [
                 (2_000_000_000,  "Searching AU retailers..."),
-                (6_000_000_000,  "AI extracting specs and prices..."),
-                (18_000_000_000, "Fetching bike photos..."),
-                (14_000_000_000, "Almost done..."),
+                (7_000_000_000,  "AI extracting specs and prices..."),
+                (20_000_000_000, "Fetching bike photos..."),
+                (20_000_000_000, "Almost done..."),
+                (20_000_000_000, "Still on it — large result set..."),
             ]
             for stage in stages {
                 try? await Task.sleep(nanoseconds: stage.nanoseconds)
@@ -703,7 +704,7 @@ struct SearchView: View {
         }
 
         do {
-            let result = try await LiveSearchService.shared.search(criteria: criteria)
+            let result = try await LiveSearchService.shared.searchWithFriendlyErrors(criteria: criteria)
             filterStore.liveResults = result.bikes
             filterStore.liveResultSource = "Live · \(result.count) bikes from web"
             lastSearchFingerprint = currentSearchFingerprint

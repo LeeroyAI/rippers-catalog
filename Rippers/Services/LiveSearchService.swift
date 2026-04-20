@@ -13,9 +13,14 @@ final class LiveSearchService {
     static let shared = LiveSearchService()
     private init() {}
 
-    // Set this to your Vercel deployment URL after running `vercel deploy`.
-    // Example: "https://rippers-abc123.vercel.app/api/search"
     static let baseURL = "https://rippers-pied.vercel.app/api/search"
+
+    private static let session: URLSession = {
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 90
+        config.timeoutIntervalForResource = 120
+        return URLSession(configuration: config)
+    }()
 
     func search(criteria: LiveSearchCriteria) async throws -> LiveSearchResult {
         var components = URLComponents(string: Self.baseURL)!
@@ -67,7 +72,7 @@ final class LiveSearchService {
             throw LiveSearchError.badURL
         }
 
-        let (data, response) = try await URLSession.shared.data(from: url)
+        let (data, response) = try await Self.session.data(from: url)
 
         guard let http = response as? HTTPURLResponse else {
             throw LiveSearchError.notHTTP
@@ -255,7 +260,33 @@ enum LiveSearchError: LocalizedError {
         case .notHTTP:
             return "Unexpected response from search service."
         case .httpError(let code, _):
-            return "Search service error (\(code))."
+            return "Search service error (\(code)). Please try again."
+        }
+    }
+}
+
+extension LiveSearchService {
+    func searchWithFriendlyErrors(criteria: LiveSearchCriteria) async throws -> LiveSearchResult {
+        do {
+            return try await search(criteria: criteria)
+        } catch let urlError as URLError where urlError.code == .timedOut {
+            throw LiveSearchUserError.timeout
+        } catch let urlError as URLError where urlError.code == .notConnectedToInternet || urlError.code == .networkConnectionLost {
+            throw LiveSearchUserError.offline
+        }
+    }
+}
+
+enum LiveSearchUserError: LocalizedError {
+    case timeout
+    case offline
+
+    var errorDescription: String? {
+        switch self {
+        case .timeout:
+            return "Search is taking longer than usual. Tap to try again — results improve with a specific profile set."
+        case .offline:
+            return "No internet connection. Connect to search live bikes."
         }
     }
 }
