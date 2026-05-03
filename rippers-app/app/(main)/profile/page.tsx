@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { startTransition, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import BikeDetailSheet from "@/app/components/BikeDetailSheet";
 import BikeProductImage from "@/app/components/BikeProductImage";
+import CreateFamilyModal from "@/app/components/CreateFamilyModal";
+import MyFamilySection from "@/app/components/MyFamilySection";
 import { catalog } from "@/src/data/catalog";
 import { getBestPrice } from "@/src/domain/bike-helpers";
 import {
@@ -13,13 +15,23 @@ import {
   RIDER_PROFILE_STORAGE_KEY,
   suggestedBikeCategory,
 } from "@/src/domain/rider-profile";
+import { savedTripsStorageKey } from "@/src/domain/saved-trips";
+import {
+  LEGACY_PROFILE_PHOTO_KEY,
+  readRiderPhoto,
+  riderPhotoStorageKey,
+  writeRiderPhoto,
+} from "@/src/domain/rider-photo";
+import { householdAddRiderHref } from "@/src/lib/welcome-add-mode";
+import { notifyRiderPhotoUpdated, RIDER_PHOTO_UPDATED_EVENT } from "@/src/lib/rider-photo-events";
+import { resizePhotoToDataUrl } from "@/src/lib/resize-photo-to-data-url";
+import { RIDERS_STORAGE_KEY } from "@/src/domain/riders-storage";
 import { RIDING_STYLE_OPTIONS, ridingStyleLabels, type RidingStyle } from "@/src/domain/riding-style";
 import { useFavourites } from "@/src/state/favourites-store";
 import { useCurrentBike } from "@/src/state/current-bike-store";
 import { useRiderProfile } from "@/src/state/rider-profile-context";
 import type { Bike } from "@/src/domain/types";
 
-const PROFILE_PHOTO_KEY = "rippers:profile-photo:v1";
 const PROFILE_PHOTO_CHANGED = "rippers:profile-photo-changed";
 
 // Gear recommendations per riding style
@@ -241,41 +253,19 @@ const GEAR: Record<string, GearSet> = {
   },
 };
 
-function resizePhotoToDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const img = new window.Image();
-    const objectUrl = URL.createObjectURL(file);
-    img.onload = () => {
-      const maxSide = 300;
-      const scale = Math.min(maxSide / img.width, maxSide / img.height, 1);
-      const canvas = document.createElement("canvas");
-      canvas.width = Math.round(img.width * scale);
-      canvas.height = Math.round(img.height * scale);
-      const ctx = canvas.getContext("2d");
-      if (!ctx) { reject(new Error("canvas")); return; }
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      URL.revokeObjectURL(objectUrl);
-      resolve(canvas.toDataURL("image/jpeg", 0.82));
-    };
-    img.onerror = () => { URL.revokeObjectURL(objectUrl); reject(new Error("load")); };
-    img.src = objectUrl;
-  });
-}
-
-function shopBiasLine(style: RidingStyle): string {
-  switch (style) {
-    case "gravity": return "DH rentals & workshop-heavy shops ranked first";
-    case "jump": return "Rental & workshop coverage prioritised";
-    case "crossCountry": return "Retail and demo-hire outlets floated up";
-    case "trail": return "Balanced workshop, hire, and sales ranking";
-    default: return "Refine style to bias shop sort";
-  }
-}
-
 export default function ProfilePage() {
   const router = useRouter();
-  const { hydrated, profile, saveProfile, clearProfileAndOnboarding } = useRiderProfile();
-  const { ids: favIds, toggle: toggleFav, has: isFav } = useFavourites();
+  const {
+    hydrated,
+    profile,
+    saveProfile,
+    clearProfileAndOnboarding,
+    riders,
+    activeRiderId,
+    switchRider,
+    removeRider,
+  } = useRiderProfile();
+  const { ids: favIds, toggle: toggleFav } = useFavourites();
 
   // Profile photo
   const [photo, setPhoto] = useState<string | null>(null);
@@ -295,6 +285,7 @@ export default function ProfilePage() {
 
   // Gear tab
   const [gearTab, setGearTab] = useState<"protection" | "clothing" | "tools">("protection");
+  const [familyModalOpen, setFamilyModalOpen] = useState(false);
 
   // Bike detail sheet
   const [selectedBike, setSelectedBike] = useState<Bike | null>(null);
@@ -323,20 +314,47 @@ export default function ProfilePage() {
     : null;
 
   useEffect(() => {
+    if (!activeRiderId) return;
     try {
-      const stored = localStorage.getItem(PROFILE_PHOTO_KEY);
-      if (stored) setPhoto(stored);
-    } catch { /* ignore */ }
-  }, []);
+      let p = readRiderPhoto(activeRiderId);
+      if (!p) {
+        const legacy = localStorage.getItem(LEGACY_PROFILE_PHOTO_KEY);
+        if (legacy) {
+          writeRiderPhoto(activeRiderId, legacy);
+          p = legacy;
+        }
+      }
+      startTransition(() => setPhoto(p ?? null));
+    } catch {
+      startTransition(() => setPhoto(null));
+    }
+  }, [activeRiderId]);
 
   useEffect(() => {
-    if (profile) {
+    if (typeof window === "undefined" || !activeRiderId) return;
+    const onRiderPhoto = (e: Event) => {
+      const ce = e as CustomEvent<{ riderId?: string }>;
+      if (ce.detail?.riderId != null && ce.detail.riderId !== activeRiderId) return;
+      try {
+        const p = readRiderPhoto(activeRiderId);
+        startTransition(() => setPhoto(p ?? null));
+      } catch {
+        startTransition(() => setPhoto(null));
+      }
+    };
+    window.addEventListener(RIDER_PHOTO_UPDATED_EVENT, onRiderPhoto);
+    return () => window.removeEventListener(RIDER_PHOTO_UPDATED_EVENT, onRiderPhoto);
+  }, [activeRiderId]);
+
+  useEffect(() => {
+    if (!profile) return;
+    startTransition(() => {
       setNickname(profile.nickname);
       setHeightCm(String(profile.heightCm));
       setWeightKg(String(profile.weightKg));
       setStyle(profile.style);
       setPreferEbike(profile.preferEbike);
-    }
+    });
   }, [profile]);
 
   // Fix loading bug: redirect when hydrated but no profile
@@ -345,6 +363,16 @@ export default function ProfilePage() {
       router.replace("/welcome");
     }
   }, [hydrated, profile, router]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const syncHash = () => {
+      if (window.location.hash === "#profile-edit") setFormOpen(true);
+    };
+    syncHash();
+    window.addEventListener("hashchange", syncHash);
+    return () => window.removeEventListener("hashchange", syncHash);
+  }, []);
 
   if (!hydrated) {
     return (
@@ -368,6 +396,7 @@ export default function ProfilePage() {
   const displayName = profile.nickname.trim() || "Rider";
   const gear = GEAR[profile.style] ?? GEAR.trail;
   const gearItems = gear[gearTab];
+  const preferEbikeAriaChecked: "true" | "false" = preferEbike ? "true" : "false";
 
   const favBikes = favIds
     .map((id) => catalog.find((b) => b.id === id))
@@ -383,8 +412,15 @@ export default function ProfilePage() {
     setPhotoError(null);
     try {
       const dataUrl = await resizePhotoToDataUrl(file);
-      localStorage.setItem(PROFILE_PHOTO_KEY, dataUrl);
+      if (!activeRiderId) return;
+      writeRiderPhoto(activeRiderId, dataUrl);
+      try {
+        localStorage.setItem(LEGACY_PROFILE_PHOTO_KEY, dataUrl);
+      } catch {
+        /* ignore */
+      }
       setPhoto(dataUrl);
+      notifyRiderPhotoUpdated(activeRiderId);
       window.dispatchEvent(new Event(PROFILE_PHOTO_CHANGED));
     } catch {
       setPhotoError("Couldn’t use that image — try a smaller JPG or PNG.");
@@ -396,11 +432,18 @@ export default function ProfilePage() {
     try {
       const payload = {
         exportedAt: new Date().toISOString(),
-        version: 1,
-        riderProfile: localStorage.getItem(RIDER_PROFILE_STORAGE_KEY),
-        favourites: localStorage.getItem("rippers:favourites:v1"),
-        profilePhoto: localStorage.getItem(PROFILE_PHOTO_KEY),
-        currentBike: localStorage.getItem("rippers:current-bike:v2"),
+        version: 2,
+        ridersState: localStorage.getItem(RIDERS_STORAGE_KEY),
+        riderProfileLegacy: localStorage.getItem(RIDER_PROFILE_STORAGE_KEY),
+        favouritesLegacy: localStorage.getItem("rippers:favourites:v1"),
+        profilePhoto: localStorage.getItem(LEGACY_PROFILE_PHOTO_KEY),
+        riderPhotos: Object.fromEntries(
+          riders.map((r) => [r.id, localStorage.getItem(riderPhotoStorageKey(r.id))])
+        ),
+        currentBikeLegacy: localStorage.getItem("rippers:current-bike:v2"),
+        savedTripsByRider: Object.fromEntries(
+          riders.map((r) => [r.id, localStorage.getItem(savedTripsStorageKey(r.id))])
+        ),
       };
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
       const a = document.createElement("a");
@@ -440,6 +483,24 @@ export default function ProfilePage() {
     setBikeSearch("");
   }
 
+  function resetFormFromProfile() {
+    if (!profile) return;
+    setNickname(profile.nickname);
+    setHeightCm(String(profile.heightCm));
+    setWeightKg(String(profile.weightKg));
+    setStyle(profile.style);
+    setPreferEbike(profile.preferEbike);
+    setError(null);
+  }
+
+  function cancelProfileEdit() {
+    resetFormFromProfile();
+    setFormOpen(false);
+    if (typeof window !== "undefined" && window.location.hash === "#profile-edit") {
+      window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
+    }
+  }
+
   function handleSave(e: React.FormEvent) {
     e.preventDefault();
     if (!validH) { setError("Height should be between 100 and 250 cm."); return; }
@@ -448,11 +509,18 @@ export default function ProfilePage() {
     saveProfile({ nickname: nickname.trim(), heightCm: h, weightKg: w, style, preferEbike });
     setSaved(true);
     setFormOpen(false);
+    if (typeof window !== "undefined" && window.location.hash === "#profile-edit") {
+      window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
+    }
     setTimeout(() => setSaved(false), 4000);
   }
 
+  const numberNoSpin =
+    "[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none";
+
   return (
     <div className="r-home-bg w-full">
+      <CreateFamilyModal open={familyModalOpen} onClose={() => setFamilyModalOpen(false)} />
       <div className="mx-auto w-full max-w-3xl px-4 pb-20 pt-5 md:px-6">
         <nav
           className="sticky top-0 z-30 -mx-4 mb-4 flex flex-wrap gap-1 border-b border-[var(--r-border)] bg-[var(--r-bg-canvas)]/95 px-2 py-2 backdrop-blur-md md:-mx-6 md:px-4"
@@ -461,11 +529,11 @@ export default function ProfilePage() {
           {(
             [
               ["profile-hero", "Profile"],
+              ["profile-riders", "Family"],
               ["profile-tools", "Tools"],
               ["profile-ride", "Ride"],
               ["profile-favs", "Saved"],
               ["profile-gear", "Gear"],
-              ["profile-edit", "Edit"],
             ] as const
           ).map(([id, label]) => (
             <button
@@ -511,6 +579,7 @@ export default function ProfilePage() {
               ref={photoInputRef}
               type="file"
               accept="image/*"
+              aria-label="Upload profile photo"
               className="sr-only"
               onChange={handlePhotoChange}
             />
@@ -535,27 +604,213 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Rider Summary */}
-          <div className="mt-5 overflow-hidden rounded-2xl border border-[var(--r-border)] bg-white/80">
-            <div className="border-b border-[var(--r-border)] bg-neutral-50/80 px-4 py-2">
-              <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[var(--r-muted)]">Rider Summary</p>
+          {/* Rider summary + inline edit (active rider) */}
+          <div
+            id="profile-edit"
+            className="mt-5 scroll-mt-24 overflow-hidden rounded-2xl border border-[var(--r-border)] bg-white/90 shadow-sm"
+          >
+            <div className="flex items-center justify-between gap-2 border-b border-[var(--r-border)] bg-neutral-50/90 px-4 py-2.5 sm:px-5">
+              <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[var(--r-muted)]">
+                {formOpen ? "Update rider profile" : "Rider summary"}
+              </p>
+              {!formOpen ? (
+                <button
+                  type="button"
+                  onClick={() => setFormOpen(true)}
+                  className="shrink-0 rounded-lg px-2.5 py-1 text-[12px] font-semibold text-[var(--r-orange)] transition hover:bg-orange-50"
+                >
+                  Edit
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={cancelProfileEdit}
+                  className="shrink-0 rounded-lg px-2.5 py-1 text-[12px] font-semibold text-[var(--r-muted)] transition hover:bg-neutral-100 hover:text-[var(--foreground)]"
+                >
+                  Cancel
+                </button>
+              )}
             </div>
-            {[
-              { label: "Height", value: `${profile.heightCm} cm` },
-              { label: "Weight", value: `${profile.weightKg} kg` },
-              { label: "Est. reach", value: `~${approximateFrameReachCm(profile.heightCm)} mm` },
-              { label: "Riding style", value: ridingStyleLabels(profile.style) },
-              { label: "Bike category", value: suggestedBikeCategory(profile) ?? "Trail" },
-              { label: "eBike interest", value: profile.preferEbike ? "Yes" : "No" },
-            ].map(({ label, value }, i, arr) => (
-              <div
-                key={label}
-                className={`flex items-center justify-between px-4 py-2.5 ${i < arr.length - 1 ? "border-b border-[var(--r-border)]" : ""}`}
-              >
-                <p className="text-[13px] text-[var(--r-muted)]">{label}</p>
-                <p className="text-[13px] font-bold text-[var(--foreground)]">{value}</p>
-              </div>
-            ))}
+
+            {!formOpen ? (
+              <>
+                {[
+                  { label: "Height", value: `${profile.heightCm} cm` },
+                  { label: "Weight", value: `${profile.weightKg} kg` },
+                  { label: "Est. reach", value: `~${approximateFrameReachCm(profile.heightCm)} mm` },
+                  { label: "Riding style", value: ridingStyleLabels(profile.style) },
+                  { label: "Bike category", value: suggestedBikeCategory(profile) ?? "Trail" },
+                  { label: "eBike interest", value: profile.preferEbike ? "Yes" : "No" },
+                ].map(({ label, value }, i, arr) => (
+                  <div
+                    key={label}
+                    className={`flex items-center justify-between px-4 py-2.5 sm:px-5 ${i < arr.length - 1 ? "border-b border-[var(--r-border)]" : ""}`}
+                  >
+                    <p className="text-[13px] text-[var(--r-muted)]">{label}</p>
+                    <p className="text-[13px] font-bold text-[var(--foreground)]">{value}</p>
+                  </div>
+                ))}
+                <div className="border-t border-[var(--r-border)] bg-neutral-50/40 px-4 py-3 sm:px-5">
+                  <button
+                    type="button"
+                    onClick={() => setFormOpen(true)}
+                    className="w-full rounded-xl border border-[var(--r-orange)]/35 bg-white py-2.5 text-[13px] font-semibold text-[var(--r-orange)] shadow-sm transition hover:bg-orange-50/80"
+                  >
+                    Update height, weight &amp; riding style
+                  </button>
+                </div>
+              </>
+            ) : (
+              <form onSubmit={handleSave} className="space-y-4 px-4 py-4 sm:space-y-5 sm:px-5 sm:py-5">
+                {riders.length > 1 ? (
+                  <p className="rounded-lg border border-[var(--r-border)] bg-neutral-50/80 px-3 py-2 text-[11px] leading-snug text-[var(--r-muted)]">
+                    Updates apply to the <strong className="text-[var(--foreground)]">active</strong> rider only. Switch
+                    them in <strong className="text-[var(--foreground)]">My Family</strong> (section below)
+                    first if you meant to edit someone else.
+                  </p>
+                ) : null}
+                <div className="min-w-0">
+                  <label className="text-xs font-semibold text-[var(--r-muted)]" htmlFor="profile-nickname">
+                    Nickname <span className="font-normal opacity-60">(optional)</span>
+                  </label>
+                  <input
+                    id="profile-nickname"
+                    type="text"
+                    value={nickname}
+                    onChange={(e) => setNickname(e.target.value)}
+                    placeholder="What should we call you?"
+                    className="r-field mt-2 w-full min-w-0 px-4 py-3 text-sm"
+                    maxLength={80}
+                    autoComplete="nickname"
+                  />
+                </div>
+
+                <div className="grid min-w-0 grid-cols-2 gap-3 sm:gap-4">
+                  <div className="min-w-0">
+                    <label className="text-xs font-semibold text-[var(--r-muted)]" htmlFor="profile-height">
+                      Height
+                    </label>
+                    <div className="relative mt-2">
+                      <input
+                        id="profile-height"
+                        type="number"
+                        inputMode="numeric"
+                        required
+                        min={100}
+                        max={250}
+                        value={heightCm}
+                        onChange={(e) => setHeightCm(e.target.value)}
+                        className={`r-field w-full min-w-0 max-w-full px-4 py-3 pr-10 text-sm box-border ${numberNoSpin}`}
+                      />
+                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-[var(--r-muted)]">
+                        cm
+                      </span>
+                    </div>
+                  </div>
+                  <div className="min-w-0">
+                    <label className="text-xs font-semibold text-[var(--r-muted)]" htmlFor="profile-weight">
+                      Weight
+                    </label>
+                    <div className="relative mt-2">
+                      <input
+                        id="profile-weight"
+                        type="number"
+                        inputMode="decimal"
+                        required
+                        min={25}
+                        max={250}
+                        value={weightKg}
+                        onChange={(e) => setWeightKg(e.target.value)}
+                        className={`r-field w-full min-w-0 max-w-full px-4 py-3 pr-10 text-sm box-border ${numberNoSpin}`}
+                      />
+                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-[var(--r-muted)]">
+                        kg
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {reach != null && (
+                  <p className="rounded-xl bg-[rgba(229,71,26,0.06)] px-4 py-3 text-[12px] leading-relaxed text-[var(--r-muted)]">
+                    Estimated reach: <strong className="text-[var(--foreground)]">~{reach}mm</strong>
+                    {draftCat && (
+                      <>
+                        {" "}
+                        · Category: <strong className="text-[var(--foreground)]">{draftCat}</strong>
+                      </>
+                    )}
+                    <span className="ml-1 opacity-70">— confirm fit with retailer before buying.</span>
+                  </p>
+                )}
+
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-[var(--r-muted)]">Riding style</p>
+                  <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                    {RIDING_STYLE_OPTIONS.map((opt) => {
+                      const active = style === opt.value;
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => setStyle(opt.value)}
+                          className={`flex min-w-0 flex-col items-start rounded-xl border px-3 py-3 text-left transition-all ${
+                            active
+                              ? "border-[var(--r-orange)] bg-[var(--r-orange-soft)] shadow-sm"
+                              : "border-[var(--r-border)] bg-white hover:border-[var(--r-orange)]/40"
+                          }`}
+                        >
+                          <span className={`h-2 w-2 shrink-0 rounded-full ${active ? "bg-[var(--r-orange)]" : "bg-neutral-300"}`} />
+                          <span
+                            className={`mt-2 text-[12px] font-semibold leading-tight sm:text-[13px] ${active ? "text-[var(--r-orange)]" : "text-[var(--foreground)]"}`}
+                          >
+                            {opt.label}
+                          </span>
+                          <span className="mt-0.5 line-clamp-2 text-[9px] leading-tight text-[var(--r-muted)] sm:text-[10px]">
+                            {opt.hint}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="flex min-w-0 items-center justify-between gap-3 rounded-xl border border-[var(--r-border)] bg-neutral-50/80 px-4 py-4">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-[var(--foreground)]">Interested in e-bikes</p>
+                    <p className="mt-0.5 text-[11px] leading-snug text-[var(--r-muted)]">Prioritises eMTB · boosts rental shops on the trip map</p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={preferEbikeAriaChecked}
+                    aria-label="Interested in e-bikes"
+                    onClick={() => setPreferEbike((v) => !v)}
+                    className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${preferEbike ? "bg-[var(--r-orange)]" : "bg-neutral-200"}`}
+                  >
+                    <span
+                      className={`absolute left-0.5 top-0.5 h-6 w-6 rounded-full bg-white shadow-sm transition-transform ${preferEbike ? "translate-x-5" : "translate-x-0"}`}
+                    />
+                  </button>
+                </div>
+
+                {error ? (
+                  <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">{error}</p>
+                ) : null}
+
+                <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end">
+                  <button
+                    type="button"
+                    onClick={cancelProfileEdit}
+                    className="rounded-xl border border-[var(--r-border)] bg-white px-4 py-3 text-sm font-semibold text-[var(--foreground)] transition hover:bg-neutral-50 sm:min-w-[7rem]"
+                  >
+                    Discard
+                  </button>
+                  <button type="submit" className="r-btn-ios-primary rounded-xl py-3 text-sm font-semibold sm:min-w-[10rem]">
+                    Save changes
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
 
           {saved && (
@@ -564,6 +819,16 @@ export default function ProfilePage() {
             </div>
           )}
         </div>
+
+        <MyFamilySection
+          riders={riders}
+          activeRiderId={activeRiderId}
+          switchRider={switchRider}
+          removeRider={removeRider}
+          onOpenCreateFamily={() => setFamilyModalOpen(true)}
+          fullPageAddHref={householdAddRiderHref("/profile")}
+          onViewCatalogBike={(bike) => setSelectedBike(bike)}
+        />
 
         {/* ── Tools ── */}
         <div id="profile-tools" className="mt-5 scroll-mt-24">
@@ -724,7 +989,7 @@ export default function ProfilePage() {
                     </ul>
                   )}
                   {bikeSearch.trim().length >= 2 && catalogSearchHits.length === 0 && (
-                    <p className="mt-2 text-[12px] text-[var(--r-muted)]">No matches — try "custom bike" tab.</p>
+                    <p className="mt-2 text-[12px] text-[var(--r-muted)]">No matches — try the custom bike tab.</p>
                   )}
                 </div>
               ) : (
@@ -774,6 +1039,7 @@ export default function ProfilePage() {
                     ref={customBikePhotoRef}
                     type="file"
                     accept="image/*"
+                    aria-label="Upload photo of your custom bike"
                     className="sr-only"
                     onChange={handleCustomBikePhoto}
                   />
@@ -810,43 +1076,56 @@ export default function ProfilePage() {
               </p>
             </div>
           ) : (
-            <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 pt-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+            <div
+              id="profile-favs-carousel"
+              className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 pt-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+            >
               {favBikes.map((bike) => {
                 const best = getBestPrice(bike);
                 return (
-                  <button
+                  <article
                     key={bike.id}
-                    type="button"
-                    onClick={() => setSelectedBike(bike)}
-                    className="flex w-36 shrink-0 snap-start flex-col overflow-hidden rounded-2xl border border-[var(--r-border)] bg-white shadow-sm ring-1 ring-black/[0.02] transition active:scale-95"
+                    className="group relative flex w-36 shrink-0 snap-start flex-col overflow-hidden rounded-2xl border border-[var(--r-border)] bg-white shadow-sm ring-1 ring-black/[0.02] transition active:scale-95"
                   >
-                    <div className="relative aspect-[4/3] w-full overflow-hidden bg-[#f5f3ef]">
-                      <BikeProductImage
-                        bikeId={bike.id}
-                        alt={bike.model}
-                        className="h-full w-full object-contain p-2"
-                      />
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); toggleFav(bike.id); }}
-                        className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-white/90 shadow"
-                        aria-label="Remove from favourites"
-                      >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="#e5471a" aria-hidden>
-                          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" stroke="#e5471a" strokeWidth="1.6" />
-                        </svg>
-                      </button>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedBike(bike)}
+                      aria-label={`View ${bike.brand} ${bike.model} specs`}
+                      className="absolute inset-0 z-[1] rounded-2xl border-0 bg-transparent p-0 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--r-orange)] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+                    />
+                    <div className="relative z-[2] flex flex-col pointer-events-none">
+                      <div className="relative aspect-[4/3] w-full overflow-hidden bg-[#f5f3ef]">
+                        <BikeProductImage
+                          bikeId={bike.id}
+                          alt={bike.model}
+                          className="h-full w-full object-contain p-2"
+                        />
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            toggleFav(bike.id);
+                          }}
+                          className="pointer-events-auto absolute right-1.5 top-1.5 z-[3] flex h-6 w-6 items-center justify-center rounded-full bg-white/90 shadow"
+                          aria-label="Remove from favourites"
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="#e5471a" aria-hidden>
+                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" stroke="#e5471a" strokeWidth="1.6" />
+                          </svg>
+                        </button>
+                      </div>
+                      <div className="px-2.5 pb-2.5 pt-2 text-left">
+                        <p className="text-[9px] font-semibold uppercase tracking-wider text-[var(--r-muted)]">{bike.brand}</p>
+                        <p className="mt-0.5 line-clamp-2 text-[12px] font-semibold leading-snug text-[var(--foreground)]">{bike.model}</p>
+                        <p className="mt-1.5 text-[13px] font-bold text-[var(--r-price-green)]">
+                          {best != null
+                            ? new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD", maximumFractionDigits: 0 }).format(best)
+                            : "—"}
+                        </p>
+                      </div>
                     </div>
-                    <div className="px-2.5 pb-2.5 pt-2 text-left">
-                      <p className="text-[9px] font-semibold uppercase tracking-wider text-[var(--r-muted)]">{bike.brand}</p>
-                      <p className="mt-0.5 line-clamp-2 text-[12px] font-semibold leading-snug text-[var(--foreground)]">{bike.model}</p>
-                      <p className="mt-1.5 text-[13px] font-bold text-[var(--r-price-green)]">
-                        {best != null
-                          ? new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD", maximumFractionDigits: 0 }).format(best)
-                          : "—"}
-                      </p>
-                    </div>
-                  </button>
+                  </article>
                 );
               })}
             </div>
@@ -898,136 +1177,6 @@ export default function ProfilePage() {
               </a>
             ))}
           </div>
-        </div>
-
-        {/* ── Edit profile (accordion) ── */}
-        <div id="profile-edit" className="mt-6 scroll-mt-24">
-          <button
-            type="button"
-            onClick={() => setFormOpen((v) => !v)}
-            className="r-ios-card flex w-full items-center justify-between px-5 py-4 text-left"
-          >
-            <span className="text-[15px] font-semibold text-[var(--foreground)]">Edit profile</span>
-            <span className={`text-[var(--r-orange)] transition-transform ${formOpen ? "rotate-90" : ""}`}>›</span>
-          </button>
-
-          {formOpen && (
-            <div className="mt-2 r-ios-card px-5 py-5">
-              <form onSubmit={handleSave} className="space-y-5">
-                <div>
-                  <label className="text-xs font-semibold text-[var(--r-muted)]" htmlFor="nickname">
-                    Nickname <span className="font-normal opacity-60">(optional)</span>
-                  </label>
-                  <input
-                    id="nickname"
-                    type="text"
-                    value={nickname}
-                    onChange={(e) => setNickname(e.target.value)}
-                    placeholder="What should we call you?"
-                    className="r-field mt-2 w-full px-4 py-3 text-sm"
-                    maxLength={80}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs font-semibold text-[var(--r-muted)]" htmlFor="height">Height</label>
-                    <div className="relative mt-2">
-                      <input
-                        id="height"
-                        type="number"
-                        inputMode="numeric"
-                        required
-                        min={100}
-                        max={250}
-                        value={heightCm}
-                        onChange={(e) => setHeightCm(e.target.value)}
-                        className="r-field w-full px-4 py-3 pr-10 text-sm"
-                      />
-                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-[var(--r-muted)]">cm</span>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-[var(--r-muted)]" htmlFor="weight">Weight</label>
-                    <div className="relative mt-2">
-                      <input
-                        id="weight"
-                        type="number"
-                        inputMode="decimal"
-                        required
-                        min={25}
-                        max={250}
-                        value={weightKg}
-                        onChange={(e) => setWeightKg(e.target.value)}
-                        className="r-field w-full px-4 py-3 pr-10 text-sm"
-                      />
-                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-[var(--r-muted)]">kg</span>
-                    </div>
-                  </div>
-                </div>
-
-                {reach != null && (
-                  <p className="rounded-xl bg-[rgba(229,71,26,0.06)] px-4 py-3 text-[12px] leading-relaxed text-[var(--r-muted)]">
-                    Estimated reach: <strong className="text-[var(--foreground)]">~{reach}mm</strong>
-                    {draftCat && <> · Category: <strong className="text-[var(--foreground)]">{draftCat}</strong></>}
-                    <span className="ml-1 opacity-70">— confirm fit with retailer before buying.</span>
-                  </p>
-                )}
-
-                <div>
-                  <p className="text-xs font-semibold text-[var(--r-muted)]">Riding style</p>
-                  <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
-                    {RIDING_STYLE_OPTIONS.map((opt) => {
-                      const active = style === opt.value;
-                      return (
-                        <button
-                          key={opt.value}
-                          type="button"
-                          onClick={() => setStyle(opt.value)}
-                          className={`flex flex-col items-start rounded-xl border px-3.5 py-3 text-left transition-all ${
-                            active
-                              ? "border-[var(--r-orange)] bg-[var(--r-orange-soft)] shadow-sm"
-                              : "border-[var(--r-border)] bg-white hover:border-[var(--r-orange)]/40"
-                          }`}
-                        >
-                          <span className={`h-2 w-2 rounded-full ${active ? "bg-[var(--r-orange)]" : "bg-neutral-300"}`} />
-                          <span className={`mt-2 text-[13px] font-semibold leading-tight ${active ? "text-[var(--r-orange)]" : "text-[var(--foreground)]"}`}>
-                            {opt.label}
-                          </span>
-                          <span className="mt-0.5 text-[10px] leading-tight text-[var(--r-muted)]">{opt.hint}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between rounded-xl border border-[var(--r-border)] bg-neutral-50/80 px-4 py-4">
-                  <div>
-                    <p className="text-sm font-semibold text-[var(--foreground)]">Interested in e-bikes</p>
-                    <p className="mt-0.5 text-[11px] text-[var(--r-muted)]">Prioritises eMTB · boosts rental shops</p>
-                  </div>
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={preferEbike ? "true" : "false"}
-                    aria-label="Interested in e-bikes"
-                    onClick={() => setPreferEbike((v) => !v)}
-                    className={`relative ml-4 h-7 w-12 shrink-0 rounded-full transition-colors ${preferEbike ? "bg-[var(--r-orange)]" : "bg-neutral-200"}`}
-                  >
-                    <span className={`absolute left-0.5 top-0.5 h-6 w-6 rounded-full bg-white shadow-sm transition-transform ${preferEbike ? "translate-x-5" : "translate-x-0"}`} />
-                  </button>
-                </div>
-
-                {error && (
-                  <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">{error}</p>
-                )}
-
-                <button type="submit" className="r-btn-ios-primary w-full rounded-xl py-3.5 text-sm font-semibold">
-                  Save changes
-                </button>
-              </form>
-            </div>
-          )}
         </div>
 
         {/* ── Account ── */}

@@ -4,6 +4,8 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { RiderContextBanner, RiderContextPicker } from "@/app/components/RiderSurfaceContext";
+import { householdAddRiderHref } from "@/src/lib/welcome-add-mode";
 import { groupTrailsForDisplay } from "@/app/trip/groupTrails";
 import type { TripShopPin, TripTrailLine } from "@/app/trip/TripMapInner";
 import { googleMapsSearchUrl } from "@/src/domain/map-links";
@@ -12,7 +14,9 @@ import { describeShopServicesForRider, profileShopBoost } from "@/src/domain/sho
 import { trailforksPlannerUrl } from "@/src/domain/rider-profile";
 import { ridingStyleLabels } from "@/src/domain/riding-style";
 import { bboxFromCenter } from "@/src/domain/trip-bbox";
+import { isPremiumTripSaveUnlocked } from "@/src/lib/premium";
 import { useRiderProfile } from "@/src/state/rider-profile-context";
+import { useSavedTrips } from "@/src/state/saved-trips-store";
 
 const DEFAULT_CENTER: [number, number] = [-33.8688, 151.2093];
 const DEFAULT_ZOOM = 10;
@@ -45,7 +49,8 @@ function trailPlural(n: number): "trail" | "trails" {
 type LoadLeg = "idle" | "loading" | "done" | "error";
 
 export default function TripMapExplorer() {
-  const { profile } = useRiderProfile();
+  const { profile, riders } = useRiderProfile();
+  const { trips: savedTrips, appendTrip } = useSavedTrips();
   const [query, setQuery] = useState("");
   const [hits, setHits] = useState<GeocodeHit[]>([]);
   const [selectOpen, setSelectOpen] = useState(false);
@@ -62,6 +67,7 @@ export default function TripMapExplorer() {
   const [loadSummary, setLoadSummary] = useState<{ trails: number; shops: number } | null>(null);
   const [legShops, setLegShops] = useState<LoadLeg>("idle");
   const [legTrails, setLegTrails] = useState<LoadLeg>("idle");
+  const [tripSavePaywallOpen, setTripSavePaywallOpen] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const mapFetchRef = useRef<AbortController | null>(null);
@@ -369,8 +375,13 @@ export default function TripMapExplorer() {
               >
                 {hits.map((h) => (
                   <li key={h.id} role="presentation">
-                    <button type="button" role="option" onClick={() => pickHit(h)}
-                      className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-[13px] hover:bg-orange-50">
+                    <button
+                      type="button"
+                      role="option"
+                      aria-selected={false}
+                      onClick={() => pickHit(h)}
+                      className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-[13px] hover:bg-orange-50"
+                    >
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="shrink-0 text-[var(--r-orange)]" aria-hidden>
                         <path d="M12 2a7 7 0 0 1 7 7c0 5.25-7 13-7 13S5 14.25 5 9a7 7 0 0 1 7-7Z" stroke="currentColor" strokeWidth="2.2" strokeLinejoin="round"/>
                         <circle cx="12" cy="9" r="2" fill="currentColor"/>
@@ -382,6 +393,17 @@ export default function TripMapExplorer() {
               </ul>
             )}
           </div>
+
+          {profile && riders.length > 0 ? (
+            <div className="border-t border-[var(--r-border)] px-4 py-4 sm:px-5 sm:py-4">
+              <RiderContextPicker
+                id="trip-household-rider"
+                description="Trail map is the same for everyone; shop ranking, e-bike rental hints, and saved trips use the rider below."
+                addHref={householdAddRiderHref("/trip")}
+              />
+              <RiderContextBanner addHref={householdAddRiderHref("/trip")} className="mt-2" />
+            </div>
+          ) : null}
 
           {/* Radius pills */}
           <div className="flex flex-wrap items-center gap-2 border-t border-[var(--r-border)] px-4 py-3">
@@ -400,23 +422,63 @@ export default function TripMapExplorer() {
             </div>
             <div className="ml-auto flex shrink-0 items-center gap-1.5">
               {place && !loadingMap && (
-                <button
-                  type="button"
-                  onClick={() => void loadFeatures(place.lat, place.lon)}
-                  title="Reload map data"
-                  aria-label="Reload map data"
-                  className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--r-border)] bg-white text-[var(--r-muted)] transition hover:border-neutral-300 hover:bg-neutral-50 hover:text-[var(--foreground)]"
-                >
-                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden>
-                    <path
-                      d="M21 2v6h-6M3 22v-6h6M21 12.5A9.5 9.5 0 0 0 12 3a9.5 9.5 0 0 0-8.5 5.25M3 11.5A9.5 9.5 0 0 0 12 21a9.5 9.5 0 0 0 8.5-5.25"
-                      stroke="currentColor"
-                      strokeWidth="1.75"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </button>
+                <>
+                  {isPremiumTripSaveUnlocked() && savedTrips.length > 0 ? (
+                    <span
+                      className="inline-flex max-w-[4.5rem] shrink-0 items-center truncate rounded-full border border-emerald-200/80 bg-emerald-50/90 px-2 py-1 text-[8px] font-bold tabular-nums text-emerald-900 sm:max-w-none sm:text-[9px]"
+                      title={`${savedTrips.length} saved trip spots on this device (active rider)`}
+                      aria-label={`${savedTrips.length} saved trips on this device`}
+                    >
+                      <span className="sm:hidden">{savedTrips.length}</span>
+                      <span className="hidden sm:inline">{savedTrips.length} saved</span>
+                    </span>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!place) return;
+                      if (isPremiumTripSaveUnlocked()) {
+                        const rec = appendTrip({
+                          place: { label: place.label, lat: place.lat, lon: place.lon },
+                          radiusKm,
+                          trailCount: loadSummary?.trails,
+                          shopCount: loadSummary?.shops,
+                        });
+                        if (rec) {
+                          const n = savedTrips.length + 1;
+                          setNotice(
+                            `Saved “${place.label}” on this device (${n} in your list). Export a backup from Profile when you want a copy.`
+                          );
+                        } else {
+                          setNotice("Couldn’t save — open a rider profile and try again.");
+                        }
+                      } else {
+                        setTripSavePaywallOpen(true);
+                      }
+                    }}
+                    title="Save this trip — Premium"
+                    className="rounded-full border border-amber-200/90 bg-gradient-to-r from-amber-50 to-white px-2.5 py-1.5 text-[9px] font-bold uppercase tracking-wide text-amber-900 shadow-sm sm:px-3 sm:text-[10px]"
+                  >
+                    Save trip
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void loadFeatures(place.lat, place.lon)}
+                    title="Reload map data"
+                    aria-label="Reload map data"
+                    className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--r-border)] bg-white text-[var(--r-muted)] transition hover:border-neutral-300 hover:bg-neutral-50 hover:text-[var(--foreground)]"
+                  >
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden>
+                      <path
+                        d="M21 2v6h-6M3 22v-6h6M21 12.5A9.5 9.5 0 0 0 12 3a9.5 9.5 0 0 0-8.5 5.25M3 11.5A9.5 9.5 0 0 0 12 21a9.5 9.5 0 0 0 8.5-5.25"
+                        stroke="currentColor"
+                        strokeWidth="1.75"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </button>
+                </>
               )}
             </div>
           </div>
@@ -725,7 +787,11 @@ export default function TripMapExplorer() {
                           <div className="mt-1 flex flex-wrap gap-1">
                             {s.sales && <span className="rounded-full bg-[rgba(37,99,235,0.1)] px-2 py-0.5 text-[10px] font-semibold text-[#2563eb]">Sales</span>}
                             {s.repair && <span className="rounded-full bg-[rgba(16,185,129,0.1)] px-2 py-0.5 text-[10px] font-semibold text-[#059669]">Service</span>}
-                            {s.rental && <span className="rounded-full bg-[rgba(124,58,237,0.1)] px-2 py-0.5 text-[10px] font-semibold text-[#7c3aed]">Rentals</span>}
+                            {s.rental && (
+                              <span className="rounded-full bg-[rgba(124,58,237,0.12)] px-2 py-0.5 text-[10px] font-bold text-[#5b21b6] ring-1 ring-[#7c3aed]/25">
+                                Hire available
+                              </span>
+                            )}
                           </div>
                           {svc && <p className="mt-0.5 text-[11px] text-[var(--r-muted)]">{svc}</p>}
                           {s.openingHours && <p className="mt-0.5 text-[10px] text-[var(--r-muted)]">{s.openingHours}</p>}
@@ -755,6 +821,44 @@ export default function TripMapExplorer() {
                 )}
               </ul>
             )}
+          </div>
+        </div>
+      )}
+
+      {tripSavePaywallOpen && (
+        <div
+          className="fixed inset-0 z-[4000] flex items-end justify-center bg-black/45 p-4 sm:items-center"
+          role="dialog"
+          aria-modal
+          aria-labelledby="trip-save-premium-title"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setTripSavePaywallOpen(false);
+          }}
+        >
+          <div className="w-full max-w-md rounded-2xl border border-[var(--r-border)] bg-white p-5 shadow-2xl">
+            <p id="trip-save-premium-title" className="text-[15px] font-bold text-[var(--foreground)]">
+              Save trips — Premium
+            </p>
+            <p className="mt-2 text-[13px] leading-relaxed text-[var(--r-muted)]">
+              Saved routes, offline packs, verified hire flags, and shareable family itineraries will ship as a Premium
+              layer. The live map preview stays free while we finish billing and sync.
+            </p>
+            <div className="mt-5 flex flex-wrap justify-end gap-2">
+              <button
+                type="button"
+                className="rounded-xl border border-[var(--r-border)] bg-white px-4 py-2.5 text-[13px] font-semibold text-[var(--foreground)]"
+                onClick={() => setTripSavePaywallOpen(false)}
+              >
+                Got it
+              </button>
+              <Link
+                href="/"
+                className="rounded-xl bg-[var(--r-orange)] px-4 py-2.5 text-[13px] font-semibold text-white no-underline shadow-[0_4px_14px_rgba(229,71,26,0.35)]"
+                onClick={() => setTripSavePaywallOpen(false)}
+              >
+                Back to home
+              </Link>
+            </div>
           </div>
         </div>
       )}

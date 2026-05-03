@@ -4,6 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import { LEGACY_PROFILE_PHOTO_KEY, readRiderPhoto, riderPhotoStorageKey } from "@/src/domain/rider-photo";
+import { RIDER_PHOTO_UPDATED_EVENT } from "@/src/lib/rider-photo-events";
 import { useRiderProfile } from "@/src/state/rider-profile-context";
 
 function stroke(active: boolean) {
@@ -87,35 +89,51 @@ const TABS = [
   { href: "/profile", label: "Profile", Icon: IconPerson },
 ] as const;
 
-const PROFILE_PHOTO_KEY = "rippers:profile-photo:v1";
 /** Dispatched from Profile (same tab) after `localStorage` is updated — `storage` only fires across tabs. */
 const PROFILE_PHOTO_CHANGED = "rippers:profile-photo-changed";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [desktopScrolled, setDesktopScrolled] = useState(false);
-  const { profile } = useRiderProfile();
+  const { profile, riders, activeRiderId } = useRiderProfile();
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
 
   useEffect(() => {
     function readProfilePhoto() {
       try {
-        setProfilePhoto(localStorage.getItem(PROFILE_PHOTO_KEY));
+        if (!activeRiderId) {
+          setProfilePhoto(localStorage.getItem(LEGACY_PROFILE_PHOTO_KEY));
+          return;
+        }
+        const scoped = readRiderPhoto(activeRiderId);
+        if (scoped) {
+          setProfilePhoto(scoped);
+          return;
+        }
+        setProfilePhoto(localStorage.getItem(LEGACY_PROFILE_PHOTO_KEY));
       } catch {
         setProfilePhoto(null);
       }
     }
+    function onRiderPhoto(e: Event) {
+      const ce = e as CustomEvent<{ riderId?: string }>;
+      if (ce.detail?.riderId != null && ce.detail.riderId !== activeRiderId) return;
+      readProfilePhoto();
+    }
     readProfilePhoto();
     window.addEventListener(PROFILE_PHOTO_CHANGED, readProfilePhoto);
+    window.addEventListener(RIDER_PHOTO_UPDATED_EVENT, onRiderPhoto);
     function onStorage(e: StorageEvent) {
-      if (e.key === PROFILE_PHOTO_KEY) readProfilePhoto();
+      const riderKey = activeRiderId ? riderPhotoStorageKey(activeRiderId) : null;
+      if (e.key === LEGACY_PROFILE_PHOTO_KEY || (riderKey != null && e.key === riderKey)) readProfilePhoto();
     }
     window.addEventListener("storage", onStorage);
     return () => {
       window.removeEventListener(PROFILE_PHOTO_CHANGED, readProfilePhoto);
+      window.removeEventListener(RIDER_PHOTO_UPDATED_EVENT, onRiderPhoto);
       window.removeEventListener("storage", onStorage);
     };
-  }, [pathname]);
+  }, [pathname, activeRiderId]);
 
   useEffect(() => {
     const onScroll = () => {
@@ -139,19 +157,40 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         aria-label="Desktop main navigation"
       >
         <div className="r-desktop-header-inner">
-          <Link href="/" className="r-desktop-brand no-underline" prefetch>
-            <span className="flex h-10 w-10 shrink-0 overflow-hidden rounded-[0.65rem] shadow-sm">
-              <Image
-                src="/icons/icon-512.png"
-                alt="Rippers"
-                width={40}
-                height={40}
-                className="h-full w-full object-contain"
-                sizes="40px"
-              />
-            </span>
-            <span className="text-sm font-semibold tracking-tight text-[var(--foreground)]">Rippers</span>
-          </Link>
+          <div className="flex min-w-0 shrink-0 items-center gap-2">
+            <Link href="/" className="r-desktop-brand no-underline" prefetch>
+              <span className="flex h-10 w-10 shrink-0 overflow-hidden rounded-[0.65rem] shadow-sm">
+                <Image
+                  src="/icons/icon-512.png"
+                  alt="Rippers"
+                  width={40}
+                  height={40}
+                  className="h-full w-full object-contain"
+                  sizes="40px"
+                />
+              </span>
+              <span className="text-sm font-semibold tracking-tight text-[var(--foreground)]">Rippers</span>
+            </Link>
+            {profile ? (
+              riders.length > 1 ? (
+                <Link
+                  href="/profile#profile-riders"
+                  className="inline-block min-w-0 max-w-[9rem] truncate rounded-full border border-[var(--r-border)] bg-white/90 px-2.5 py-1 text-[11px] font-semibold text-[var(--foreground)] no-underline shadow-sm transition hover:border-[var(--r-orange)]/35 hover:bg-orange-50/50 sm:max-w-[10rem]"
+                  title="Switch household rider"
+                >
+                  <span className="font-normal text-[var(--r-muted)]">As </span>
+                  {profile.nickname.trim() || "Rider"}
+                </Link>
+              ) : (
+                <span
+                  className="inline-block min-w-0 max-w-[9rem] truncate rounded-full border border-transparent px-2.5 py-1 text-[11px] text-[var(--r-muted)] sm:max-w-[10rem]"
+                  title="Active rider on this device"
+                >
+                  {profile.nickname.trim() || "Rider"}
+                </span>
+              )
+            ) : null}
+          </div>
 
           <Link
             href="/#home-query"

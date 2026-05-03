@@ -9,18 +9,22 @@ import BikeDetailSheet from "@/app/components/BikeDetailSheet";
 import MatchBreakdownSheet from "@/app/components/MatchBreakdownSheet";
 import BikeProductImage from "@/app/components/BikeProductImage";
 import HomeCarouselCard from "@/app/components/HomeCarouselCard";
+import { RiderContextBanner, RiderContextPicker } from "@/app/components/RiderSurfaceContext";
+import { householdAddRiderHref } from "@/src/lib/welcome-add-mode";
 import { catalog } from "@/src/data/catalog";
 import { getBestPrice, getDisplayPrice } from "@/src/domain/bike-helpers";
 import { matchBreakdownForBike, matchPercentForBike } from "@/src/domain/match-score";
 import { ridingStyleLabels } from "@/src/domain/riding-style";
+import type { CurrentBikeEntry } from "@/src/domain/current-bike-entry";
 import { suggestedBikeCategory, type RiderProfileV1 } from "@/src/domain/rider-profile";
 import type { Bike, FilterState } from "@/src/domain/types";
 import { useFilterStore } from "@/src/state/filter-store";
 import { useFavourites } from "@/src/state/favourites-store";
 import { useCurrentBike } from "@/src/state/current-bike-store";
+import { LEGACY_PROFILE_PHOTO_KEY, readRiderPhoto, riderPhotoStorageKey } from "@/src/domain/rider-photo";
+import { RIDER_PHOTO_UPDATED_EVENT } from "@/src/lib/rider-photo-events";
 import { useRiderProfile } from "@/src/state/rider-profile-context";
 
-const PROFILE_PHOTO_KEY = "rippers:profile-photo:v1";
 const PROFILE_PHOTO_CHANGED = "rippers:profile-photo-changed";
 
 function filtersSummaryLine(filters: FilterState): string {
@@ -46,8 +50,8 @@ function heroLines(
 ): { title: string; sub: string } {
   if (!profile) {
     return {
-      title: "Find your perfect MTB.",
-      sub: `${catalogSize} bikes in this AU catalogue snapshot — search & filters narrow the list; add your profile to rank by match.`,
+      title: "Find the right MTB\nfor you or your family.",
+      sub: `${catalogSize} Australian bikes in one snapshot — search, filters, and sizing help you shop for yourself or a junior rider. Add a profile to unlock match-ranked picks.`,
     };
   }
   switch (profile.style) {
@@ -69,7 +73,7 @@ function heroLines(
     default:
       return {
         title: `Hey ${name}!\nReady to rip?`,
-        sub: "Your best profile matches surface first — use search to narrow, or open the full matching list anytime.",
+        sub: "Your best profile matches surface first — handy when you’re buying for yourself or shortlisting bikes for someone else in the family.",
       };
   }
 }
@@ -81,7 +85,7 @@ function HomePageContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { filters, filteredBikes, updateFilters, resetFilters } = useFilterStore();
-  const { hydrated, profile } = useRiderProfile();
+  const { hydrated, profile, riders, activeRiderId } = useRiderProfile();
   const { toggle, has } = useFavourites();
   const syncedFromProfile = useRef(false);
   const [matchBike, setMatchBike] = useState<Bike | null>(null);
@@ -131,25 +135,54 @@ function HomePageContent() {
         ?? null
     : null;
 
+  const currentRideLabel = useMemo(() => {
+    if (!currentBikeEntry) return null;
+    if (currentBikeEntry.type === "catalog") {
+      if (currentCatalogBike) return `${currentCatalogBike.brand} ${currentCatalogBike.model}`;
+      return `${currentBikeEntry.brand} ${currentBikeEntry.model}`;
+    }
+    const b = currentBikeEntry.brand.trim();
+    const n = currentBikeEntry.name.trim();
+    if (b && n) return `${b} ${n}`;
+    return n || b || "Custom bike";
+  }, [currentBikeEntry, currentCatalogBike]);
+
   useEffect(() => {
     function readProfilePhoto() {
       try {
-        setProfilePhoto(localStorage.getItem(PROFILE_PHOTO_KEY));
+        if (!activeRiderId) {
+          setProfilePhoto(localStorage.getItem(LEGACY_PROFILE_PHOTO_KEY));
+          return;
+        }
+        const scoped = readRiderPhoto(activeRiderId);
+        if (scoped) {
+          setProfilePhoto(scoped);
+          return;
+        }
+        setProfilePhoto(localStorage.getItem(LEGACY_PROFILE_PHOTO_KEY));
       } catch {
         setProfilePhoto(null);
       }
     }
+    function onRiderPhoto(e: Event) {
+      const ce = e as CustomEvent<{ riderId?: string }>;
+      if (ce.detail?.riderId != null && ce.detail.riderId !== activeRiderId) return;
+      readProfilePhoto();
+    }
     readProfilePhoto();
     window.addEventListener(PROFILE_PHOTO_CHANGED, readProfilePhoto);
+    window.addEventListener(RIDER_PHOTO_UPDATED_EVENT, onRiderPhoto);
     function onStorage(e: StorageEvent) {
-      if (e.key === PROFILE_PHOTO_KEY) readProfilePhoto();
+      const riderKey = activeRiderId ? riderPhotoStorageKey(activeRiderId) : null;
+      if (e.key === LEGACY_PROFILE_PHOTO_KEY || (riderKey != null && e.key === riderKey)) readProfilePhoto();
     }
     window.addEventListener("storage", onStorage);
     return () => {
       window.removeEventListener(PROFILE_PHOTO_CHANGED, readProfilePhoto);
+      window.removeEventListener(RIDER_PHOTO_UPDATED_EVENT, onRiderPhoto);
       window.removeEventListener("storage", onStorage);
     };
-  }, [pathname]);
+  }, [pathname, activeRiderId]);
 
   useEffect(() => {
     try {
@@ -231,6 +264,29 @@ function HomePageContent() {
 
   const carouselItems = rankedCarousel.slice(0, 6);
 
+  /** Prefer this rider&apos;s researched catalogue bike, else their custom bike, else only then a carousel top pick. */
+  const heroBikeDisplay = useMemo(() => {
+    if (currentCatalogBike) return { mode: "catalog" as const, bike: currentCatalogBike };
+    if (currentBikeEntry?.type === "custom") return { mode: "custom" as const, entry: currentBikeEntry };
+    const topPick = rankedCarousel[0]?.bike ?? null;
+    if (topPick) return { mode: "topPick" as const, bike: topPick };
+    return null;
+  }, [currentCatalogBike, currentBikeEntry, rankedCarousel]);
+
+  function matchPctForBikeId(bikeId: number): number | null {
+    const row = rankedCarousel.find((c) => c.bike.id === bikeId);
+    return row?.m ?? null;
+  }
+
+  /** Show Norco Fluid in caption but Silverback carousel — custom bikes show their own panel. */
+  function heroCustomSubtitle(e: Extract<CurrentBikeEntry, { type: "custom" }>): string | null {
+    const bits = [
+      [e.brand, e.name].filter((x) => x.trim()).join(" ").trim(),
+      e.year.trim() || null,
+    ].filter(Boolean);
+    return bits.length ? bits.join(" · ") : null;
+  }
+
   const bestFiltered = useMemo(() => {
     const prices = filteredBikes.map((b) => getBestPrice(b)).filter((x): x is number => typeof x === "number");
     if (!prices.length) return null;
@@ -282,6 +338,42 @@ function HomePageContent() {
             </h1>
             <p className="mt-3 max-w-[22rem] text-[14px] leading-relaxed text-white/65 md:text-[15px]">{sub}</p>
 
+            {hydrated && profile ? (
+              <div className="mt-4 max-w-[26rem] rounded-2xl border border-white/[0.12] bg-white/[0.06] px-4 py-3.5 backdrop-blur-sm">
+                <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-[13px] text-white/85">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/45">Active rider</span>
+                  <span className="font-semibold text-white">{profile.nickname.trim() || "Rider"}</span>
+                  <span className="text-white/35">·</span>
+                  <span className="text-white/70">{ridingStyleLabels(profile.style)}</span>
+                  {riders.length > 1 ? (
+                    <>
+                      <span className="text-white/35">·</span>
+                      <Link
+                        href="/profile#profile-riders"
+                        className="font-semibold text-[#ff9a7a] no-underline underline-offset-2 hover:underline"
+                      >
+                        Switch
+                      </Link>
+                    </>
+                  ) : null}
+                </div>
+                <div className="mt-2 border-t border-white/[0.08] pt-2.5">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/45">Current bike</p>
+                  {currentRideLabel ? (
+                    <p className="mt-1 text-[13px] font-medium leading-snug text-white/90">{currentRideLabel}</p>
+                  ) : (
+                    <p className="mt-1 text-[12px] leading-snug text-white/55">
+                      None on file —{" "}
+                      <Link href="/profile#profile-ride" className="font-semibold text-[#ff9a7a] no-underline hover:underline">
+                        add in Profile
+                      </Link>{" "}
+                      or when you add a rider.
+                    </p>
+                  )}
+                </div>
+              </div>
+            ) : null}
+
             {/* Stat pills — with a profile, lead with care (ranking) not a bare catalogue count */}
             <div className="mt-5 flex flex-wrap gap-2">
               <span className="rounded-full border border-white/[0.14] bg-white/[0.07] px-3 py-1.5 text-[11px] font-semibold text-white/75">
@@ -309,48 +401,11 @@ function HomePageContent() {
             {hydrated && !profile && (
               <div className="mt-7 flex flex-wrap gap-3">
                 <Link href="/welcome" className="inline-flex items-center gap-2 rounded-2xl bg-[var(--r-orange)] px-5 py-3 text-[14px] font-semibold text-white shadow-[0_8px_24px_rgba(229,71,26,0.45)] no-underline">
-                  Build your profile →
+                  Build your rider profile →
                 </Link>
                 <a href="#results" className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/[0.08] px-5 py-3 text-[14px] font-semibold text-white/85 no-underline">
                   Browse bikes ↓
                 </a>
-              </div>
-            )}
-
-            {/* Current ride (mobile inline, desktop hidden — shown in right col) */}
-            {currentBikeEntry && (
-              <div className="mt-6 flex items-center gap-3 md:hidden">
-                <div className="h-16 w-20 shrink-0 overflow-hidden rounded-xl bg-white/[0.07] ring-1 ring-white/10">
-                  {currentBikeEntry.type === "catalog" && currentCatalogBike ? (
-                    <BikeProductImage bikeId={currentCatalogBike.id} alt={currentCatalogBike.model} className="h-full w-full object-contain p-1.5" />
-                  ) : currentBikeEntry.type === "custom" && currentBikeEntry.photo ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={currentBikeEntry.photo} alt="My bike" className="h-full w-full object-cover" />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center text-2xl">🚵</div>
-                  )}
-                </div>
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-white/40">My current ride</p>
-                  <p className="mt-0.5 text-[13px] font-bold leading-tight text-white">
-                    {currentBikeEntry.type === "catalog" && currentCatalogBike
-                      ? `${currentCatalogBike.brand} ${currentCatalogBike.model}`
-                      : currentBikeEntry.type === "custom"
-                        ? `${currentBikeEntry.brand ? currentBikeEntry.brand + " " : ""}${currentBikeEntry.name}`
-                        : ""}
-                  </p>
-                  {currentBikeEntry.type === "catalog" && currentCatalogBike && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        router.replace(`/?openBike=${currentCatalogBike.id}`, { scroll: false });
-                      }}
-                      className="mt-0.5 text-[11px] font-semibold text-[var(--r-orange)]"
-                    >
-                      View specs →
-                    </button>
-                  )}
-                </div>
               </div>
             )}
           </div>
@@ -377,15 +432,31 @@ function HomePageContent() {
                   <div className="pointer-events-none absolute inset-0 rounded-3xl bg-[radial-gradient(ellipse_80%_60%_at_50%_60%,rgba(229,71,26,0.22),transparent_70%)]" />
 
                   {/* Badge */}
-                  <div className="relative z-10 mb-3 flex items-center gap-2">
-                    <span className="rounded-full border border-white/20 bg-white/[0.08] px-3 py-1 text-[11px] font-semibold text-white/70">
-                      {isCurrentRide ? "My current ride" : "Your top pick"}
-                    </span>
-                    {matchPct !== null && !isCurrentRide && (
-                      <span className="rounded-full bg-[rgba(229,71,26,0.25)] px-2.5 py-1 text-[11px] font-bold text-[#ff8060]">
-                        {matchPct}% match
+                  <div className="relative z-10 mb-2 flex flex-col items-center gap-1.5">
+                    <div className="flex flex-wrap items-center justify-center gap-2">
+                      <span className="rounded-full border border-white/20 bg-white/[0.08] px-3 py-1 text-[11px] font-semibold text-white/70">
+                        {isCurrentRide ? "My current ride" : "Your top pick"}
                       </span>
-                    )}
+                      {matchPct !== null && !isCurrentRide && (
+                        <span className="rounded-full bg-[rgba(229,71,26,0.25)] px-2.5 py-1 text-[11px] font-bold text-[#ff8060]">
+                          {matchPct}% match
+                        </span>
+                      )}
+                    </div>
+                    {profile ? (
+                      <p className="max-w-[20rem] text-center text-[10px] leading-snug text-white/45">
+                        Matches for{" "}
+                        <span className="font-semibold text-white/70">{profile.nickname.trim() || "Rider"}</span>
+                        {currentRideLabel ? (
+                          <>
+                            {" "}
+                            · current bike: <span className="text-white/65">{currentRideLabel}</span>
+                          </>
+                        ) : (
+                          <> · no current bike on file</>
+                        )}
+                      </p>
+                    ) : null}
                   </div>
 
                   {/* Bike image */}
@@ -431,12 +502,79 @@ function HomePageContent() {
         </div>
       </section>
 
+      {/* ─── New visitor: value story (above the fold scroll) ─── */}
+      <section className="mx-4 mt-5 rounded-2xl border border-[var(--r-border)] bg-white shadow-sm" aria-labelledby="home-value-heading">
+        <div className="border-b border-[var(--r-border)] px-4 py-3.5">
+          <h2 id="home-value-heading" className="text-[14px] font-bold tracking-tight text-[var(--foreground)]">
+            What Rippers helps you do
+          </h2>
+          <p className="mt-1 text-[12px] leading-snug text-[var(--r-muted)]">
+            One AU-focused workspace: research bikes, compare builds, and plan where to ride — without losing context in a dozen retailer tabs.
+          </p>
+        </div>
+        <ol className="divide-y divide-[var(--r-border)] text-[12px] leading-snug">
+          <li className="flex gap-3 px-4 py-3">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[rgba(229,71,26,0.1)] text-[11px] font-bold text-[var(--r-orange)]" aria-hidden>
+              1
+            </span>
+            <div>
+              <p className="font-semibold text-[var(--foreground)]">Find a bike for you or your child</p>
+              <p className="mt-0.5 text-[11px] text-[var(--r-muted)]">
+                Filters, sizing, and (with a profile) match scores help you narrow junior or adult bikes from the same catalogue snapshot.
+              </p>
+            </div>
+          </li>
+          <li className="flex gap-3 px-4 py-3">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[rgba(229,71,26,0.1)] text-[11px] font-bold text-[var(--r-orange)]" aria-hidden>
+              2
+            </span>
+            <div>
+              <p className="font-semibold text-[var(--foreground)]">Family &amp; multi-rider profiles</p>
+              <p className="mt-0.5 text-[11px] text-[var(--r-muted)]">
+                Add household riders on this device — each gets their own Watch list, current ride, and match scores. Switch the active rider from{" "}
+                <Link href="/profile#profile-riders" className="font-semibold text-[var(--r-orange)] underline decoration-[var(--r-orange)]/30 underline-offset-2">
+                  Profile → Family
+                </Link>
+                {" "}before you shop or compare.
+              </p>
+            </div>
+          </li>
+          <li className="flex gap-3 px-4 py-3">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[rgba(229,71,26,0.1)] text-[11px] font-bold text-[var(--r-orange)]" aria-hidden>
+              3
+            </span>
+            <div>
+              <p className="font-semibold text-[var(--foreground)]">Plan a trip around where you want to ride</p>
+              <p className="mt-0.5 text-[11px] text-[var(--r-muted)]">
+                Search a town or trail head, see OSM trails and nearby shops. Full trip dossiers, saved routes, and verified hire intel are planned as{" "}
+                <span className="font-semibold text-[var(--foreground)]">Premium</span> — the map preview stays free while we build that layer.
+              </p>
+            </div>
+          </li>
+          <li className="flex gap-3 px-4 py-3">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[rgba(229,71,26,0.1)] text-[11px] font-bold text-[var(--r-orange)]" aria-hidden>
+              4
+            </span>
+            <div>
+              <p className="font-semibold text-[var(--foreground)]">Premium ideas we&apos;re exploring</p>
+              <p className="mt-0.5 text-[11px] text-[var(--r-muted)]">
+                Stock alerts on saved bikes, retailer deep-links with your size pre-filled, curated trail packs per region, and family plan billing — tell us what you&apos;d pay for first.
+              </p>
+            </div>
+          </li>
+        </ol>
+      </section>
+
       {/* ─── Feature tiles ─── */}
       <section className="mt-5 grid grid-cols-2 gap-2.5 px-4 sm:grid-cols-4">
         <Link
           href="/trip"
-          className="flex flex-col items-start gap-2 rounded-2xl border border-[var(--r-border)] bg-white p-3.5 no-underline shadow-sm"
+          title="Ride map — free preview; saved routes and deeper trip intel planned as Premium"
+          className="relative flex flex-col items-start gap-2 rounded-2xl border border-[var(--r-border)] bg-white p-3.5 pr-14 no-underline shadow-sm"
         >
+          <span className="absolute right-2 top-2 rounded-full bg-gradient-to-r from-amber-500 to-[#d97706] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white shadow-sm">
+            Premium
+          </span>
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[rgba(229,71,26,0.1)]">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
               <path d="M3 17h14a3 3 0 1 1 0 6 3 3 0 0 1 0-6Z" stroke="#e5471a" strokeWidth="1.6" opacity="0.4" />
@@ -446,7 +584,7 @@ function HomePageContent() {
           </span>
           <div>
             <p className="text-[12px] font-bold leading-tight text-[var(--foreground)]">Plan a ride</p>
-            <p className="mt-0.5 text-[10px] leading-snug text-[var(--r-muted)]">Trails & shops near you</p>
+            <p className="mt-0.5 text-[10px] leading-snug text-[var(--r-muted)]">Shops near the trail · preview</p>
           </div>
         </Link>
 
@@ -478,7 +616,7 @@ function HomePageContent() {
           </span>
           <div>
             <p className="text-[12px] font-bold leading-tight text-[var(--foreground)]">Profile</p>
-            <p className="mt-0.5 text-[10px] leading-snug text-[var(--r-muted)]">Tune your matches</p>
+            <p className="mt-0.5 text-[10px] leading-snug text-[var(--r-muted)]">Match tuning · one rider today</p>
           </div>
         </Link>
 
@@ -523,9 +661,10 @@ function HomePageContent() {
         </summary>
         <div className="mt-3 border-t border-[var(--r-border)] pt-3">
           <p className="text-[13px] leading-relaxed text-[var(--r-muted)]">
-            Rippers is the go-to MTB finder for Australian riders. We aggregate bikes from the biggest
-            AU retailers and match them to your riding style, height, and budget — so you spend less
-            time searching and more time shredding.
+            Rippers is an Australian MTB research companion: one catalogue snapshot, real prices from major AU retailers,
+            and match scoring once we know how you ride. Use it to shop for yourself, a teenager, or anyone you&apos;re
+            helping into their first proper bike — then jump to Compare, Watch, or the ride map when you&apos;re ready to
+            leave the spreadsheet behind.
           </p>
           <div className="mt-4 grid grid-cols-3 divide-x divide-[var(--r-border)] text-center">
             <div className="pr-2">
@@ -584,7 +723,17 @@ function HomePageContent() {
       {/* ─── Search + filters ─── */}
       <section id="filter-search-area" className="mx-4 mt-7">
         <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--r-orange)]">Filter & search</p>
-        <div className="r-glass-well mt-3 p-2">
+        {hydrated && profile && riders.length > 0 ? (
+          <div className="r-glass-well mt-2 px-3 py-3 sm:px-4 sm:py-3.5">
+            <RiderContextPicker
+              id="home-household-rider"
+              description="Match scores, search ranking, and Watch use whoever is selected here — switch before you shop."
+              addHref={householdAddRiderHref("/")}
+            />
+            <RiderContextBanner addHref={householdAddRiderHref("/")} className="mt-1" />
+          </div>
+        ) : null}
+        <div className={`r-glass-well p-2 ${hydrated && profile && riders.length > 0 ? "mt-2" : "mt-3"}`}>
           <input
             id="home-query"
             type="search"

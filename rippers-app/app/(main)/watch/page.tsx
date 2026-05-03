@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import BikeDetailSheet from "@/app/components/BikeDetailSheet";
+import { RiderContextBanner, RiderContextPicker } from "@/app/components/RiderSurfaceContext";
+import { householdAddRiderHref } from "@/src/lib/welcome-add-mode";
 import BikeProductImage from "@/app/components/BikeProductImage";
 import MatchBreakdownSheet from "@/app/components/MatchBreakdownSheet";
 import { catalog } from "@/src/data/catalog";
@@ -18,7 +20,7 @@ const aud = (n: number) =>
 
 export default function WatchlistPage() {
   const { ids, toggle, has } = useFavourites();
-  const { profile } = useRiderProfile();
+  const { hydrated, profile, riders } = useRiderProfile();
   const [selectedBike, setSelectedBike] = useState<Bike | null>(null);
   const [matchBike, setMatchBike] = useState<Bike | null>(null);
   const [sortBy, setSortBy] = useState<"saved" | "match" | "price">("saved");
@@ -83,6 +85,17 @@ export default function WatchlistPage() {
           </div>
         )}
       </div>
+
+      {hydrated && profile && riders.length > 0 ? (
+        <div className="mx-4 mt-3 rounded-2xl border border-[var(--r-border)] bg-white px-3 py-3 shadow-sm sm:px-4 md:mx-0">
+          <RiderContextPicker
+            id="watch-household-rider"
+            description="This list is per rider — switch before saving or comparing hearts."
+            addHref={householdAddRiderHref("/watch")}
+          />
+          <RiderContextBanner addHref={householdAddRiderHref("/watch")} className="mt-1" />
+        </div>
+      ) : null}
 
       {savedBikes.length >= 2 && (
         <div className="mt-3 px-4 md:px-0">

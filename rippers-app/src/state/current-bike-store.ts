@@ -1,42 +1,97 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useState } from "react";
 
-const KEY = "rippers:current-bike:v2";
+import {
+  type CurrentBikeEntry,
+  currentBikeStorageKeyForRider,
+} from "@/src/domain/current-bike-entry";
+import { CURRENT_BIKE_UPDATED_EVENT, notifyCurrentBikeUpdated } from "@/src/lib/current-bike-events";
+import { enrichCurrentBikeWithCatalog } from "@/src/lib/enrich-current-bike-catalog";
+import { useRiderProfile } from "@/src/state/rider-profile-context";
 
-export type CurrentBikeEntry =
-  | { type: "catalog"; bikeId: number; brand: string; model: string; year: number }
-  | { type: "custom"; name: string; brand: string; year: string; photo: string | null };
+export type { CurrentBikeEntry };
 
-function read(): CurrentBikeEntry | null {
+const LEGACY_KEY = "rippers:current-bike:v2";
+
+function scopedKey(riderId: string | null): string {
+  return riderId ? currentBikeStorageKeyForRider(riderId) : LEGACY_KEY;
+}
+
+function migrateLegacyToScoped(riderId: string) {
+  if (typeof localStorage === "undefined") return;
   try {
-    const raw = localStorage.getItem(KEY);
+    const dest = scopedKey(riderId);
+    if (localStorage.getItem(dest)) return;
+    const legacy = localStorage.getItem(LEGACY_KEY);
+    if (!legacy) return;
+    localStorage.setItem(dest, legacy);
+    localStorage.removeItem(LEGACY_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+function read(key: string): CurrentBikeEntry | null {
+  try {
+    const raw = localStorage.getItem(key);
     if (!raw) return null;
-    return JSON.parse(raw) as CurrentBikeEntry;
+    const parsed = JSON.parse(raw) as CurrentBikeEntry;
+    const enriched = enrichCurrentBikeWithCatalog(parsed);
+    if (enriched && JSON.stringify(enriched) !== JSON.stringify(parsed)) {
+      try {
+        localStorage.setItem(key, JSON.stringify(enriched));
+      } catch {
+        /* ignore */
+      }
+    }
+    return enriched;
   } catch {
     return null;
   }
 }
 
 export function useCurrentBike() {
+  const { activeRiderId, hydrated } = useRiderProfile();
+  const storageKey = scopedKey(activeRiderId);
   const [entry, setEntry] = useState<CurrentBikeEntry | null>(null);
-  const [hydrated, setHydrated] = useState(false);
+  const [storeHydrated, setStoreHydrated] = useState(false);
+
+  /** layoutEffect: scoped key + enrichment before paint so Home hero matches switched rider immediately. */
+  useLayoutEffect(() => {
+    if (!hydrated) return;
+    if (activeRiderId) migrateLegacyToScoped(activeRiderId);
+    setEntry(read(storageKey));
+    setStoreHydrated(true);
+  }, [hydrated, activeRiderId, storageKey]);
 
   useEffect(() => {
-    setEntry(read());
-    setHydrated(true);
-  }, []);
+    if (!hydrated) return;
+    function refresh() {
+      const key = scopedKey(activeRiderId);
+      setEntry(read(key));
+    }
+    window.addEventListener(CURRENT_BIKE_UPDATED_EVENT, refresh);
+    return () => window.removeEventListener(CURRENT_BIKE_UPDATED_EVENT, refresh);
+  }, [hydrated, activeRiderId]);
 
-  const save = useCallback((e: CurrentBikeEntry | null) => {
-    try {
-      if (e === null) {
-        localStorage.removeItem(KEY);
-      } else {
-        localStorage.setItem(KEY, JSON.stringify(e));
+  const save = useCallback(
+    (e: CurrentBikeEntry | null) => {
+      const next = enrichCurrentBikeWithCatalog(e);
+      try {
+        if (next === null) {
+          localStorage.removeItem(storageKey);
+        } else {
+          localStorage.setItem(storageKey, JSON.stringify(next));
+        }
+      } catch {
+        /* ignore */
       }
-    } catch {}
-    setEntry(e);
-  }, []);
+      setEntry(next);
+      notifyCurrentBikeUpdated();
+    },
+    [storageKey]
+  );
 
-  return { entry, hydrated, save };
+  return { entry, hydrated: storeHydrated, save };
 }

@@ -115,7 +115,14 @@ export default function TripMapInner({
         >
           <Popup>
             <div className="min-w-[11rem] text-sm leading-snug">
-              <strong>{shop.name}</strong>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <strong>{shop.name}</strong>
+                {shop.rental && (
+                  <span className="rounded bg-[#f3e8ff] px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#5b21b6]">
+                    Hire available
+                  </span>
+                )}
+              </div>
               <div className="mt-1.5 text-[11px] text-neutral-600">
                 {serviceLine(shop.sales, shop.repair, shop.rental)}
               </div>
