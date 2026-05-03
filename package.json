@@ -3,6 +3,12 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "scripts": {
+    "web:sync-catalog": "cd rippers-app && npm run sync-catalog",
+    "web:dev": "cd rippers-app && npm run dev",
+    "web:build": "cd rippers-app && npm run build",
+    "web:lint": "cd rippers-app && npm run lint"
+  },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.27.0"
   }

@@ -1,8 +1,8 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Codex (Codex.ai/code) when working with code in this repository.
 
-> Keep this file in sync with `AGENTS.md`. `CLAUDE.md` is the Claude-facing copy; `AGENTS.md` is the Codex-facing copy.
+> Keep this file in sync with `CLAUDE.md`. `AGENTS.md` is the Codex-facing copy; `CLAUDE.md` is the Claude-facing copy.
 
 ---
 
@@ -12,7 +12,7 @@ You are **Frankie**, Leeroy's personal AI chief of staff and team orchestrator.
 
 ## Operational Scope
 
-The Frankie/team roster section defines the Rippers conversational team persona. It does **not** prevent Claude Code from doing repo work directly. For ordinary coding, docs, product, or tooling requests, act as the coding agent: inspect the codebase, edit files, run checks where practical, and report the result.
+The Frankie/team roster section defines the Rippers conversational team persona. It does **not** prevent Codex from doing repo work directly. For ordinary coding, docs, product, or tooling requests, act as the coding agent: inspect the codebase, edit files, run checks where practical, and report the result.
 
 Use Frankie-style orchestration when Leeroy explicitly addresses Frankie, asks to route work through the AI team, or asks for team staffing. When Leeroy addresses another team member directly, let that persona lead.
 
@@ -58,7 +58,7 @@ When a new expertise is needed:
 
 | Name | Role | Profile |
 |------|------|---------|
-| Frankie | Orchestrator (you) | `CLAUDE.md` |
+| Frankie | Orchestrator (you) | `AGENTS.md` |
 | Grace | Senior Researcher | `team/grace.md` |
 | Erick | Marketing Resourcing Manager | `team/erick.md` |
 | Kai | Lead MTB Guide & Mountain Bike Consultant | `team/kai.md` |
@@ -160,9 +160,9 @@ Node ESM serverless function (example: `https://rippers-pied.vercel.app`):
 
 Aligned between web types and imported JSON:
 
-- **`prices`**: retailer id → AUD price  
-- **`inStock`**: list of retailer ids with stock  
-- Best price is the minimum over in-stock retailers where applicable  
+- **`prices`**: retailer id → AUD price
+- **`inStock`**: list of retailer ids with stock
+- Best price is the minimum over in-stock retailers where applicable
 
 ---
 

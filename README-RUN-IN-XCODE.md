@@ -1,42 +1,59 @@
-# Run In Xcode (Simulator)
+# Legacy: SwiftUI / Xcode prototype
 
-1. Open `Rippers.xcodeproj` in Xcode
-2. Select the `Rippers` scheme
-3. Choose an iPhone Simulator (iPhone 16 recommended)
+> **This document describes the archived SwiftUI + Xcode tree under `Rippers/`.**  
+> The **shipping Rippers product** is the **Next.js PWA** in **`rippers-app/`** — see the [root README](README.md) and [rippers-app/README.md](rippers-app/README.md).
+
+The `Rippers.xcodeproj` target was an early native client for catalogue browse, live search, compare, watchlist, trip planner, and sizing. Feature work and READMEs now centre on the web app; this file remains for anyone who still opens the Xcode project or runs Swift-only tests.
+
+---
+
+## Run in Xcode (Simulator)
+
+1. Open `Rippers.xcodeproj` in Xcode  
+2. Select the `Rippers` scheme  
+3. Choose an iPhone Simulator (e.g. iPhone 16)  
 4. Build and Run (`Cmd+R`)
 
 ---
 
-## Current Build State
+## Historical build notes
 
-All features compile and run. The app is functional end-to-end.
+- **Home / Search** — profile, “For You” picks, filters, live search entry point  
+- **Results** — catalog + live results, sorting, detail  
+- **Compare** — up to 3 bikes side-by-side  
+- **Watchlist** — saved bikes, pricing context  
+- **Sizing** — height-based frame hints  
+- **Trip planner** — native maps search, gear checklist (platform-specific)  
+- **Live search** — `LiveSearchService` calling a Vercel deployment such as `https://rippers-pied.vercel.app/api/search` (`api/search.js` in this repo)
 
-### iOS App
-- **Home/Search** — rider profile setup, For You personalised picks, filter controls, live search button
-- **Results** — live search results or filtered static catalog; sort options; live source badge; AI chat
-- **Compare** — side-by-side specs for up to 3 bikes
-- **Watchlist** — save bikes, target price alerts, 7-day price history, favourites
-- **Sizing** — frame size guide by rider height
-- **Trip Planner** — MKLocalSearch for trails/shops, terrain gear checklist, ride readiness card, saved bikes reference
-- **Budget** — cost planning tools
+### Data sources (legacy iOS, historical)
 
-### Live Search Backend
-- Deployed at `https://rippers-pied.vercel.app/api/search`
-- Requires `BRAVE_SEARCH_API_KEY` and `ANTHROPIC_API_KEY` in Vercel project settings
-- iOS app calls it via `Rippers/Services/LiveSearchService.swift`
-
-### Data Sources (in priority order)
-1. **Live search** — Vercel function called when user taps "Search Bikes Live" (Brave Search + Claude)
-2. **Live catalog feed** — GitHub raw URL fetched on launch, TTL 60 min (`useLiveCatalog: true`)
-3. **Bundled catalog** — `Rippers/catalog.json` compiled into the app bundle
-4. **Static fallback** — `Rippers/Data/Bikes.swift` (48 bikes, always available)
+1. Live search — Vercel `api/search.js`  
+2. Live catalog URL — optional fetch (see `CatalogFeatureFlags` in the Swift tree)  
+3. Bundled `Rippers/catalog.json`  
+4. Static `Rippers/Data/Bikes.swift` fallback  
 
 ---
 
-## Notes
+## Repo hygiene
 
-- `Package.swift` is for core logic unit tests only — do not add SwiftUI files to it
-- After adding or removing `.swift` files, run `ruby scripts/generate_xcodeproj.rb` to update the Xcode project
-- After updating `dashboard.html`, run `node scripts/import_dashboard_data.js` to sync data files
-- The live catalog URL is `https://raw.githubusercontent.com/LeeroyAI/rippers-catalog/main/Rippers/catalog.json`
-- Feature flags live in `Rippers/Catalog/CatalogFeatureFlags.swift` — `useLiveCatalog` is currently `true`
+- **`Package.swift`** — Swift package **tests only** for core filter logic; do not add SwiftUI there  
+- After adding/removing `.swift` files under `Rippers/`: `ruby scripts/generate_xcodeproj.rb`  
+- After updating `dashboard.html`: `node scripts/import_dashboard_data.js`  
+- Example live catalog URL (if still referenced in Swift):  
+  `https://raw.githubusercontent.com/LeeroyAI/rippers-catalog/main/Rippers/catalog.json`
+
+---
+
+## Command-line simulator build (optional)
+
+```bash
+xcodebuild -project Rippers.xcodeproj -scheme Rippers -showdestinations
+xcodebuild -project Rippers.xcodeproj -scheme Rippers \
+  -destination "platform=iOS Simulator,id=<simulator-uuid>" -quiet
+```
+
+```bash
+swift test
+swift test --filter BikeFilterEngineTests/testCategoryFilter
+```
