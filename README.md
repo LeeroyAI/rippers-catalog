@@ -59,26 +59,46 @@ Open **http://localhost:3000** (use `http://localhost:3000` — the dev server b
 ## Project structure (high level)
 
 ```
-rippers-app/           ← Primary Rippers UI (Next.js PWA)
-├── app/               — routes, layouts, UI components, Route Handlers (api/*)
-├── src/data/          — catalog snapshot (catalog.json), bike images helpers
-├── src/domain/        — filter engine, match score, rider profile types
-└── src/state/         — client stores (filters, favourites, profile context, …)
+rippers-app/                    ← Primary Rippers UI (Next.js PWA)
+├── app/
+│   ├── (main)/               — App shell routes: home, compare, watch, profile, sizing
+│   ├── (map)/trip/           — Full-height map “Ride” experience
+│   ├── welcome/              — Splash + rider profile onboarding
+│   ├── trip/                 — Leaflet map client (TripMapExplorer, TripMapInner)
+│   ├── components/           — AppShell, sheets, forms, carousel cards, …
+│   ├── api/
+│   │   ├── ask/              — AI Q&A for a bike
+│   │   ├── geocode/          — Place search for trip
+│   │   ├── overpass/         — Combined OSM query (shops + trails) — optional single call
+│   │   ├── overpass/shops/   — Bicycle shops only (parallel with trails on Ride page)
+│   │   ├── overpass/trails/  — Named / MTB-tagged paths & tracks only
+│   │   └── bike-img/[id]/    — Product image helper
+│   ├── layout.tsx, globals.css, middleware.ts
+│   └── …
+├── src/
+│   ├── data/                 — catalog.json (synced), catalog.ts, bike-images helpers
+│   ├── domain/               — filter engine, match score, rider profile, map/trip helpers
+│   ├── state/                — filter store, rider profile context, favourites, …
+│   └── server/
+│       └── overpass.ts       — Overpass QL, fetch + parse, response limits, unstable_cache per bbox
 
-api/
-└── search.js          — Vercel serverless live search (Brave + Claude) — optional / legacy integration
+api/                            ← Repo root (optional Vercel Node function)
+└── search.js                   — Live search: Brave + Claude (legacy iOS / future web)
 
 scripts/
-├── import_dashboard_data.js  — Parses dashboard.html → catalog + legacy Swift data
-├── publish_catalog.sh        — Publishes catalog.json (e.g. to live feed)
-└── fetch_live_catalog.js     — Batch fetcher (e.g. GitHub Action)
+├── import_dashboard_data.js    — dashboard.html → catalog.json + Rippers/Data/*.swift
+├── publish_catalog.sh          — Publishes catalog (e.g. live feed)
+└── fetch_live_catalog.js       — Batch fetcher (GitHub Action, when enabled)
 
-Rippers/               — Legacy SwiftUI / Xcode prototype (not the main product)
+docs/
+└── MAINTAINING.md              — Ongoing maintenance notes
+
+Rippers/                        — Legacy SwiftUI / Xcode prototype (not the main product)
 Rippers.xcodeproj
-Package.swift          — Swift unit tests for filter core only
+Package.swift                   — Swift unit tests for filter core only
 
 .github/workflows/
-└── update_catalog.yml — Scheduled catalog refresh (when enabled)
+└── update_catalog.yml          — Scheduled catalog refresh (when enabled)
 ```
 
 ---
@@ -112,9 +132,16 @@ The **web app** can evolve to call this endpoint directly; the legacy iOS client
 
 ### Next.js Route Handlers (`rippers-app/app/api/`)
 
-- **`/api/ask`** — AI Q&A for a bike (requires provider keys in deployment env)
-- **`/api/geocode`**, **`/api/overpass`** — map / trip helpers
-- **`/api/bike-img/[id]`** — product imagery proxy/cache patterns as implemented
+| Route | Role |
+|-------|------|
+| **`POST /api/ask`** | AI Q&A for a bike (provider keys in env) |
+| **`GET /api/geocode?q=…`** | Nominatim place search (AU) for the Ride map |
+| **`POST /api/overpass`** | One request: shops + trails (uses shared `src/server/overpass.ts`) |
+| **`POST /api/overpass/shops`** | Bike shops only (Overpass); cached by normalized bbox |
+| **`POST /api/overpass/trails`** | Named / MTB-graded paths & tracks only; cached separately |
+| **`/api/bike-img/[id]`** | Product imagery helper |
+
+Trip UI typically calls **`shops` + `trails` in parallel** so the client can show per-leg progress; both layers share **`src/server/overpass.ts`** (query builders, mirror failover, `unstable_cache`).
 
 ---
 

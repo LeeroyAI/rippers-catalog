@@ -1,6 +1,6 @@
 # Rippers — Web app (PWA)
 
-This folder is the **primary Rippers product**: a **Next.js** Progressive Web App for Australian MTB shoppers — catalogue browsing, profile-based match scores, compare, watchlist, trip map, sizing, and optional AI Q&A.
+This folder is the **primary Rippers product**: a **Next.js** Progressive Web App for Australian MTB shoppers — catalogue browsing, profile-based match scores, compare, watchlist, **Ride** map (shops + named/MTB OSM trails via Overpass, parallel APIs + progress UI), sizing, and optional AI Q&A.
 
 Parent repo: **[LeeroyAI/rippers-catalog](https://github.com/LeeroyAI/rippers-catalog)** (monorepo: `rippers-app/` + catalog pipeline + legacy Swift tree).
 
@@ -51,7 +51,9 @@ Open **http://localhost:3000** in your browser.
 | `app/(map)/trip/` | Full-bleed map trip experience |
 | `app/welcome/` | Onboarding / rider profile entry (also gated by middleware) |
 | `app/components/` | Shared UI: `AppShell`, sheets, carousel cards, forms |
-| `app/api/*` | Route Handlers: `ask`, `geocode`, `overpass`, `bike-img` |
+| `app/trip/` | Leaflet map: `TripMapExplorer` (search, radius, progress), `TripMapInner` |
+| `app/api/*` | `ask`, `geocode`, `overpass` (+ `overpass/shops`, `overpass/trails`), `bike-img/[id]` |
+| `src/server/overpass.ts` | Overpass QL, fetch/parse, bbox `unstable_cache` (~10 min) |
 | `src/data/catalog.ts` | Typed re-export of synced `catalog.json` |
 | `src/domain/` | Filter pipeline, match scoring, rider types, trip helpers |
 | `src/state/` | Client stores and React context (filters, profile, favourites, …) |
