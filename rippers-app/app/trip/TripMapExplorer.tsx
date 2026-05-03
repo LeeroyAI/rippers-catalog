@@ -2,8 +2,9 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { groupTrailsForDisplay } from "@/app/trip/groupTrails";
 import type { TripShopPin, TripTrailLine } from "@/app/trip/TripMapInner";
 import { googleMapsSearchUrl } from "@/src/domain/map-links";
 import type { BicycleShopServices } from "@/src/domain/shop-profile-fit";
@@ -33,13 +34,15 @@ function shopServices(p: TripShopPin): BicycleShopServices {
 
 const RADII = [8, 12, 16, 22, 30] as const;
 
-type LoadLeg = "idle" | "loading" | "done" | "error";
-
-function LegSpinner() {
-  return (
-    <span className="inline-block h-2.5 w-2.5 animate-spin rounded-full border-2 border-[var(--r-orange)] border-t-transparent" />
-  );
+function shopPlural(n: number): "shop" | "shops" {
+  return n === 1 ? "shop" : "shops";
 }
+
+function trailPlural(n: number): "trail" | "trails" {
+  return n === 1 ? "trail" : "trails";
+}
+
+type LoadLeg = "idle" | "loading" | "done" | "error";
 
 export default function TripMapExplorer() {
   const { profile } = useRiderProfile();
@@ -62,6 +65,13 @@ export default function TripMapExplorer() {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const mapFetchRef = useRef<AbortController | null>(null);
+  /** After pickHit / geolocation, geocode must not reopen suggestions for the same query. */
+  const committedQueryRef = useRef<string | null>(null);
+  const placeRef = useRef<GeocodeHit | null>(null);
+  const geocodeGenRef = useRef(0);
+  useEffect(() => {
+    placeRef.current = place;
+  }, [place]);
 
   const center: [number, number] = place ? [place.lat, place.lon] : DEFAULT_CENTER;
   const zoom = place ? 13 : DEFAULT_ZOOM;
@@ -77,28 +87,7 @@ export default function TripMapExplorer() {
     return copy;
   }, [shops, profile]);
 
-  // Deduplicate trails by name — keep closest centroid, count segments
-  const groupedTrails = useMemo(() => {
-    type Group = { name: string; segments: number; kmFromCenter: number; centroidLat: number; centroidLon: number };
-    const map = new Map<string, Group>();
-    const isGeneric = (n: string) => {
-      const s = n.toLowerCase().trim();
-      if (!s) return true;
-      if (s.startsWith("mtb trail (grade")) return false;
-      return ["trail / path", "path", "track", "trail", "unnamed path"].includes(s);
-    };
-    const sorted = [...trails].sort((a, b) => a.kmFromCenter - b.kmFromCenter);
-    for (const t of sorted) {
-      const key = (isGeneric(t.name) ? `__generic__${t.id}` : t.name.toLowerCase().trim());
-      const ex = map.get(key);
-      if (!ex) {
-        map.set(key, { name: isGeneric(t.name) ? "Unnamed path" : t.name, segments: 1, kmFromCenter: t.kmFromCenter, centroidLat: t.centroidLat, centroidLon: t.centroidLon });
-      } else {
-        map.set(key, { ...ex, segments: ex.segments + 1 });
-      }
-    }
-    return Array.from(map.values()).sort((a, b) => a.kmFromCenter - b.kmFromCenter);
-  }, [trails]);
+  const groupedTrails = useMemo(() => groupTrailsForDisplay(trails), [trails]);
 
   const loadProgressPct = useMemo(() => {
     let n = 0;
@@ -117,18 +106,43 @@ export default function TripMapExplorer() {
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (query.trim().length < 2) { setHits([]); return; }
+    if (query.trim().length < 2) {
+      geocodeGenRef.current += 1;
+      startTransition(() => {
+        setHits([]);
+        setSelectOpen(false);
+        setLoadingPlaces(false);
+      });
+      return;
+    }
+    const myGen = ++geocodeGenRef.current;
     debounceRef.current = setTimeout(async () => {
+      if (geocodeGenRef.current !== myGen) return;
       setLoadingPlaces(true);
       try {
         const res = await fetch(`/api/geocode?q=${encodeURIComponent(query.trim())}`);
         const json = (await res.json()) as { results?: GeocodeHit[] };
-        setHits(json.results ?? []);
-        setSelectOpen(true);
-      } catch { setHits([]); }
-      finally { setLoadingPlaces(false); }
+        if (geocodeGenRef.current !== myGen) return;
+        const results = json.results ?? [];
+        const qNorm = query.trim().toLowerCase();
+        const locked = committedQueryRef.current;
+        const lockedToPlace = placeRef.current != null && locked != null && qNorm === locked.toLowerCase();
+        if (lockedToPlace) {
+          setHits([]);
+          setSelectOpen(false);
+        } else {
+          setHits(results);
+          setSelectOpen(results.length > 0);
+        }
+      } catch {
+        if (geocodeGenRef.current === myGen) setHits([]);
+      } finally {
+        if (geocodeGenRef.current === myGen) setLoadingPlaces(false);
+      }
     }, 420);
-    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
   }, [query]);
 
   const loadFeatures = useCallback(async (lat: number, lon: number) => {
@@ -184,7 +198,7 @@ export default function TripMapExplorer() {
           if (json.attribution) setAttr(json.attribution);
           trailOk = res.ok && !json.error;
           const list = json.trails ?? [];
-          nTrails = list.length;
+          nTrails = groupTrailsForDisplay(list).length;
           setTrails(list);
           setLegTrails(trailOk ? "done" : "error");
         }),
@@ -225,26 +239,35 @@ export default function TripMapExplorer() {
 
   useEffect(() => {
     if (!place) {
+      committedQueryRef.current = null;
       mapFetchRef.current?.abort();
-      setShops([]);
-      setTrails([]);
-      setAttr("");
-      setNotice(null);
-      setLoadSummary(null);
-      setLegShops("idle");
-      setLegTrails("idle");
+      startTransition(() => {
+        setShops([]);
+        setTrails([]);
+        setAttr("");
+        setNotice(null);
+        setLoadSummary(null);
+        setLegShops("idle");
+        setLegTrails("idle");
+      });
       return;
     }
-    void loadFeatures(place.lat, place.lon);
+    /* OSM fetch updates many state fields — intentional reaction to `place`. */
+    void loadFeatures(place.lat, place.lon); // eslint-disable-line react-hooks/set-state-in-effect -- async in loadFeatures
     return () => {
       mapFetchRef.current?.abort();
     };
   }, [place, loadFeatures]);
 
   function pickHit(hit: GeocodeHit) {
+    const short = hit.label.split(",").slice(0, 2).join(",").trim();
+    committedQueryRef.current = short.toLowerCase();
+    geocodeGenRef.current += 1;
+    setLoadingPlaces(false);
     setPlace(hit);
-    setQuery(hit.label.split(",").slice(0, 2).join(","));
-    setHits([]); setSelectOpen(false);
+    setQuery(short);
+    setHits([]);
+    setSelectOpen(false);
   }
 
   function useMyLocation() {
@@ -252,6 +275,9 @@ export default function TripMapExplorer() {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const { latitude: lat, longitude: lon } = pos.coords;
+        committedQueryRef.current = "my location";
+        geocodeGenRef.current += 1;
+        setLoadingPlaces(false);
         setPlace({ id: `me-${lat}-${lon}`, lat, lon, label: "My location" });
         setQuery("My location");
         setNotice(null);
@@ -264,54 +290,85 @@ export default function TripMapExplorer() {
   const hasResults = rankedShops.length > 0 || trails.length > 0;
   const locationShort = place?.label.split(",").slice(0, 2).join(", ") ?? null;
 
+  /* Abs-positioned map + panel: no in-flow height — avoid flex-1/basis-0 here or used height → 0 clips UI. */
   return (
-    <div className="relative overflow-hidden" style={{ height: "calc(100dvh - var(--r-shell-pad-top) - var(--r-shell-pad-bottom))" }}>
+    <div
+      className="relative box-border flex shrink-0 flex-col overflow-hidden"
+      style={{
+        height: "calc(100dvh - var(--r-shell-pad-bottom))",
+        minHeight: "calc(100dvh - var(--r-shell-pad-bottom))",
+      }}
+    >
 
       {/* Map */}
-      <div className="absolute inset-0 z-0">
+      <div className="absolute inset-x-0 bottom-0 top-[var(--r-shell-pad-top)] z-0">
         <TripMapInner center={center} zoom={zoom} shops={rankedShops} trails={trails}
           focusLabel={place?.label ?? "Sydney preview — search anywhere in AU to reposition"}
         />
       </div>
 
       {/* ── Control panel ── */}
-      <div ref={panelRef} className="absolute left-3 right-3 top-3 z-[1100] md:right-auto md:w-[360px]">
-        <div className="rounded-2xl border border-[var(--r-border)] bg-white/97 shadow-xl backdrop-blur-md">
+      <div
+        ref={panelRef}
+        className="absolute left-3 right-3 z-[1100] md:right-auto md:w-[min(400px,calc(100vw-1.5rem))] top-[calc(var(--r-shell-pad-top)+0.75rem)]"
+      >
+        <div className="overflow-hidden rounded-2xl border border-[var(--r-border)] bg-white/98 shadow-[0_16px_48px_rgba(18,16,12,0.12)] ring-1 ring-black/[0.03] backdrop-blur-md">
 
           {/* Search row */}
-          <div className="relative flex gap-2 p-3 pb-2.5">
+          <div className="relative flex gap-2.5 p-4 pb-4">
             <div className="relative flex-1">
-              <svg className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <svg className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400" width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden>
                 <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2"/>
                 <path d="m21 21-4.35-4.35" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
               </svg>
               <input
                 type="search"
                 value={query}
-                onChange={(e) => { setQuery(e.target.value); if (!e.target.value) setPlace(null); }}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setQuery(v);
+                  const t = v.trim();
+                  if (!t) {
+                    setPlace(null);
+                    committedQueryRef.current = null;
+                    return;
+                  }
+                  const locked = committedQueryRef.current;
+                  if (locked != null && t.toLowerCase() !== locked.toLowerCase()) {
+                    setPlace(null);
+                    committedQueryRef.current = null;
+                  }
+                }}
                 placeholder="Town, suburb, trail head…"
-                className="r-field w-full py-2.5 pl-9 pr-3 text-[14px] font-medium"
+                className="r-field w-full py-3 pl-10 pr-3 text-[15px] font-medium"
                 aria-label="Search riding destination"
                 autoComplete="off"
-                onFocus={() => hits.length && setSelectOpen(true)}
+                onFocus={() => {
+                  if (loadingMap) return;
+                  if (hits.length) setSelectOpen(true);
+                }}
               />
-              {loadingPlaces && (
+              {loadingPlaces && !loadingMap && (
                 <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 animate-spin rounded-full border-2 border-[var(--r-orange)] border-t-transparent" />
               )}
             </div>
             <button type="button" onClick={useMyLocation} title="Use my location"
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-[var(--r-orange)] text-white shadow-sm transition hover:brightness-105 active:scale-95">
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--r-orange)] text-white shadow-[0_6px_16px_rgba(229,71,26,0.35)] transition hover:brightness-105 active:scale-[0.98]">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
                 <path d="M12 2a7 7 0 0 1 7 7c0 5.25-7 13-7 13S5 14.25 5 9a7 7 0 0 1 7-7Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
                 <circle cx="12" cy="9" r="2.5" fill="currentColor" stroke="none"/>
               </svg>
             </button>
 
-            {/* Dropdown */}
-            {selectOpen && hits.length > 0 && (
-              <ul role="listbox" className="absolute left-0 right-12 top-full z-50 mt-1 max-h-52 overflow-auto rounded-xl border border-[var(--r-border)] bg-white shadow-xl">
+            {/* Dropdown — hidden while map layers load so it never stacks on the progress UI */}
+            {selectOpen && hits.length > 0 && !loadingMap && (
+              <ul
+                role="listbox"
+                aria-label="Search suggestions"
+                className="absolute left-0 right-[3.25rem] top-full z-50 mt-2 max-h-52 overflow-auto rounded-xl border border-[var(--r-border)] bg-white py-1 shadow-xl"
+              >
                 {hits.map((h) => (
-                  <li key={h.id}>
+                  <li key={h.id} role="presentation">
                     <button type="button" role="option" onClick={() => pickHit(h)}
                       className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-[13px] hover:bg-orange-50">
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="shrink-0 text-[var(--r-orange)]" aria-hidden>
@@ -327,106 +384,210 @@ export default function TripMapExplorer() {
           </div>
 
           {/* Radius pills */}
-          <div className="flex items-center gap-1.5 border-t border-[var(--r-border)] px-3 py-2.5">
-            <span className="shrink-0 text-[11px] font-semibold text-[var(--r-muted)]">Radius</span>
-            <div className="flex flex-1 gap-1">
+          <div className="flex flex-wrap items-center gap-2 border-t border-[var(--r-border)] px-4 py-3">
+            <span className="shrink-0 text-[11px] font-bold uppercase tracking-wide text-[var(--r-muted)]">Radius</span>
+            <div className="flex min-w-0 flex-1 gap-1.5">
               {RADII.map((r) => (
                 <button key={r} type="button" onClick={() => setRadiusKm(r)}
-                  className={`flex-1 rounded-full py-1 text-[11px] font-semibold transition-colors ${
+                  className={`min-w-0 flex-1 rounded-full py-2 text-[11px] font-semibold transition-colors ${
                     radiusKm === r
-                      ? "bg-[var(--r-orange)] text-white"
+                      ? "bg-[var(--r-orange)] text-white shadow-[0_2px_8px_rgba(229,71,26,0.35)]"
                       : "bg-neutral-100 text-[var(--r-muted)] hover:bg-neutral-200"
                   }`}>
-                  {r}km
+                  {r} km
                 </button>
               ))}
             </div>
-            {place && !loadingMap && (
-              <button type="button" onClick={() => void loadFeatures(place.lat, place.lon)}
-                className="shrink-0 rounded-full bg-neutral-100 px-2.5 py-1 text-[11px] font-semibold text-[var(--foreground)] hover:bg-neutral-200">
-                Reload
-              </button>
-            )}
-            {loadingMap && (
-              <span className="flex shrink-0 items-center gap-1 text-[10px] font-semibold text-[var(--r-muted)]">
-                <LegSpinner />
-                OSM
-              </span>
-            )}
+            <div className="ml-auto flex shrink-0 items-center gap-1.5">
+              {place && !loadingMap && (
+                <button
+                  type="button"
+                  onClick={() => void loadFeatures(place.lat, place.lon)}
+                  title="Reload map data"
+                  aria-label="Reload map data"
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--r-border)] bg-white text-[var(--r-muted)] transition hover:border-neutral-300 hover:bg-neutral-50 hover:text-[var(--foreground)]"
+                >
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <path
+                      d="M21 2v6h-6M3 22v-6h6M21 12.5A9.5 9.5 0 0 0 12 3a9.5 9.5 0 0 0-8.5 5.25M3 11.5A9.5 9.5 0 0 0 12 21a9.5 9.5 0 0 0 8.5-5.25"
+                      stroke="currentColor"
+                      strokeWidth="1.75"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+              )}
+            </div>
           </div>
 
           {loadingMap && place && (
-            <div className="border-t border-[var(--r-border)] px-3 py-2.5" role="status" aria-live="polite">
-              <div className="mb-2 h-1.5 w-full overflow-hidden rounded-full bg-neutral-200">
-                <div
-                  className="h-full rounded-full bg-[var(--r-orange)] transition-[width] duration-300 ease-out"
-                  style={{ width: `${loadProgressPct}%` }}
+            <div
+              className="border-t border-[var(--r-border)] bg-gradient-to-b from-neutral-50/90 to-white px-4 py-4"
+              role="status"
+              aria-live="polite"
+              aria-busy="true"
+            >
+              <div className="mb-2 flex items-center gap-2.5">
+                <span
+                  className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-[var(--r-orange)] border-t-transparent"
+                  aria-hidden
                 />
+                <p className="text-[12px] font-semibold text-[var(--foreground)]">Loading trails &amp; shops</p>
               </div>
-              <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-[10px] font-semibold text-[var(--r-muted)]">
-                <span className="inline-flex items-center gap-1.5">
-                  {legShops === "loading" && <LegSpinner />}
-                  {legShops === "done" && <span className="text-emerald-600" aria-hidden>✓</span>}
-                  {legShops === "error" && <span className="text-red-600" aria-hidden>!</span>}
-                  Bike shops
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  {legTrails === "loading" && <LegSpinner />}
-                  {legTrails === "done" && <span className="text-emerald-600" aria-hidden>✓</span>}
-                  {legTrails === "error" && <span className="text-red-600" aria-hidden>!</span>}
-                  Trails & paths
-                </span>
-              </div>
-              <p className="mt-1.5 text-[10px] leading-snug text-[var(--r-muted)]">
-                Two parallel OpenStreetMap queries; repeats in the same area use a server cache (~10 minutes) so the
-                second view is much faster.
+              <p className="mb-3 text-[11px] leading-snug text-[var(--r-muted)]">
+                Fetching OpenStreetMap data — usually a few seconds, sometimes longer on slow networks.
               </p>
-            </div>
-          )}
-
-          {/* Bottom row: Trailforks + profile hint */}
-          {(place || profile) && (
-            <div className="flex flex-wrap items-center gap-2 border-t border-[var(--r-border)] px-3 py-2.5">
-              {place && (
-                <a href={trailforksPlannerUrl(place.lat, place.lon)} target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-full bg-[var(--r-orange)] px-3 py-1.5 text-[11px] font-bold text-white shadow-sm hover:brightness-105">
-                  Trailforks ↗
-                </a>
-              )}
-              {profile && (
-                <span className="text-[11px] text-[var(--r-muted)]">
-                  <span className="font-semibold text-[var(--r-orange)]">{ridingStyleLabels(profile.style)}</span>
-                  {" · "}shops ranked for your style
-                </span>
-              )}
-              {!profile && (
-                <Link href="/profile" className="text-[11px] font-semibold text-[var(--foreground)] underline underline-offset-4">
-                  Set up profile →
-                </Link>
-              )}
+              <div className="r-trip-load-track relative mb-3 h-2.5 w-full overflow-hidden rounded-full bg-neutral-200/90 ring-1 ring-inset ring-black/[0.04]">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-[var(--r-orange)] to-[#ff6b35] transition-[width] duration-300 ease-out"
+                  style={{ width: `${Math.max(loadProgressPct, 8)}%` }}
+                />
+                <div className="r-trip-load-shine" aria-hidden />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div
+                  className={`rounded-xl border bg-white px-3 py-2.5 ${
+                    legShops === "loading"
+                      ? "border-[var(--r-orange)]/35 shadow-[0_0_0_1px_rgba(229,71,26,0.08)]"
+                      : "border-[var(--r-border)]"
+                  }`}
+                >
+                  <p className="text-[10px] font-bold uppercase tracking-wide text-[var(--r-muted)]">Bike shops</p>
+                  <p className="mt-1 flex items-center gap-2 text-[12px] font-semibold text-[var(--foreground)]">
+                    {legShops === "loading" && (
+                      <span
+                        className="h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-[var(--r-orange)] border-t-transparent"
+                        aria-hidden
+                      />
+                    )}
+                    {legShops === "done" && <span className="text-emerald-600" aria-hidden>✓</span>}
+                    {legShops === "error" && <span className="text-red-600" aria-hidden>!</span>}
+                    <span className={legShops === "loading" ? "animate-pulse" : undefined}>
+                      {legShops === "loading"
+                        ? "Loading…"
+                        : legShops === "done"
+                          ? "Loaded"
+                          : "Couldn’t load"}
+                    </span>
+                  </p>
+                </div>
+                <div
+                  className={`rounded-xl border bg-white px-3 py-2.5 ${
+                    legTrails === "loading"
+                      ? "border-[var(--r-orange)]/35 shadow-[0_0_0_1px_rgba(229,71,26,0.08)]"
+                      : "border-[var(--r-border)]"
+                  }`}
+                >
+                  <p className="text-[10px] font-bold uppercase tracking-wide text-[var(--r-muted)]">Trails</p>
+                  <p className="mt-1 flex items-center gap-2 text-[12px] font-semibold text-[var(--foreground)]">
+                    {legTrails === "loading" && (
+                      <span
+                        className="h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-[var(--r-orange)] border-t-transparent"
+                        aria-hidden
+                      />
+                    )}
+                    {legTrails === "done" && <span className="text-emerald-600" aria-hidden>✓</span>}
+                    {legTrails === "error" && <span className="text-red-600" aria-hidden>!</span>}
+                    <span className={legTrails === "loading" ? "animate-pulse" : undefined}>
+                      {legTrails === "loading"
+                        ? "Loading…"
+                        : legTrails === "done"
+                          ? "Loaded"
+                          : "Couldn’t load"}
+                    </span>
+                  </p>
+                </div>
+              </div>
+              <details className="mt-3 rounded-xl border border-neutral-200/80 bg-white/90 px-3 py-2.5">
+                <summary className="cursor-pointer list-none text-[11px] font-semibold text-[var(--r-muted)] [&::-webkit-details-marker]:hidden">
+                  <span className="flex items-center justify-between gap-3 pr-0.5">
+                    <span className="min-w-0">Data sources &amp; cache</span>
+                    <span className="shrink-0 text-[10px] font-normal tabular-nums text-neutral-400">More</span>
+                  </span>
+                </summary>
+                <p className="mt-2 text-[10px] leading-relaxed text-[var(--r-muted)]">
+                  Two OpenStreetMap requests run in parallel. Results are cached on our server for about ten minutes, then
+                  refreshed. Trail and shop coverage depends on what mappers have added in OpenStreetMap — it varies by
+                  area.
+                </p>
+              </details>
             </div>
           )}
 
           {loadSummary && !loadingMap && place && (
-            <div className="border-t border-[var(--r-border)] bg-[rgba(229,71,26,0.06)] px-3 py-2">
-              <p className="text-[11px] leading-snug text-[var(--foreground)]">
-                <span className="font-semibold">{loadSummary.trails}</span> mapped trails ·{" "}
-                <span className="font-semibold">{loadSummary.shops}</span> shops —{" "}
-                <button type="button" className="font-semibold text-[var(--r-orange)] underline underline-offset-2" onClick={() => setResultsOpen(true)}>
+            <div className="border-t border-[var(--r-border)] bg-[rgba(229,71,26,0.06)] px-4 py-3">
+              <p className="text-[12px] leading-snug text-[var(--foreground)]">
+                <span className="font-bold tabular-nums">{loadSummary.trails}</span> {trailPlural(loadSummary.trails)} ·{" "}
+                <span className="font-bold tabular-nums">{loadSummary.shops}</span> {shopPlural(loadSummary.shops)}
+                <span className="text-[var(--r-muted)]"> · </span>
+                <button
+                  type="button"
+                  className="font-semibold text-[var(--r-orange)] underline decoration-[var(--r-orange)]/30 underline-offset-2 hover:decoration-[var(--r-orange)]"
+                  onClick={() => setResultsOpen(true)}
+                >
                   Open list
-                </button>{" "}
-                <span className="text-[var(--r-muted)]">(map stays visible)</span>
+                </button>
               </p>
-              <p className="mt-1 text-[10px] leading-snug text-[var(--r-muted)]">
-                Trails are named or MTB-tagged OpenStreetMap ways only, so you see rideable routes instead of anonymous paths.
-              </p>
+              {loadSummary.shops === 0 && (
+                <p className="mt-2 text-[11px] leading-snug text-[var(--r-muted)]">
+                  No retail bike shops matched in OSM for this radius — try a wider radius, or help improve local data on{" "}
+                  <a
+                    className="font-semibold text-[var(--r-orange)] underline decoration-[var(--r-orange)]/30 underline-offset-2"
+                    href={`https://www.openstreetmap.org/#map=14/${place.lat}/${place.lon}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    OpenStreetMap ↗
+                  </a>
+                  .
+                </p>
+              )}
+              <details className="mt-2">
+                <summary className="cursor-pointer list-none text-[10px] font-medium text-[var(--r-muted)] [&::-webkit-details-marker]:hidden hover:text-[var(--foreground)]">
+                  What counts as a trail here?
+                </summary>
+                <p className="mt-1.5 text-[10px] leading-relaxed text-[var(--r-muted)]">
+                  Only named or MTB-tagged OpenStreetMap ways — fewer anonymous paths, more rideable lines on the map.
+                </p>
+              </details>
+            </div>
+          )}
+
+          {/* Trailforks (secondary) + profile */}
+          {(place || profile) && !loadingMap && (
+            <div className="flex flex-col gap-2.5 border-t border-[var(--r-border)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+              <div className="min-w-0 text-[12px] leading-snug text-[var(--r-muted)]">
+                {profile && (
+                  <p>
+                    <span className="font-semibold text-[var(--r-orange)]">{ridingStyleLabels(profile.style)}</span>
+                    <span className="text-[var(--r-muted)]"> — shops ranked for your style</span>
+                  </p>
+                )}
+                {!profile && (
+                  <Link href="/profile" className="font-semibold text-[var(--foreground)] underline decoration-neutral-300 underline-offset-4 hover:decoration-[var(--r-orange)]">
+                    Set up profile for smarter shop picks
+                  </Link>
+                )}
+              </div>
+              {place && (
+                <a
+                  href={trailforksPlannerUrl(place.lat, place.lon)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex shrink-0 items-center justify-center gap-1.5 self-start rounded-xl border border-[var(--r-orange)]/40 bg-white px-3.5 py-2 text-[12px] font-semibold text-[var(--r-orange)] shadow-sm transition hover:bg-[rgba(229,71,26,0.06)] sm:self-auto"
+                >
+                  Trailforks map
+                  <span aria-hidden>↗</span>
+                </a>
+              )}
             </div>
           )}
 
           {/* Error / notice */}
           {notice && (
-            <div className="border-t border-amber-100 bg-amber-50 px-3 py-2">
-              <p className="text-[11px] text-amber-900">{notice}</p>
+            <div className="border-t border-amber-100 bg-amber-50 px-4 py-3">
+              <p className="text-[12px] leading-snug text-amber-950">{notice}</p>
             </div>
           )}
         </div>
@@ -444,10 +605,14 @@ export default function TripMapExplorer() {
         <button type="button" onClick={() => setResultsOpen(true)}
           className="absolute bottom-[max(1rem,calc(env(safe-area-inset-bottom)+0.75rem))] left-1/2 z-[1100] flex max-w-[min(92vw,24rem)] -translate-x-1/2 items-center gap-2 rounded-full border border-[var(--r-border)] bg-white/97 px-4 py-2.5 text-[13px] font-semibold shadow-lg backdrop-blur-md">
           <span className="h-2 w-2 shrink-0 rounded-full bg-[var(--r-orange)]" />
-          <span className="truncate">{groupedTrails.length} trails</span>
+          <span className="truncate">
+            {groupedTrails.length} {trailPlural(groupedTrails.length)}
+          </span>
           <span className="shrink-0 text-neutral-300">·</span>
           <span className="h-2 w-2 shrink-0 rounded-full bg-[#2563eb]" />
-          <span className="truncate">{rankedShops.length} shops</span>
+          <span className="truncate">
+            {rankedShops.length} {shopPlural(rankedShops.length)}
+          </span>
           <span className="ml-0.5 shrink-0 text-[var(--r-orange)]">▲</span>
         </button>
       )}
@@ -455,7 +620,7 @@ export default function TripMapExplorer() {
       {/* ── Results sheet: shorter on mobile so the map stays usable ── */}
       {resultsOpen && (
         <div
-          className="absolute bottom-0 left-0 right-0 z-[1200] flex max-h-[46dvh] flex-col rounded-t-2xl border border-[var(--r-border)] bg-white shadow-2xl md:left-auto md:right-3 md:top-3 md:bottom-auto md:max-h-[min(72dvh,calc(100dvh-var(--r-shell-pad-top)-1.5rem))] md:w-[min(380px,calc(100vw-1.5rem))] md:rounded-2xl md:border md:shadow-xl"
+          className="absolute bottom-0 left-0 right-0 z-[1200] flex max-h-[46dvh] flex-col rounded-t-2xl border border-[var(--r-border)] bg-white shadow-2xl md:left-auto md:right-3 md:top-[calc(var(--r-shell-pad-top)+0.75rem)] md:bottom-auto md:max-h-[min(72dvh,calc(100dvh-var(--r-shell-pad-top)-1.5rem))] md:w-[min(380px,calc(100vw-1.5rem))] md:rounded-2xl md:border md:shadow-xl"
         >
 
           {/* Drag handle */}

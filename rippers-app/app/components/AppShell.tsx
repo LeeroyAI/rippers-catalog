@@ -87,6 +87,10 @@ const TABS = [
   { href: "/profile", label: "Profile", Icon: IconPerson },
 ] as const;
 
+const PROFILE_PHOTO_KEY = "rippers:profile-photo:v1";
+/** Dispatched from Profile (same tab) after `localStorage` is updated — `storage` only fires across tabs. */
+const PROFILE_PHOTO_CHANGED = "rippers:profile-photo-changed";
+
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [desktopScrolled, setDesktopScrolled] = useState(false);
@@ -94,11 +98,24 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem("rippers:profile-photo:v1");
-      if (stored) setProfilePhoto(stored);
-    } catch {}
-  }, []);
+    function readProfilePhoto() {
+      try {
+        setProfilePhoto(localStorage.getItem(PROFILE_PHOTO_KEY));
+      } catch {
+        setProfilePhoto(null);
+      }
+    }
+    readProfilePhoto();
+    window.addEventListener(PROFILE_PHOTO_CHANGED, readProfilePhoto);
+    function onStorage(e: StorageEvent) {
+      if (e.key === PROFILE_PHOTO_KEY) readProfilePhoto();
+    }
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener(PROFILE_PHOTO_CHANGED, readProfilePhoto);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, [pathname]);
 
   useEffect(() => {
     const onScroll = () => {
@@ -123,14 +140,29 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       >
         <div className="r-desktop-header-inner">
           <Link href="/" className="r-desktop-brand no-underline" prefetch>
-            <span className="overflow-hidden rounded-[0.65rem] shadow-sm">
-              <Image src="/icons/icon-512.png" alt="Rippers" width={40} height={40} className="h-[40px] w-[40px]" />
+            <span className="flex h-10 w-10 shrink-0 overflow-hidden rounded-[0.65rem] shadow-sm">
+              <Image
+                src="/icons/icon-512.png"
+                alt="Rippers"
+                width={40}
+                height={40}
+                className="h-full w-full object-contain"
+                sizes="40px"
+              />
             </span>
             <span className="text-sm font-semibold tracking-tight text-[var(--foreground)]">Rippers</span>
           </Link>
 
-          <Link href="/#home-query" scroll={false} className="r-desktop-search-chip no-underline">
-            <span className="text-[var(--foreground)]/75">Jump to search &amp; filters on Home</span>
+          <Link
+            href="/#home-query"
+            scroll={false}
+            title="Jump to search and filters on Home"
+            className="r-desktop-search-chip max-[1099px]:min-w-0 max-[1099px]:max-w-[10.5rem] max-[1099px]:gap-1.5 max-[1099px]:px-2.5 no-underline"
+          >
+            <span className="text-[var(--foreground)]/75 max-[1099px]:hidden">Jump to search &amp; filters on Home</span>
+            <span className="hidden max-[1099px]:inline text-[12px] font-semibold text-[var(--foreground)]/80" aria-hidden>
+              Search
+            </span>
             <span className="r-desktop-search-chip-cta">Go</span>
           </Link>
 

@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Suspense, startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import BikeDetailSheet from "@/app/components/BikeDetailSheet";
 import MatchBreakdownSheet from "@/app/components/MatchBreakdownSheet";
@@ -19,6 +19,9 @@ import { useFilterStore } from "@/src/state/filter-store";
 import { useFavourites } from "@/src/state/favourites-store";
 import { useCurrentBike } from "@/src/state/current-bike-store";
 import { useRiderProfile } from "@/src/state/rider-profile-context";
+
+const PROFILE_PHOTO_KEY = "rippers:profile-photo:v1";
+const PROFILE_PHOTO_CHANGED = "rippers:profile-photo-changed";
 
 function filtersSummaryLine(filters: FilterState): string {
   const parts: string[] = [];
@@ -36,36 +39,62 @@ function filtersSummaryLine(filters: FilterState): string {
   return parts.length > 0 ? parts.join(" · ") : "All categories · any budget";
 }
 
-function heroLines(profile: RiderProfileV1 | null, name: string): { title: string; sub: string } {
+function heroLines(
+  profile: RiderProfileV1 | null,
+  name: string,
+  catalogSize: number
+): { title: string; sub: string } {
   if (!profile) {
     return {
       title: "Find your perfect MTB.",
-      sub: "48 bikes from 20+ Australian retailers — matched to how you ride.",
+      sub: `${catalogSize} bikes in this AU catalogue snapshot — search & filters narrow the list; add your profile to rank by match.`,
     };
   }
   switch (profile.style) {
     case "gravity":
-      return { title: `Hey ${name}!\nReady to rip?`, sub: "Your enduro & gravity picks, ranked for you." };
+      return {
+        title: `Hey ${name}!\nReady to rip?`,
+        sub: "Enduro & gravity builds, sorted with your match scores — nothing hidden, you choose where to look.",
+      };
     case "jump":
-      return { title: `Hey ${name}!\nPark sessions incoming.`, sub: "Your jump & park picks, ready to browse." };
+      return {
+        title: `Hey ${name}!\nPark sessions incoming.`,
+        sub: "Playful bikes first in the list — same full catalogue, ordered for how you ride.",
+      };
     case "crossCountry":
-      return { title: `Hey ${name}!\nLong days ahead.`, sub: "Your XC picks, matched to budget and height." };
+      return {
+        title: `Hey ${name}!\nLong days ahead.`,
+        sub: "XC-friendly picks rise to the top; budget and height still steer what you see.",
+      };
     default:
-      return { title: `Hey ${name}!\nReady to rip?`, sub: "Your trail picks, ranked to your style and budget." };
+      return {
+        title: `Hey ${name}!\nReady to rip?`,
+        sub: "Your best profile matches surface first — use search to narrow, or open the full matching list anytime.",
+      };
   }
 }
 
+const HOME_MATCH_SHORTLIST = 24;
+
 function HomePageContent() {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const { filters, filteredBikes, updateFilters, resetFilters } = useFilterStore();
   const { hydrated, profile } = useRiderProfile();
   const { toggle, has } = useFavourites();
   const syncedFromProfile = useRef(false);
-  const [selectedBike, setSelectedBike] = useState<Bike | null>(null);
   const [matchBike, setMatchBike] = useState<Bike | null>(null);
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
+  const [whatIsOpen, setWhatIsOpen] = useState(true);
+  /** With a profile and no search: show top matches only until user expands. */
+  const [listScope, setListScope] = useState<"personalised" | "full">("personalised");
   const { entry: currentBikeEntry } = useCurrentBike();
+
+  const resetFiltersAndList = useCallback(() => {
+    resetFilters();
+    setListScope("personalised");
+  }, [resetFilters]);
 
   const clearOpenBikeParam = useCallback(() => {
     const next = new URLSearchParams(searchParams.toString());
@@ -76,24 +105,24 @@ function HomePageContent() {
   }, [router, searchParams]);
 
   const closeBikeSheet = useCallback(() => {
-    setSelectedBike(null);
     clearOpenBikeParam();
   }, [clearOpenBikeParam]);
+
+  const openBikeParam = searchParams.get("openBike");
+  const selectedBike = useMemo((): Bike | null => {
+    if (openBikeParam == null || openBikeParam === "") return null;
+    const id = Number(openBikeParam);
+    if (!Number.isFinite(id)) return null;
+    return catalog.find((b) => b.id === id) ?? null;
+  }, [openBikeParam]);
 
   useEffect(() => {
     const raw = searchParams.get("openBike");
     if (raw == null || raw === "") return;
     const id = Number(raw);
-    if (!Number.isFinite(id)) {
+    if (!Number.isFinite(id) || !catalog.some((b) => b.id === id)) {
       clearOpenBikeParam();
-      return;
     }
-    const found = catalog.find((b) => b.id === id) ?? null;
-    if (!found) {
-      clearOpenBikeParam();
-      return;
-    }
-    setSelectedBike(found);
   }, [searchParams, clearOpenBikeParam]);
 
   const currentCatalogBike = currentBikeEntry?.type === "catalog"
@@ -103,10 +132,33 @@ function HomePageContent() {
     : null;
 
   useEffect(() => {
+    function readProfilePhoto() {
+      try {
+        setProfilePhoto(localStorage.getItem(PROFILE_PHOTO_KEY));
+      } catch {
+        setProfilePhoto(null);
+      }
+    }
+    readProfilePhoto();
+    window.addEventListener(PROFILE_PHOTO_CHANGED, readProfilePhoto);
+    function onStorage(e: StorageEvent) {
+      if (e.key === PROFILE_PHOTO_KEY) readProfilePhoto();
+    }
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener(PROFILE_PHOTO_CHANGED, readProfilePhoto);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, [pathname]);
+
+  useEffect(() => {
     try {
-      const stored = localStorage.getItem("rippers:profile-photo:v1");
-      if (stored) setProfilePhoto(stored);
-    } catch {}
+      if (localStorage.getItem("rippers:what-is-collapsed:v1")) {
+        startTransition(() => setWhatIsOpen(false));
+      }
+    } catch {
+      /* ignore */
+    }
   }, []);
 
   const catalogCategories = useMemo(() => {
@@ -122,6 +174,31 @@ function HomePageContent() {
       syncedFromProfile.current = true;
     }
   }, [hydrated, profile, updateFilters]);
+
+  const searchActive = Boolean(filters.query?.trim());
+  const showMatchShortlist =
+    Boolean(profile) && !searchActive && listScope === "personalised";
+
+  const viewModeLine = useMemo(() => {
+    if (searchActive) {
+      return "Viewing: text search on the full catalogue snapshot.";
+    }
+    if (!profile) {
+      return "Viewing: filtered catalogue (add a profile on Profile for match-ranked picks).";
+    }
+    if (listScope === "full") {
+      return "Viewing: every bike that matches your filters, ranked for your profile.";
+    }
+    return `Viewing: top ${HOME_MATCH_SHORTLIST} profile matches — open the full list or narrow filters for a tighter shortlist.`;
+  }, [searchActive, profile, listScope]);
+
+  const homeListBikes = useMemo(() => {
+    if (!showMatchShortlist) return filteredBikes;
+    return filteredBikes.slice(0, HOME_MATCH_SHORTLIST);
+  }, [filteredBikes, showMatchShortlist]);
+
+  const shortlistIsTruncated =
+    showMatchShortlist && filteredBikes.length > homeListBikes.length;
 
   useEffect(() => {
     function applyHashNavigation() {
@@ -146,18 +223,11 @@ function HomePageContent() {
   }, []);
 
   const rankedCarousel = useMemo(() => {
-    const rows = filteredBikes.map((bike) => ({
+    return homeListBikes.map((bike) => ({
       bike,
       m: matchPercentForBike(bike, profile ?? null),
     }));
-    rows.sort((a, b) => {
-      if (b.m !== a.m) return b.m - a.m;
-      const pa = getBestPrice(a.bike) ?? Infinity;
-      const pb = getBestPrice(b.bike) ?? Infinity;
-      return pa - pb;
-    });
-    return rows;
-  }, [filteredBikes, profile]);
+  }, [homeListBikes, profile]);
 
   const carouselItems = rankedCarousel.slice(0, 6);
 
@@ -168,7 +238,7 @@ function HomePageContent() {
   }, [filteredBikes]);
 
   const greetName = profile?.nickname?.trim() || "there";
-  const { title, sub } = heroLines(profile ?? null, greetName);
+  const { title, sub } = heroLines(profile ?? null, greetName, catalog.length);
 
   return (
     <main className="mx-auto w-full max-w-none pb-20">
@@ -212,17 +282,25 @@ function HomePageContent() {
             </h1>
             <p className="mt-3 max-w-[22rem] text-[14px] leading-relaxed text-white/65 md:text-[15px]">{sub}</p>
 
-            {/* Stat pills */}
+            {/* Stat pills — with a profile, lead with care (ranking) not a bare catalogue count */}
             <div className="mt-5 flex flex-wrap gap-2">
               <span className="rounded-full border border-white/[0.14] bg-white/[0.07] px-3 py-1.5 text-[11px] font-semibold text-white/75">
-                {catalog.length} bikes
+                {!profile
+                  ? `${catalog.length} bikes to explore`
+                  : searchActive
+                    ? `${filteredBikes.length} search · ${catalog.length} in snapshot`
+                    : shortlistIsTruncated
+                      ? `${homeListBikes.length} top matches · ${filteredBikes.length} with filters`
+                      : listScope === "full"
+                        ? `${filteredBikes.length} listed · full match list`
+                        : `${homeListBikes.length} match${homeListBikes.length !== 1 ? "es" : ""} · your filters`}
               </span>
               <span className="rounded-full border border-white/[0.14] bg-white/[0.07] px-3 py-1.5 text-[11px] font-semibold text-white/75">
-                20+ AU retailers
+                Prices from 20+ AU stores
               </span>
               {hydrated && profile && (
                 <span className="rounded-full border border-[#e5471a]/40 bg-[#e5471a]/[0.15] px-3 py-1.5 text-[11px] font-semibold text-[#ff7b58]">
-                  {ridingStyleLabels(profile.style)} rider
+                  {ridingStyleLabels(profile.style)}
                 </span>
               )}
             </div>
@@ -265,7 +343,6 @@ function HomePageContent() {
                     <button
                       type="button"
                       onClick={() => {
-                        setSelectedBike(currentCatalogBike);
                         router.replace(`/?openBike=${currentCatalogBike.id}`, { scroll: false });
                       }}
                       className="mt-0.5 text-[11px] font-semibold text-[var(--r-orange)]"
@@ -338,7 +415,6 @@ function HomePageContent() {
                       <button
                         type="button"
                         onClick={() => {
-                          setSelectedBike(heroBike);
                           router.replace(`/?openBike=${heroBike.id}`, { scroll: false });
                         }}
                         className="mt-1 text-[11px] font-semibold text-[var(--r-orange)]"
@@ -424,33 +500,64 @@ function HomePageContent() {
         </Link>
       </section>
 
-      {/* ─── What is Rippers ─── */}
-      <section className="mx-4 mt-5 rounded-2xl border border-[var(--r-border)] bg-white px-5 py-4 shadow-sm">
-        <p className="text-[10px] font-bold uppercase tracking-[0.17em] text-[var(--r-orange)]">What is Rippers?</p>
-        <p className="mt-2 text-[13px] leading-relaxed text-[var(--r-muted)]">
-          Rippers is the go-to MTB finder for Australian riders. We aggregate bikes from the biggest
-          AU retailers and match them to your riding style, height, and budget — so you spend less
-          time searching and more time shredding.
-        </p>
-        <div className="mt-4 grid grid-cols-3 divide-x divide-[var(--r-border)] text-center">
-          <div className="pr-2">
-            <p className="text-[22px] font-bold tracking-tight text-[var(--foreground)]">{catalog.length}</p>
-            <p className="mt-0.5 text-[10px] text-[var(--r-muted)]">bikes</p>
+      {/* ─── What is Rippers (collapsible after first dismiss) ─── */}
+      <details
+        className="group mx-4 mt-5 rounded-2xl border border-[var(--r-border)] bg-white px-5 py-3 shadow-sm open:pb-4"
+        open={whatIsOpen}
+        onToggle={(e) => {
+          const el = e.currentTarget;
+          setWhatIsOpen(el.open);
+          try {
+            if (!el.open) localStorage.setItem("rippers:what-is-collapsed:v1", "1");
+            else localStorage.removeItem("rippers:what-is-collapsed:v1");
+          } catch {
+            /* ignore */
+          }
+        }}
+      >
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-2 marker:content-none [&::-webkit-details-marker]:hidden">
+          <p className="text-[10px] font-bold uppercase tracking-[0.17em] text-[var(--r-orange)]">What is Rippers?</p>
+          <span className="text-[11px] font-semibold text-[var(--r-muted)] group-open:text-[var(--r-orange)]">
+            {whatIsOpen ? "Hide" : "Show"}
+          </span>
+        </summary>
+        <div className="mt-3 border-t border-[var(--r-border)] pt-3">
+          <p className="text-[13px] leading-relaxed text-[var(--r-muted)]">
+            Rippers is the go-to MTB finder for Australian riders. We aggregate bikes from the biggest
+            AU retailers and match them to your riding style, height, and budget — so you spend less
+            time searching and more time shredding.
+          </p>
+          <div className="mt-4 grid grid-cols-3 divide-x divide-[var(--r-border)] text-center">
+            <div className="pr-2">
+              <p className="text-[22px] font-bold tracking-tight text-[var(--foreground)]">{catalog.length}</p>
+              <p className="mt-0.5 text-[10px] font-medium leading-tight text-[var(--r-muted)]">models in snapshot</p>
+            </div>
+            <div className="px-2">
+              <p className="text-[22px] font-bold tracking-tight text-[var(--foreground)]">20+</p>
+              <p className="mt-0.5 text-[10px] font-medium leading-tight text-[var(--r-muted)]">AU retailers</p>
+            </div>
+            <div className="pl-2">
+              <p className="text-[22px] font-bold tracking-tight text-[var(--r-price-green)]">
+                {bestFiltered != null
+                  ? new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD", maximumFractionDigits: 0 }).format(bestFiltered)
+                  : "AU$—"}
+              </p>
+              <p className="mt-0.5 text-[10px] font-medium leading-tight text-[var(--r-muted)]">best in match set</p>
+            </div>
           </div>
-          <div className="px-2">
-            <p className="text-[22px] font-bold tracking-tight text-[var(--foreground)]">20+</p>
-            <p className="mt-0.5 text-[10px] text-[var(--r-muted)]">retailers</p>
-          </div>
-          <div className="pl-2">
-            <p className="text-[22px] font-bold tracking-tight text-[var(--r-price-green)]">
-              {bestFiltered != null
-                ? new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD", maximumFractionDigits: 0 }).format(bestFiltered)
-                : "AU$—"}
-            </p>
-            <p className="mt-0.5 text-[10px] text-[var(--r-muted)]">from</p>
-          </div>
+          <p className="mt-3 text-[11px] leading-snug text-[var(--r-muted)]">
+            Snapshot = every model in this build ({catalog.length}). Below you see{" "}
+            <span className="font-semibold text-[var(--foreground)]">{homeListBikes.length}</span>
+            {profile && !searchActive && shortlistIsTruncated
+              ? ` top profile matches (${filteredBikes.length} match your filters — open full list for the rest).`
+              : profile && searchActive
+                ? ` from search (${filteredBikes.length} hit${filteredBikes.length !== 1 ? "s" : ""}).`
+                : profile
+                  ? ` bikes ranked for your profile and filters.`
+                  : ` after filters and search.`}
+          </p>
         </div>
-      </section>
+      </details>
 
       {/* ─── Top picks carousel ─── */}
       <section className="px-4 pt-7">
@@ -459,7 +566,11 @@ function HomePageContent() {
             {profile ? "Your top picks" : "Top bikes right now"}
           </p>
           <Link href="/#results" className="text-[12px] font-semibold text-[var(--r-orange)] no-underline">
-            See all {filteredBikes.length} →
+            {searchActive
+              ? `See ${filteredBikes.length} results`
+              : profile && shortlistIsTruncated
+                ? `See top ${homeListBikes.length} →`
+                : `See ${homeListBikes.length} →`}
           </Link>
         </div>
         <div className="r-carousel-scroll mt-3 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 pl-1 pr-1 pt-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -517,11 +628,52 @@ function HomePageContent() {
 
       {/* ─── Results grid ─── */}
       <section id="results" className="scroll-mt-6 px-4 pt-8">
-        <div className="flex items-center justify-between gap-2">
-          <h2 className="text-[17px] font-semibold text-[var(--foreground)]">All matches</h2>
-          <span className="text-[12px] text-[var(--r-muted)]">
-            {filteredBikes.length} bike{filteredBikes.length !== 1 ? "s" : ""}
-          </span>
+        <div className="flex flex-wrap items-end justify-between gap-2">
+          <div>
+            <h2 className="text-[17px] font-semibold text-[var(--foreground)]">
+              {searchActive
+                ? "Search results"
+                : profile
+                  ? listScope === "full"
+                    ? "All bikes matching your filters"
+                    : "Your best profile matches"
+                  : "Browse catalogue"}
+            </h2>
+            <p className="mt-0.5 text-[11px] leading-snug text-[var(--r-muted)]">
+              {searchActive
+                ? `Text search on the ${catalog.length}-bike snapshot — ${filteredBikes.length} hit${filteredBikes.length !== 1 ? "s" : ""}.`
+                : profile
+                  ? listScope === "full"
+                    ? `Ranked by your rider profile (${filteredBikes.length} after category & budget).`
+                    : `Top ${homeListBikes.length} by match for your profile and filters — open full list to see the rest.`
+                  : "Filter by category and budget, or search — data is the bundled AU snapshot in this build."}
+            </p>
+            <p className="mt-2 text-[11px] font-semibold leading-snug text-[var(--r-orange)]">{viewModeLine}</p>
+          </div>
+          <div className="flex shrink-0 flex-col items-end gap-1">
+            <span className="text-[12px] text-[var(--r-muted)]">
+              {homeListBikes.length} shown
+              {profile && filteredBikes.length !== homeListBikes.length ? ` · ${filteredBikes.length} match filters` : ""}
+            </span>
+            {profile && !searchActive && shortlistIsTruncated && (
+              <button
+                type="button"
+                onClick={() => setListScope("full")}
+                className="text-[12px] font-semibold text-[var(--r-orange)] underline decoration-[var(--r-orange)]/30 underline-offset-2"
+              >
+                Show all {filteredBikes.length} →
+              </button>
+            )}
+            {profile && !searchActive && listScope === "full" && filteredBikes.length > HOME_MATCH_SHORTLIST && (
+              <button
+                type="button"
+                onClick={() => setListScope("personalised")}
+                className="text-[12px] font-semibold text-[var(--r-orange)] underline decoration-[var(--r-orange)]/30 underline-offset-2"
+              >
+                Top {HOME_MATCH_SHORTLIST} matches only
+              </button>
+            )}
+          </div>
         </div>
         {filteredBikes.length === 0 ? (
           <div className="mt-6 rounded-2xl border border-dashed border-[var(--r-border)] bg-white/80 px-6 py-10 text-center shadow-sm">
@@ -531,7 +683,7 @@ function HomePageContent() {
             </p>
             <button
               type="button"
-              onClick={() => resetFilters()}
+              onClick={() => resetFiltersAndList()}
               className="mt-5 inline-flex items-center justify-center rounded-full bg-[var(--r-orange)] px-5 py-2.5 text-[13px] font-semibold text-white shadow-[0_8px_20px_rgba(229,71,26,0.35)]"
             >
               Clear all filters
@@ -539,7 +691,7 @@ function HomePageContent() {
           </div>
         ) : null}
         <div className="mt-4 grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
-          {filteredBikes.map((bike) => {
+          {homeListBikes.map((bike) => {
             const isFav = has(bike.id);
             const matchPct = matchPercentForBike(bike, profile ?? null);
             const breakdown = matchBreakdownForBike(bike, profile ?? null);
@@ -556,8 +708,8 @@ function HomePageContent() {
                   className="absolute inset-0 z-[1] rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--r-orange)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--r-bg-canvas)]"
                   aria-label={`View ${bike.brand} ${bike.model} specs`}
                 />
-                {/* Image */}
-                <div className="relative z-[2] aspect-[16/10] overflow-hidden bg-[#f5f3ef]">
+                {/* Image — pointer-events-none so the underlying Link receives taps; buttons opt back in */}
+                <div className="relative z-[2] aspect-[16/10] overflow-hidden bg-[#f5f3ef] pointer-events-none">
                   <BikeProductImage
                     bikeId={bike.id}
                     alt={`${bike.brand} ${bike.model}`}
@@ -568,7 +720,7 @@ function HomePageContent() {
                     type="button"
                     onClick={(e) => { e.stopPropagation(); setMatchBike(bike); }}
                     aria-label={`${matchPct}% match — tap for breakdown`}
-                    className="absolute right-2.5 top-2.5 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-bold tracking-tight text-[var(--r-match-text)] shadow ring-1 ring-black/5 backdrop-blur-[2px] transition-transform active:scale-95"
+                    className="pointer-events-auto absolute right-2.5 top-2.5 z-[3] rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-bold tracking-tight text-[var(--r-match-text)] shadow ring-1 ring-black/5 backdrop-blur-[2px] transition-transform active:scale-95"
                   >
                     {matchPct}%
                   </button>
@@ -577,7 +729,7 @@ function HomePageContent() {
                     type="button"
                     onClick={(e) => { e.stopPropagation(); toggle(bike.id); }}
                     aria-label={isFav ? "Remove from favourites" : "Save to favourites"}
-                    className="absolute left-2.5 top-2.5 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 shadow backdrop-blur-sm transition-transform active:scale-90"
+                    className="pointer-events-auto absolute left-2.5 top-2.5 z-[3] flex h-7 w-7 items-center justify-center rounded-full bg-white/90 shadow backdrop-blur-sm transition-transform active:scale-90"
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill={isFav ? "#e5471a" : "none"} aria-hidden>
                       <path
@@ -594,8 +746,8 @@ function HomePageContent() {
                     </span>
                   )}
                 </div>
-                {/* Info */}
-                <div className="relative z-[2] flex flex-1 flex-col px-4 pb-4 pt-3">
+                {/* Info — same pass-through pattern as image row */}
+                <div className="relative z-[2] flex flex-1 flex-col px-4 pb-4 pt-3 pointer-events-none">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--r-muted)]">{bike.brand}</p>
                   <h3 className="mt-1 text-[15px] font-semibold leading-snug text-[var(--foreground)]">{bike.model}</h3>
                   <p className="mt-1 text-[12px] text-[var(--r-muted)]">
@@ -611,10 +763,9 @@ function HomePageContent() {
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            setSelectedBike(bike);
                             router.replace(`/?openBike=${bike.id}`, { scroll: false });
                           }}
-                          className="text-[10px] font-semibold text-[var(--r-orange)]"
+                          className="pointer-events-auto text-[10px] font-semibold text-[var(--r-orange)]"
                         >
                           Details →
                         </button>

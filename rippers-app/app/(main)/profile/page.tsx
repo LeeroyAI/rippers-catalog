@@ -8,7 +8,11 @@ import BikeDetailSheet from "@/app/components/BikeDetailSheet";
 import BikeProductImage from "@/app/components/BikeProductImage";
 import { catalog } from "@/src/data/catalog";
 import { getBestPrice } from "@/src/domain/bike-helpers";
-import { approximateFrameReachCm, suggestedBikeCategory } from "@/src/domain/rider-profile";
+import {
+  approximateFrameReachCm,
+  RIDER_PROFILE_STORAGE_KEY,
+  suggestedBikeCategory,
+} from "@/src/domain/rider-profile";
 import { RIDING_STYLE_OPTIONS, ridingStyleLabels, type RidingStyle } from "@/src/domain/riding-style";
 import { useFavourites } from "@/src/state/favourites-store";
 import { useCurrentBike } from "@/src/state/current-bike-store";
@@ -16,6 +20,7 @@ import { useRiderProfile } from "@/src/state/rider-profile-context";
 import type { Bike } from "@/src/domain/types";
 
 const PROFILE_PHOTO_KEY = "rippers:profile-photo:v1";
+const PROFILE_PHOTO_CHANGED = "rippers:profile-photo-changed";
 
 // Gear recommendations per riding style
 type GearItem = { icon: string; name: string; desc: string; url: string };
@@ -274,6 +279,8 @@ export default function ProfilePage() {
 
   // Profile photo
   const [photo, setPhoto] = useState<string | null>(null);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const [backupNotice, setBackupNotice] = useState<string | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
   // Edit form
@@ -373,12 +380,42 @@ export default function ProfilePage() {
   async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    setPhotoError(null);
     try {
       const dataUrl = await resizePhotoToDataUrl(file);
       localStorage.setItem(PROFILE_PHOTO_KEY, dataUrl);
       setPhoto(dataUrl);
-    } catch { /* ignore */ }
+      window.dispatchEvent(new Event(PROFILE_PHOTO_CHANGED));
+    } catch {
+      setPhotoError("Couldn’t use that image — try a smaller JPG or PNG.");
+    }
     e.target.value = "";
+  }
+
+  function exportRippersBackup() {
+    try {
+      const payload = {
+        exportedAt: new Date().toISOString(),
+        version: 1,
+        riderProfile: localStorage.getItem(RIDER_PROFILE_STORAGE_KEY),
+        favourites: localStorage.getItem("rippers:favourites:v1"),
+        profilePhoto: localStorage.getItem(PROFILE_PHOTO_KEY),
+        currentBike: localStorage.getItem("rippers:current-bike:v2"),
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `rippers-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    } catch {
+      setBackupNotice("Export failed — check download permissions.");
+      setTimeout(() => setBackupNotice(null), 6000);
+    }
+  }
+
+  function scrollToProfileSection(id: string) {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   async function handleCustomBikePhoto(e: React.ChangeEvent<HTMLInputElement>) {
@@ -417,9 +454,33 @@ export default function ProfilePage() {
   return (
     <div className="r-home-bg w-full">
       <div className="mx-auto w-full max-w-3xl px-4 pb-20 pt-5 md:px-6">
+        <nav
+          className="sticky top-0 z-30 -mx-4 mb-4 flex flex-wrap gap-1 border-b border-[var(--r-border)] bg-[var(--r-bg-canvas)]/95 px-2 py-2 backdrop-blur-md md:-mx-6 md:px-4"
+          aria-label="Profile sections"
+        >
+          {(
+            [
+              ["profile-hero", "Profile"],
+              ["profile-tools", "Tools"],
+              ["profile-ride", "Ride"],
+              ["profile-favs", "Saved"],
+              ["profile-gear", "Gear"],
+              ["profile-edit", "Edit"],
+            ] as const
+          ).map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => scrollToProfileSection(id)}
+              className="rounded-lg px-2.5 py-1.5 text-[11px] font-semibold text-[var(--r-muted)] transition hover:bg-white hover:text-[var(--foreground)]"
+            >
+              {label}
+            </button>
+          ))}
+        </nav>
 
         {/* ── Hero card ── */}
-        <div className="r-home-hero px-5 py-6">
+        <div id="profile-hero" className="r-home-hero scroll-mt-24 px-5 py-6">
           <div className="flex items-center gap-4">
             {/* Photo */}
             <button
@@ -470,6 +531,7 @@ export default function ProfilePage() {
                 )}
               </div>
               <p className="mt-1 text-[12px] text-[var(--r-muted)]">Tap photo to change</p>
+              {photoError && <p className="mt-1 text-[12px] font-medium text-red-600">{photoError}</p>}
             </div>
           </div>
 
@@ -504,7 +566,7 @@ export default function ProfilePage() {
         </div>
 
         {/* ── Tools ── */}
-        <div className="mt-5">
+        <div id="profile-tools" className="mt-5 scroll-mt-24">
           <h2 className="mb-2 px-1 text-[15px] font-semibold text-[var(--foreground)]">Tools</h2>
           <div className="overflow-hidden rounded-2xl border border-[var(--r-border)] bg-white">
             {[
@@ -534,10 +596,21 @@ export default function ProfilePage() {
               </Link>
             ))}
           </div>
+          <button
+            type="button"
+            onClick={exportRippersBackup}
+            className="mt-3 w-full rounded-2xl border border-dashed border-[var(--r-border)] bg-white px-4 py-3 text-left text-[13px] font-semibold text-[var(--foreground)] transition hover:border-[var(--r-orange)]/40 hover:bg-[rgba(229,71,26,0.04)]"
+          >
+            Export my data (JSON backup)
+            <span className="mt-0.5 block text-[11px] font-normal text-[var(--r-muted)]">
+              Profile, saved bikes, photo, and current ride — for moving devices or your records.
+            </span>
+          </button>
+          {backupNotice && <p className="mt-2 text-[12px] font-medium text-red-600">{backupNotice}</p>}
         </div>
 
         {/* ── Current Ride ── */}
-        <div className="mt-5">
+        <div id="profile-ride" className="mt-5 scroll-mt-24">
           <div className="mb-3 flex items-center justify-between px-1">
             <h2 className="text-[15px] font-semibold text-[var(--foreground)]">My current ride</h2>
             {currentBikeEntry && (
@@ -711,7 +784,7 @@ export default function ProfilePage() {
         </div>
 
         {/* ── Favourites ── */}
-        <div className="mt-5">
+        <div id="profile-favs" className="mt-5 scroll-mt-24">
           <div className="mb-3 flex items-center justify-between px-1">
             <h2 className="text-[15px] font-semibold text-[var(--foreground)]">
               My favourites
@@ -781,7 +854,7 @@ export default function ProfilePage() {
         </div>
 
         {/* ── Gear recommendations ── */}
-        <div className="mt-6">
+        <div id="profile-gear" className="mt-6 scroll-mt-24">
           <h2 className="mb-3 px-1 text-[15px] font-semibold text-[var(--foreground)]">
             Gear for your ride
             <span className="ml-2 text-[12px] font-normal text-[var(--r-muted)]">
@@ -828,7 +901,7 @@ export default function ProfilePage() {
         </div>
 
         {/* ── Edit profile (accordion) ── */}
-        <div className="mt-6">
+        <div id="profile-edit" className="mt-6 scroll-mt-24">
           <button
             type="button"
             onClick={() => setFormOpen((v) => !v)}
@@ -936,7 +1009,8 @@ export default function ProfilePage() {
                   <button
                     type="button"
                     role="switch"
-                    aria-checked={preferEbike}
+                    aria-checked={preferEbike ? "true" : "false"}
+                    aria-label="Interested in e-bikes"
                     onClick={() => setPreferEbike((v) => !v)}
                     className={`relative ml-4 h-7 w-12 shrink-0 rounded-full transition-colors ${preferEbike ? "bg-[var(--r-orange)]" : "bg-neutral-200"}`}
                   >

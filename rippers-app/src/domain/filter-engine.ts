@@ -1,4 +1,6 @@
 import { getBestPrice, getSearchBlob } from "./bike-helpers";
+import { matchPercentForBike } from "./match-score";
+import type { RiderProfileV1 } from "./rider-profile";
 import type { Bike, FilterState } from "./types";
 
 function textMatches(bike: Bike, query: string): boolean {
@@ -40,7 +42,7 @@ function budgetMatches(bike: Bike, budgetMax: number | null): boolean {
   return bestPrice <= budgetMax;
 }
 
-function sortBikes(bikes: Bike[], filters: FilterState): Bike[] {
+function sortBikes(bikes: Bike[], filters: FilterState, profile: RiderProfileV1 | null): Bike[] {
   switch (filters.sort) {
     case "priceLow":
       return [...bikes].sort((a, b) => (getBestPrice(a) ?? Infinity) - (getBestPrice(b) ?? Infinity));
@@ -50,11 +52,21 @@ function sortBikes(bikes: Bike[], filters: FilterState): Bike[] {
       return [...bikes].sort((a, b) => b.year - a.year);
     case "bestMatch":
     default:
-      return bikes;
+      return [...bikes].sort((a, b) => {
+        const mb = matchPercentForBike(b, profile);
+        const ma = matchPercentForBike(a, profile);
+        if (mb !== ma) return mb - ma;
+        return (getBestPrice(a) ?? Infinity) - (getBestPrice(b) ?? Infinity);
+      });
   }
 }
 
-export function applyFilters(bikes: Bike[], filters: FilterState): Bike[] {
+/** Filters the bundled catalogue client-side; `bestMatch` sorts by profile match when `profile` is set. */
+export function applyFilters(
+  bikes: Bike[],
+  filters: FilterState,
+  profile: RiderProfileV1 | null = null
+): Bike[] {
   const filtered = bikes.filter(
     (bike) =>
       textMatches(bike, filters.query) &&
@@ -62,5 +74,5 @@ export function applyFilters(bikes: Bike[], filters: FilterState): Bike[] {
       budgetMatches(bike, filters.budgetMax)
   );
 
-  return sortBikes(filtered, filters);
+  return sortBikes(filtered, filters, profile);
 }

@@ -53,17 +53,19 @@ export function useDialogFocus(open: boolean, containerRef: RefObject<HTMLElemen
     if (!root) return;
     function onKeyDown(e: KeyboardEvent) {
       if (e.key !== "Tab") return;
-      const nodes = focusablesIn(root);
+      const el = containerRef.current;
+      if (!el) return;
+      const nodes = focusablesIn(el);
       if (nodes.length === 0) return;
-      const first = nodes[0];
-      const last = nodes[nodes.length - 1];
+      const first = nodes[0]!;
+      const last = nodes[nodes.length - 1]!;
       const active = document.activeElement;
       if (e.shiftKey) {
-        if (active === first || !root.contains(active)) {
+        if (active === first || (active instanceof Node && !el.contains(active))) {
           e.preventDefault();
           last.focus();
         }
-      } else if (active === last || !root.contains(active)) {
+      } else if (active === last || (active instanceof Node && !el.contains(active))) {
         e.preventDefault();
         first.focus();
       }

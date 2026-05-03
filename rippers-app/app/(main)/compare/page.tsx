@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 
 import BikeProductImage from "@/app/components/BikeProductImage";
 import { catalog } from "@/src/data/catalog";
@@ -108,9 +109,29 @@ function SearchDropdown({
   );
 }
 
-export default function ComparePage() {
+function ComparePageContent() {
   const { profile } = useRiderProfile();
+  const searchParams = useSearchParams();
   const [bikes, setBikes] = useState<Bike[]>([]);
+  const hydratedFromUrl = useRef(false);
+
+  useEffect(() => {
+    if (hydratedFromUrl.current) return;
+    const raw = searchParams.get("bikes");
+    if (!raw?.trim()) return;
+    const ids = [
+      ...new Set(
+        raw
+          .split(",")
+          .map((x) => Number(x.trim()))
+          .filter((n) => Number.isFinite(n) && n > 0)
+      ),
+    ].slice(0, MAX);
+    const found = ids.map((id) => catalog.find((b) => b.id === id)).filter((b): b is Bike => Boolean(b));
+    if (found.length === 0) return;
+    hydratedFromUrl.current = true;
+    setBikes(found);
+  }, [searchParams]);
 
   function addBike(b: Bike) {
     setBikes((prev) => prev.length < MAX ? [...prev, b] : prev);
@@ -222,6 +243,28 @@ export default function ComparePage() {
               )}
             </div>
 
+            {/* One-bike preview: first few spec rows before full compare */}
+            {bikes.length === 1 && (
+              <div className="mt-4 overflow-hidden rounded-2xl border border-[var(--r-border)] bg-white shadow-sm">
+                <p className="border-b border-[var(--r-border)] bg-neutral-50/90 px-4 py-2.5 text-[11px] font-semibold leading-snug text-[var(--r-muted)]">
+                  Quick look — add another bike for a side-by-side spec table.
+                </p>
+                {SPEC_ROWS.slice(0, 4).map((row, i) => {
+                  const b = bikes[0]!;
+                  const val = specVal(b, row.key);
+                  return (
+                    <div
+                      key={row.key}
+                      className={`grid grid-cols-[140px_1fr] items-start gap-3 px-4 py-2.5 ${i !== 0 ? "border-t border-[var(--r-border)]" : ""}`}
+                    >
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--r-muted)]">{row.label}</p>
+                      <p className={`text-[13px] leading-snug ${val === "—" ? "text-neutral-300" : "text-[var(--foreground)]"}`}>{val}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
             {/* Spec table */}
             {showTable && (
               <div className="mt-4 overflow-hidden rounded-2xl border border-[var(--r-border)] bg-white shadow-sm">
@@ -294,5 +337,19 @@ export default function ComparePage() {
         </div>
       )}
     </main>
+  );
+}
+
+export default function ComparePage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="ios-shell-page mx-auto flex min-h-[40vh] w-full max-w-[80rem] items-center justify-center pb-24 md:px-8">
+          <p className="text-[14px] text-[var(--r-muted)]">Loading compare…</p>
+        </main>
+      }
+    >
+      <ComparePageContent />
+    </Suspense>
   );
 }

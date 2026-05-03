@@ -1,6 +1,6 @@
 import { unstable_cache } from "next/cache";
 
-import { servicesFromShopTags } from "@/src/domain/shop-profile-fit";
+import { isTripMapRetailShop, servicesFromShopTags } from "@/src/domain/shop-profile-fit";
 
 export type OverpassBbox = {
   south: number;
@@ -85,11 +85,48 @@ function bboxJsonKey(b: OverpassBbox): string {
 
 function buildShopsQuery(bbox: OverpassBbox): string {
   const { south, west, north, east } = bbox;
+  const bb = `${south},${west},${north},${east}`;
   const t = OVERPASS_STATEMENT_TIMEOUT;
+  const sportBike = '["shop"="sports"]["sport"~"bicycle|mtb|cycling|mountain_biking|e-bike|ebike",i]';
+  const sportOutdoor = '["shop"="outdoor"]["sport"~"bicycle|mtb|cycling|mountain_biking|e-bike|ebike",i]';
+  const sportsBikeHint = '["shop"="sports"]["bicycle"~"^(yes|designated|retail|only|sale)$",i]';
+  const outdoorBikeHint = '["shop"="outdoor"]["bicycle"~"^(yes|designated|retail|only|sale)$",i]';
+  const sportsSvcRetail = '["shop"="sports"]["service:bicycle:retail"~"^(yes|only|retail)$",i]';
+  const outdoorSvcRetail = '["shop"="outdoor"]["service:bicycle:retail"~"^(yes|only|retail)$",i]';
   return `[out:json][timeout:${t}];
 (
-  node["shop"="bicycle"](${south},${west},${north},${east});
-  way["shop"="bicycle"](${south},${west},${north},${east});
+  node["shop"="bicycle"](${bb});
+  way["shop"="bicycle"](${bb});
+  relation["shop"="bicycle"](${bb});
+  node["amenity"="bicycle_rental"](${bb});
+  way["amenity"="bicycle_rental"](${bb});
+  relation["amenity"="bicycle_rental"](${bb});
+  node["amenity"="bicycle_repair_station"](${bb});
+  node["craft"="bicycle_repair"](${bb});
+  way["craft"="bicycle_repair"](${bb});
+  relation["craft"="bicycle_repair"](${bb});
+  node${sportBike}(${bb});
+  way${sportBike}(${bb});
+  relation${sportBike}(${bb});
+  node${sportOutdoor}(${bb});
+  way${sportOutdoor}(${bb});
+  node${sportsBikeHint}(${bb});
+  way${sportsBikeHint}(${bb});
+  relation${sportsBikeHint}(${bb});
+  node${outdoorBikeHint}(${bb});
+  way${outdoorBikeHint}(${bb});
+  node${sportsSvcRetail}(${bb});
+  way${sportsSvcRetail}(${bb});
+  node${outdoorSvcRetail}(${bb});
+  way${outdoorSvcRetail}(${bb});
+  node["shop"="sports"]["service:bicycle:repair"="yes"](${bb});
+  way["shop"="sports"]["service:bicycle:repair"="yes"](${bb});
+  node["shop"="sports"]["service:bicycle:rental"="yes"](${bb});
+  way["shop"="sports"]["service:bicycle:rental"="yes"](${bb});
+  node["shop"="outdoor"]["service:bicycle:repair"="yes"](${bb});
+  way["shop"="outdoor"]["service:bicycle:repair"="yes"](${bb});
+  node["shop"="outdoor"]["service:bicycle:rental"="yes"](${bb});
+  way["shop"="outdoor"]["service:bicycle:rental"="yes"](${bb});
 );
 out center tags;
 `;
@@ -196,13 +233,22 @@ function centroid(points: [number, number][]): [number, number] {
   return [lat / n, lng / n];
 }
 
+function defaultBikeVenueName(tags: Record<string, string>): string {
+  if (tags.amenity === "bicycle_rental") return "Bike rental";
+  if (tags.amenity === "bicycle_repair_station") return "Bike repair";
+  if (tags.craft === "bicycle_repair") return "Bike repair workshop";
+  if (tags.shop === "outdoor") return "Outdoor shop";
+  if (tags.shop === "sports") return "Sports shop";
+  return "Bike shop";
+}
+
 function parseShops(elements: OverpassElement[], bbox: OverpassBbox): OverpassShopRow[] {
   const centerLat = (bbox.south + bbox.north) / 2;
   const centerLon = (bbox.west + bbox.east) / 2;
   const shops: OverpassShopRow[] = [];
   for (const el of elements) {
     const tags = el.tags ?? {};
-    if (tags.shop !== "bicycle") continue;
+    if (!isTripMapRetailShop(tags)) continue;
     const lat = el.lat ?? el.center?.lat;
     const lon = el.lon ?? el.center?.lon;
     if (lat == null || lon == null || !Number.isFinite(lat) || !Number.isFinite(lon)) continue;
@@ -210,9 +256,10 @@ function parseShops(elements: OverpassElement[], bbox: OverpassBbox): OverpassSh
     const website = tags.website || tags["contact:website"] || tags["url"] || undefined;
     const phone = tags.phone || tags["contact:phone"] || undefined;
     const openingHours = tags.opening_hours || undefined;
+    const nameRaw = tags.name?.trim() || tags.brand?.trim();
     shops.push({
       id: `${el.type}/${el.id}`,
-      name: tags.name ?? tags.brand ?? "Bike shop",
+      name: nameRaw || defaultBikeVenueName(tags),
       lat,
       lon,
       kmFromCenter: haversineKm(centerLat, centerLon, lat, lon),
@@ -293,7 +340,7 @@ async function fetchTrailsUncached(bboxJson: string): Promise<{ ok: boolean; tra
   return { ok: true, trails: parseTrails(data.elements, bbox) };
 }
 
-const getShopsCached = unstable_cache(fetchShopsUncached, ["overpass-shops-v2"], {
+const getShopsCached = unstable_cache(fetchShopsUncached, ["overpass-shops-v5"], {
   revalidate: CACHE_REVALIDATE_SEC,
 });
 

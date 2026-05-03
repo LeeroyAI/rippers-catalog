@@ -84,6 +84,17 @@ export default function WatchlistPage() {
         )}
       </div>
 
+      {savedBikes.length >= 2 && (
+        <div className="mt-3 px-4 md:px-0">
+          <Link
+            href={`/compare?bikes=${savedBikes.slice(0, 3).map((b) => b.id).join(",")}`}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--r-orange)]/35 bg-[rgba(229,71,26,0.06)] px-3.5 py-2 text-[12px] font-semibold text-[var(--r-orange)] no-underline transition hover:bg-[rgba(229,71,26,0.1)]"
+          >
+            Compare {Math.min(3, savedBikes.length)} in spec table →
+          </Link>
+        </div>
+      )}
+
       {/* Empty state */}
       {savedBikes.length === 0 && (
         <div className="mx-4 mt-10 flex flex-col items-center rounded-2xl border border-dashed border-[var(--r-border)] bg-white px-8 py-14 text-center md:mx-0">

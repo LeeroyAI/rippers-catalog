@@ -66,7 +66,7 @@ if (
   parsed.length < 20
 ) {
   console.warn(
-    `[rippers catalogue] Only ${parsed.length} bikes loaded — expected full export (~48). From rippers-app run: npm run sync-catalog`
+    `[rippers catalogue] Only ${parsed.length} bikes loaded — sync the full export from the monorepo root. From rippers-app run: npm run sync-catalog`
   );
 }
 

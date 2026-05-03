@@ -45,11 +45,15 @@ export function RiderProfileProvider({ children }: { children: ReactNode }) {
         if (parsed) {
           setOnboardedCookie();
         } else if (document.cookie.includes("rippers_onboarded=1")) {
+          /* Cookie without profile (cleared storage, corrupt data) — avoid a half-onboarded state */
           clearOnboardedCookie();
         }
       }
     } catch {
       setProfile(null);
+      if (typeof document !== "undefined" && document.cookie.includes("rippers_onboarded=1")) {
+        clearOnboardedCookie();
+      }
     }
     setHydrated(true);
   }, []);

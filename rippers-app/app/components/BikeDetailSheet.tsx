@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import AskAISheet from "@/app/components/AskAISheet";
 import BikeProductImage from "@/app/components/BikeProductImage";
@@ -119,12 +119,46 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
   const { toggle, has } = useFavourites();
   const { profile } = useRiderProfile();
   const [askOpen, setAskOpen] = useState(false);
+  const [sheetVisible, setSheetVisible] = useState(false);
+  const [descExpanded, setDescExpanded] = useState(false);
+  const [headerCompact, setHeaderCompact] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
+  const bikeOpenIdRef = useRef<number | null>(null);
 
   useDialogFocus(!!bike, panelRef);
 
+  useLayoutEffect(() => {
+    if (!bike) {
+      bikeOpenIdRef.current = null;
+      setSheetVisible(false);
+      return;
+    }
+    if (bikeOpenIdRef.current === null) {
+      bikeOpenIdRef.current = bike.id;
+      if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        setSheetVisible(true);
+        return;
+      }
+      setSheetVisible(false);
+      const id = requestAnimationFrame(() => {
+        requestAnimationFrame(() => setSheetVisible(true));
+      });
+      return () => cancelAnimationFrame(id);
+    }
+    if (bikeOpenIdRef.current !== bike.id) {
+      bikeOpenIdRef.current = bike.id;
+      panelRef.current?.scrollTo(0, 0);
+      setDescExpanded(false);
+      setHeaderCompact(false);
+    }
+  }, [bike]);
+
   useEffect(() => {
-    if (!bike) setAskOpen(false);
+    if (!bike) {
+      setAskOpen(false);
+      setDescExpanded(false);
+      setHeaderCompact(false);
+    }
   }, [bike]);
 
   useEffect(() => {
@@ -168,27 +202,67 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
     rows: g.rows.filter((r) => specVal(bike, r.key) !== null),
   })).filter((g) => g.rows.length > 0);
 
+  const matchPositive = matchFactors.filter((f) => f.sentiment === "positive").length;
+  const descLong = (bike.description?.length ?? 0) > 220;
+
   return (
     <>
       <div
-        className="fixed inset-0 z-[2000] bg-black/50 backdrop-blur-sm"
+        className={`fixed inset-0 z-[2000] bg-black/50 backdrop-blur-sm motion-safe:transition-opacity motion-safe:duration-300 motion-safe:ease-out ${
+          sheetVisible ? "opacity-100" : "opacity-0"
+        }`}
         onClick={onClose}
         aria-hidden
       />
       <div
         ref={panelRef}
-        className="fixed bottom-0 left-0 right-0 z-[2001] max-h-[92dvh] overflow-y-auto rounded-t-3xl bg-white shadow-2xl"
+        className={`fixed bottom-0 left-0 right-0 z-[2001] flex max-h-[92dvh] flex-col overflow-hidden rounded-t-[1.35rem] bg-white shadow-[0_-12px_48px_rgba(18,16,12,0.18)] motion-safe:transition-transform motion-safe:duration-[320ms] motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${
+          sheetVisible ? "translate-y-0" : "translate-y-full"
+        }`}
         role="dialog"
         aria-modal
         aria-label={`${bike.brand} ${bike.model} — full specs`}
       >
-        {/* Drag handle */}
-        <div className="sticky top-0 z-10 flex justify-center bg-white pt-3 pb-1">
-          <div className="h-1 w-10 rounded-full bg-neutral-200" />
+        {/* Sticky chrome: handle + optional compact title (scroll) */}
+        <div className="z-20 shrink-0 bg-white/95 pb-0 pt-[max(0.5rem,env(safe-area-inset-top,0px))] shadow-[0_1px_0_rgba(0,0,0,0.06)] backdrop-blur-md supports-[backdrop-filter]:bg-white/88">
+          <div className="flex justify-center pt-1 pb-2">
+            <div className="h-1 w-10 shrink-0 rounded-full bg-neutral-200" aria-hidden />
+          </div>
+          <div
+            className={`grid transition-[grid-template-rows,opacity] duration-200 ease-out motion-reduce:transition-none ${
+              headerCompact ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+            }`}
+          >
+            <div className="min-h-0 overflow-hidden">
+              <div className="flex items-center gap-3 border-t border-[var(--r-border)] px-4 pb-2.5 pt-1">
+                <p className="min-w-0 flex-1 truncate text-[14px] font-semibold text-[var(--foreground)]">
+                  {bike.model}
+                </p>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  aria-label="Close"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-neutral-700 transition-colors hover:bg-neutral-200"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <path d="M18 6 6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
+        <div
+          className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain"
+          onScroll={(e) => {
+            const st = e.currentTarget.scrollTop;
+            const next = st > 72;
+            setHeaderCompact((prev) => (prev !== next ? next : prev));
+          }}
+        >
         {/* Hero image */}
-        <div className="relative mx-4 mt-1 aspect-[16/9] overflow-hidden rounded-2xl bg-[#f5f3ef]">
+        <div className="relative mx-4 mt-1 aspect-[16/9] overflow-hidden rounded-2xl bg-[#f5f3ef] ring-1 ring-black/[0.04]">
           <BikeProductImage
             bikeId={bike.id}
             alt={`${bike.brand} ${bike.model}`}
@@ -196,7 +270,6 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
           />
           <button
             type="button"
-            data-dialog-initial-focus
             onClick={onClose}
             aria-label="Close"
             className="absolute left-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 shadow backdrop-blur"
@@ -229,66 +302,128 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
         {/* Header */}
         <div className="px-5 pt-4">
           <div className="flex items-start justify-between gap-3">
-            <div>
+            <div className="min-w-0">
               <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-[var(--r-muted)]">
                 {bike.brand} · {bike.year}
               </p>
-              <h2 className="mt-0.5 text-[22px] font-semibold tracking-tight text-[var(--foreground)]">
+              <h2 className="mt-1 text-[22px] font-semibold leading-[1.2] tracking-tight text-[var(--foreground)]">
                 {bike.model}
               </h2>
+              {([bike.category, bike.wheel, bike.travel].filter(Boolean) as string[]).length > 0 && (
+                <div className="mt-2.5 flex flex-wrap gap-1.5">
+                  {[bike.category, bike.wheel, bike.travel].filter(Boolean).map((bit) => (
+                    <span
+                      key={bit}
+                      className="rounded-full border border-[var(--r-border)] bg-neutral-50 px-2.5 py-1 text-[11px] font-semibold text-[var(--r-muted)]"
+                    >
+                      {bit}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
             {bestPrice != null && (
-              <div className="shrink-0 text-right">
-                <p className="text-[22px] font-bold leading-tight text-[var(--r-price-green)]">
+              <div className="shrink-0 rounded-xl border border-[var(--r-border)] bg-gradient-to-b from-neutral-50 to-white px-3 py-2 text-right shadow-sm">
+                {sortedRetailers.length > 1 && (
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--r-muted)]">From</p>
+                )}
+                <p className="text-[21px] font-bold leading-tight tabular-nums text-[var(--r-price-green)]">
                   {aud(bestPrice)}
                 </p>
                 {bike.wasPrice != null && bike.wasPrice > bestPrice && (
-                  <p className="text-[12px] text-neutral-400 line-through">{aud(bike.wasPrice)}</p>
+                  <div className="mt-1 flex flex-col items-end gap-0.5">
+                    <p className="text-[11px] text-neutral-400 line-through">{aud(bike.wasPrice)}</p>
+                    <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                      Save {aud(bike.wasPrice - bestPrice)}
+                    </span>
+                  </div>
                 )}
               </div>
             )}
           </div>
-          <p className="mt-3 text-[13px] leading-relaxed text-[var(--r-muted)]">{bike.description}</p>
+          <div className="mt-4">
+            <p
+              className={`text-[13px] leading-relaxed text-[var(--r-muted)] ${
+                !descExpanded && descLong ? "line-clamp-4" : ""
+              }`}
+            >
+              {bike.description}
+            </p>
+            {descLong && (
+              <button
+                type="button"
+                onClick={() => setDescExpanded((e) => !e)}
+                className="mt-2 text-[12px] font-semibold text-[var(--r-orange)]"
+              >
+                {descExpanded ? "Show less" : "Read full description"}
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* Match breakdown */}
-        <div className="mx-4 mt-4 overflow-hidden rounded-2xl border border-[var(--r-border)]">
-          <div className="flex items-center gap-3 bg-neutral-50 px-4 py-2.5">
-            <span className="text-[13px] font-bold text-[var(--r-orange)]">{matchPct}%</span>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--r-muted)]">Match score</p>
-          </div>
-          {matchFactors.map((f, i) => (
-            <div
-              key={f.label}
-              className={`flex items-start gap-3 px-4 py-2.5 ${i < matchFactors.length - 1 ? "border-t border-[var(--r-border)]" : ""}`}
-            >
-              <span className="mt-0.5 shrink-0">
-                {f.sentiment === "positive" && (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
-                    <circle cx="12" cy="12" r="10" fill="rgba(22,163,74,0.12)" />
-                    <path d="m7.5 12 3 3 6-6" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                )}
-                {f.sentiment === "neutral" && (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
-                    <circle cx="12" cy="12" r="10" fill="rgba(120,113,108,0.1)" />
-                    <path d="M8 12h8" stroke="#78716c" strokeWidth="2" strokeLinecap="round" />
-                  </svg>
-                )}
-                {f.sentiment === "negative" && (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
-                    <circle cx="12" cy="12" r="10" fill="rgba(229,71,26,0.1)" />
-                    <path d="m9 9 6 6M15 9l-6 6" stroke="#e5471a" strokeWidth="2" strokeLinecap="round" />
-                  </svg>
-                )}
-              </span>
-              <div>
-                <p className="text-[12px] font-semibold text-[var(--foreground)]">{f.label}</p>
-                <p className="mt-0.5 text-[11px] leading-snug text-[var(--r-muted)]">{f.detail}</p>
-              </div>
+        {/* Match breakdown — starts closed so specs & actions feel primary */}
+        <details className="group mx-4 mt-5 overflow-hidden rounded-2xl border border-[var(--r-border)] bg-neutral-50/40 open:border-[var(--r-orange)]/25 open:bg-white open:shadow-[0_8px_28px_rgba(18,16,12,0.06)]">
+          <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden">
+            <span className="flex h-11 min-w-[2.75rem] shrink-0 items-center justify-center rounded-xl bg-[rgba(229,71,26,0.12)] px-1 text-[14px] font-bold tabular-nums leading-none text-[var(--r-orange)]">
+              {matchPct}%
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--r-muted)]">
+                Match score
+              </p>
+              <p className="mt-0.5 text-[12px] font-medium leading-snug text-[var(--foreground)]">
+                {profile
+                  ? `Tap for ${matchFactors.length} reason${matchFactors.length === 1 ? "" : "s"} · ${matchPositive} aligned with you`
+                  : "Add a profile in Rippers to personalise this score"}
+              </p>
             </div>
-          ))}
-        </div>
+            <svg
+              className="h-5 w-5 shrink-0 text-neutral-400 transition-transform duration-200 group-open:rotate-180"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              aria-hidden
+            >
+              <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </summary>
+          <div className="border-t border-[var(--r-border)] bg-white">
+            {matchFactors.map((f, i) => (
+              <div
+                key={f.label}
+                className={`flex items-start gap-3 px-4 py-2.5 ${
+                  i < matchFactors.length - 1 ? "border-b border-[var(--r-border)]" : ""
+                }`}
+              >
+                <span className="mt-0.5 shrink-0">
+                  {f.sentiment === "positive" && (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+                      <circle cx="12" cy="12" r="10" fill="rgba(22,163,74,0.12)" />
+                      <path d="m7.5 12 3 3 6-6" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                  {f.sentiment === "neutral" && (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+                      <circle cx="12" cy="12" r="10" fill="rgba(120,113,108,0.1)" />
+                      <path d="M8 12h8" stroke="#78716c" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                  )}
+                  {f.sentiment === "negative" && (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+                      <circle cx="12" cy="12" r="10" fill="rgba(229,71,26,0.1)" />
+                      <path d="m9 9 6 6M15 9l-6 6" stroke="#e5471a" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                  )}
+                </span>
+                <div>
+                  <p className="text-[12px] font-semibold text-[var(--foreground)]">{f.label}</p>
+                  <p className="mt-0.5 text-[11px] leading-snug text-[var(--r-muted)]">{f.detail}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </details>
 
         {/* Sizes */}
         {bike.sizes && bike.sizes.length > 0 && (
@@ -391,48 +526,86 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
           </div>
         )}
 
-        {/* CTA */}
-        <div className="mx-4 mt-5 pb-[max(2rem,calc(env(safe-area-inset-bottom)+1.5rem))]">
-          {bike.sourceUrl && (
-            <a
-              href={bike.sourceUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="r-btn-ios-primary flex w-full items-center justify-center gap-2 rounded-2xl py-4 text-[15px] font-semibold no-underline shadow-[0_14px_26px_rgba(229,71,26,0.3)]"
-            >
-              View official listing ↗
-            </a>
-          )}
-          {/* Ask AI */}
-          <button
-            type="button"
-            onClick={() => setAskOpen(true)}
-            className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-[var(--r-orange)]/25 bg-[rgba(229,71,26,0.06)] py-3.5 text-[14px] font-semibold text-[var(--r-orange)] transition-colors hover:bg-[rgba(229,71,26,0.1)]"
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z" fill="currentColor"/>
-            </svg>
-            Ask AI about this bike
-          </button>
+        <div className="h-4 shrink-0" aria-hidden />
+        </div>
 
-          <button
-            type="button"
-            onClick={() => toggle(bike.id)}
-            className={`mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border py-3.5 text-[14px] font-semibold transition-colors ${
-              isFav
-                ? "border-[var(--r-orange)]/30 bg-[var(--r-orange-soft)] text-[var(--r-orange)]"
-                : "border-[var(--r-border)] bg-white text-[var(--foreground)]"
-            }`}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill={isFav ? "#e5471a" : "none"} aria-hidden>
-              <path
-                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-                stroke={isFav ? "#e5471a" : "#666"}
-                strokeWidth="1.6"
-              />
-            </svg>
-            {isFav ? "Saved to favourites" : "Save to favourites"}
-          </button>
+        {/* Sticky actions — always reachable */}
+        <div className="shrink-0 border-t border-[var(--r-border)] bg-white/95 px-4 pt-3 shadow-[0_-8px_32px_rgba(18,16,12,0.08)] backdrop-blur-md supports-[backdrop-filter]:bg-white/90 pb-[max(0.75rem,calc(env(safe-area-inset-bottom)+0.75rem))]">
+          {bike.sourceUrl ? (
+            <>
+              <a
+                href={bike.sourceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                data-dialog-initial-focus
+                className="r-btn-ios-primary flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 text-[15px] font-semibold no-underline shadow-[0_10px_24px_rgba(229,71,26,0.28)]"
+              >
+                Shop this bike
+                <span className="text-white/90" aria-hidden>
+                  ↗
+                </span>
+              </a>
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setAskOpen(true)}
+                  className="flex items-center justify-center gap-1.5 rounded-xl border border-[var(--r-orange)]/30 bg-[rgba(229,71,26,0.07)] py-3 text-[13px] font-semibold text-[var(--r-orange)] transition-colors hover:bg-[rgba(229,71,26,0.11)]"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z" fill="currentColor"/>
+                  </svg>
+                  Ask AI
+                </button>
+                <button
+                  type="button"
+                  onClick={() => toggle(bike.id)}
+                  className={`flex items-center justify-center gap-1.5 rounded-xl border py-3 text-[13px] font-semibold transition-colors ${
+                    isFav
+                      ? "border-[var(--r-orange)]/35 bg-[var(--r-orange-soft)] text-[var(--r-orange)]"
+                      : "border-[var(--r-border)] bg-white text-[var(--foreground)]"
+                  }`}
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill={isFav ? "#e5471a" : "none"} aria-hidden>
+                    <path
+                      d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                      stroke={isFav ? "#e5471a" : "#666"}
+                      strokeWidth="1.6"
+                    />
+                  </svg>
+                  {isFav ? "Saved" : "Save"}
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                data-dialog-initial-focus
+                onClick={() => setAskOpen(true)}
+                className="r-btn-ios-primary flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 text-[15px] font-semibold text-white shadow-[0_10px_24px_rgba(229,71,26,0.28)]"
+              >
+                Ask AI about this bike
+              </button>
+              <button
+                type="button"
+                onClick={() => toggle(bike.id)}
+                className={`mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl border py-3 text-[13px] font-semibold transition-colors ${
+                  isFav
+                    ? "border-[var(--r-orange)]/35 bg-[var(--r-orange-soft)] text-[var(--r-orange)]"
+                    : "border-[var(--r-border)] bg-neutral-50 text-[var(--foreground)]"
+                }`}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill={isFav ? "#e5471a" : "none"} aria-hidden>
+                  <path
+                    d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                    stroke={isFav ? "#e5471a" : "#666"}
+                    strokeWidth="1.6"
+                  />
+                </svg>
+                {isFav ? "Saved to favourites" : "Save to favourites"}
+              </button>
+            </>
+          )}
         </div>
       </div>
 

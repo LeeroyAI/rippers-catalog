@@ -75,6 +75,14 @@ summary:focus-visible {
   padding-bottom: var(--r-shell-pad-bottom);
 }
 
+/* Full-bleed routes under AppShell (e.g. ride map) — flex chain for min-h-0 children */
+.r-map-group-shell {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
 .r-desktop-header {
   display: none;
 }
@@ -96,6 +104,8 @@ summary:focus-visible {
   align-items: center;
   gap: 0.55rem;
   padding: 0.1rem 0.25rem;
+  /* Don’t let the wide search chip + nav squeeze the mark below its square aspect */
+  flex-shrink: 0;
 }
 
 .r-desktop-search-chip {
@@ -503,4 +513,33 @@ summary:focus-visible {
 
 .r-btn-orange:hover {
   filter: brightness(1.04);
+}
+
+/* Trip map “Loading trails & shops” — motion so the bar never looks frozen at ~50% */
+@keyframes r-trip-load-shine {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(250%);
+  }
+}
+
+.r-trip-load-track .r-trip-load-shine {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 9999px;
+  pointer-events: none;
+}
+
+.r-trip-load-track .r-trip-load-shine::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 45%;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  animation: r-trip-load-shine 1.35s ease-in-out infinite;
 }

@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useState } from "react";
 
+import { useRiderProfile } from "@/src/state/rider-profile-context";
+
 // ─── Sizing data ────────────────────────────────────────────────────────────
 
 type FrameSize = { size: string; label: string; heightMin: number; heightMax: number; inseamMin: number; inseamMax: number };
@@ -66,6 +68,7 @@ function estimateInseam(heightCm: number): number {
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function SizingPage() {
+  const { profile } = useRiderProfile();
   const [heightCm, setHeightCm] = useState<number | "">("");
   const [weightKg, setWeightKg] = useState<number | "">("");
   const [ageTxt, setAgeTxt] = useState<string>("");
@@ -91,6 +94,25 @@ export default function SizingPage() {
       <p className="mt-2 text-[14px] leading-relaxed text-[var(--r-muted)]">
         Get the right frame size before you buy. Height is the primary driver — reach and inseam fine-tune the fit.
       </p>
+
+      {profile && profile.heightCm > 0 ? (
+        <p className="mt-4 rounded-2xl border border-[var(--r-border)] bg-white px-4 py-3 text-[13px] leading-relaxed text-[var(--r-muted)] shadow-sm">
+          Your saved profile height is{" "}
+          <strong className="text-[var(--foreground)]">{profile.heightCm} cm</strong>. Match scores and sizing hints use
+          the same number —{" "}
+          <Link href="/profile" className="font-semibold text-[var(--r-orange)] underline decoration-[var(--r-orange)]/30 underline-offset-2">
+            update it on Profile
+          </Link>{" "}
+          if it changes, or type below to experiment without saving.
+        </p>
+      ) : (
+        <p className="mt-4 rounded-2xl border border-dashed border-[var(--r-border)] bg-[rgba(229,71,26,0.04)] px-4 py-3 text-[13px] leading-relaxed text-[var(--r-muted)]">
+          <Link href="/profile" className="font-semibold text-[var(--r-orange)] underline decoration-[var(--r-orange)]/30 underline-offset-2">
+            Save your height in Profile
+          </Link>{" "}
+          so match scores and this guide stay aligned across the app.
+        </p>
+      )}
 
       {/* ── Calculator ── */}
       <section className="mt-6 rounded-2xl border border-[var(--r-border)] bg-white p-5 shadow-sm">
