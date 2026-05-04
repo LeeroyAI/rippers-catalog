@@ -23,8 +23,12 @@ import { useCurrentBike } from "@/src/state/current-bike-store";
 import { LEGACY_PROFILE_PHOTO_KEY, readRiderPhoto, riderPhotoStorageKey } from "@/src/domain/rider-photo";
 import { RIDER_PHOTO_UPDATED_EVENT } from "@/src/lib/rider-photo-events";
 import { useRiderProfile } from "@/src/state/rider-profile-context";
+import { currentBikeStorageKeyForRider } from "@/src/domain/current-bike-entry";
+import { webLookupSpecSummary } from "@/src/domain/bike-lookup";
+import { forceWebBikeLookupRefresh } from "@/src/lib/bike-web-lookup-client";
 
 const PROFILE_PHOTO_CHANGED = "rippers:profile-photo-changed";
+const LEGACY_CURRENT_BIKE_KEY = "rippers:current-bike:v2";
 
 function filtersSummaryLine(filters: FilterState): string {
   const parts: string[] = [];
@@ -93,6 +97,9 @@ function HomePageContent() {
   /** With a profile and no search: show top matches only until user expands. */
   const [listScope, setListScope] = useState<"personalised" | "full">("personalised");
   const { entry: currentBikeEntry } = useCurrentBike();
+  const currentBikeStorageKey = activeRiderId
+    ? currentBikeStorageKeyForRider(activeRiderId)
+    : LEGACY_CURRENT_BIKE_KEY;
 
   const resetFiltersAndList = useCallback(() => {
     resetFilters();
@@ -430,6 +437,12 @@ function HomePageContent() {
               if (heroBikeDisplay.mode === "custom") {
                 const ce = heroBikeDisplay.entry;
                 const line = heroCustomSubtitle(ce);
+                const lu = ce.lookup;
+                const webImg =
+                  lu?.status === "ok" && lu.imageUrl
+                    ? `/api/bike-img-proxy?url=${encodeURIComponent(lu.imageUrl)}`
+                    : null;
+                const webSpecLine = lu?.status === "ok" ? webLookupSpecSummary(lu.specs) : "";
                 return (
                   <div className="relative flex w-full max-w-[480px] flex-col items-center">
                     <div className="pointer-events-none absolute inset-0 rounded-3xl bg-[radial-gradient(ellipse_80%_60%_at_50%_60%,rgba(229,71,26,0.22),transparent_70%)]" />
@@ -462,6 +475,25 @@ function HomePageContent() {
                           alt=""
                           className="max-h-[min(100%,320px)] w-full max-w-full object-contain object-center drop-shadow-[0_24px_48px_rgba(0,0,0,0.55)]"
                         />
+                      ) : webImg ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={webImg}
+                          alt=""
+                          className="max-h-[min(100%,320px)] w-full max-w-full object-contain object-center drop-shadow-[0_24px_48px_rgba(0,0,0,0.55)]"
+                        />
+                      ) : lu?.status === "loading" ? (
+                        <div className="flex flex-col items-center gap-3 px-6 py-12 text-center">
+                          <span
+                            className="h-10 w-10 animate-spin rounded-full border-2 border-white/25 border-t-[var(--r-orange)]"
+                            aria-hidden
+                          />
+                          <p className="text-[13px] font-semibold leading-snug text-white/70">Finding photo &amp; specs…</p>
+                          <p className="max-w-[16rem] text-[11px] leading-snug text-white/45">
+                            Pulling retailer / editorial matches for{" "}
+                            <span className="text-white/65">{`${ce.brand} ${ce.name}`.trim() || "your bike"}</span>.
+                          </p>
+                        </div>
                       ) : (
                         <div className="flex flex-col items-center gap-3 px-6 py-12 text-center">
                           <span className="text-6xl opacity-85" aria-hidden>
@@ -471,9 +503,9 @@ function HomePageContent() {
                             {`${ce.brand} ${ce.name}`.trim() || "Custom bike"}
                           </p>
                           <p className="max-w-[16rem] text-[11px] leading-snug text-white/45">
-                            We couldn&apos;t match this to a model in the AU catalogue snapshot — open Profile → Ride and
-                            pick from &quot;Search catalogue&quot; (or add the bike to the dataset) for product photos and
-                            specs here.
+                            {lu?.status === "failed"
+                              ? "We couldn&apos;t find a confident image or spec sheet online — try Refresh below or tweak brand / model / year in Profile."
+                              : "Save your bike in Profile to look up product photos and specs from the web."}
                           </p>
                         </div>
                       )}
@@ -484,12 +516,34 @@ function HomePageContent() {
                         {`${ce.brand} ${ce.name}`.trim() || "Custom"}
                       </p>
                       {line ? <p className="mt-1 text-[12px] text-white/50">{line}</p> : null}
-                      <Link
-                        href="/profile#profile-ride"
-                        className="mt-2 inline-block text-[11px] font-semibold text-[var(--r-orange)] no-underline hover:underline"
-                      >
-                        Update in Profile →
-                      </Link>
+                      {webSpecLine ? (
+                        <p className="mt-1 text-[12px] leading-snug text-white/55">{webSpecLine}</p>
+                      ) : null}
+                      {lu?.status === "ok" && lu.sourceUrl ? (
+                        <a
+                          href={lu.sourceUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-1 inline-block text-[10px] font-semibold text-white/45 underline-offset-2 hover:text-white/70 hover:underline"
+                        >
+                          Found via source ↗
+                        </a>
+                      ) : null}
+                      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+                        <Link
+                          href="/profile#profile-ride"
+                          className="inline-block text-[11px] font-semibold text-[var(--r-orange)] no-underline hover:underline"
+                        >
+                          Update in Profile →
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => forceWebBikeLookupRefresh(currentBikeStorageKey)}
+                          className="text-[11px] font-semibold text-white/55 underline-offset-2 hover:text-white/85 hover:underline"
+                        >
+                          Refresh image &amp; specs
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );

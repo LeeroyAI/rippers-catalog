@@ -8,6 +8,7 @@ import {
 } from "@/src/domain/current-bike-entry";
 import { CURRENT_BIKE_UPDATED_EVENT, notifyCurrentBikeUpdated } from "@/src/lib/current-bike-events";
 import { enrichCurrentBikeWithCatalog } from "@/src/lib/enrich-current-bike-catalog";
+import { retryStaleWebBikeLookupIfNeeded, startWebBikeLookupForEntry } from "@/src/lib/bike-web-lookup-client";
 import { useRiderProfile } from "@/src/state/rider-profile-context";
 
 export type { CurrentBikeEntry };
@@ -64,10 +65,16 @@ export function useCurrentBike() {
   useLayoutEffect(() => {
     if (!hydrated) return;
     if (activeRiderId) migrateLegacyToScoped(activeRiderId);
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync subscribed store (LS) → React entry
-    setEntry(read(storageKey));
+    const initial = read(storageKey);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync localStorage → React before paint when rider/storageKey changes
+    setEntry(initial);
     setStoreHydrated(true);
   }, [hydrated, activeRiderId, storageKey]);
+
+  useEffect(() => {
+    if (!hydrated || !storeHydrated) return;
+    queueMicrotask(() => retryStaleWebBikeLookupIfNeeded(storageKey));
+  }, [hydrated, storeHydrated, storageKey]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -93,6 +100,9 @@ export function useCurrentBike() {
       }
       setEntry(next);
       notifyCurrentBikeUpdated();
+      if (typeof window !== "undefined" && next?.type === "custom") {
+        startWebBikeLookupForEntry(storageKey, next);
+      }
     },
     [storageKey]
   );

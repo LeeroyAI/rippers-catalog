@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { startTransition, useEffect, useRef, useState } from "react";
+import { startTransition, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import BikeDetailSheet from "@/app/components/BikeDetailSheet";
@@ -32,8 +32,12 @@ import { useFavourites } from "@/src/state/favourites-store";
 import { useCurrentBike } from "@/src/state/current-bike-store";
 import { useRiderProfile } from "@/src/state/rider-profile-context";
 import type { Bike } from "@/src/domain/types";
+import { currentBikeStorageKeyForRider } from "@/src/domain/current-bike-entry";
+import { webLookupSpecSummary } from "@/src/domain/bike-lookup";
+import { forceWebBikeLookupRefresh } from "@/src/lib/bike-web-lookup-client";
 
 const PROFILE_PHOTO_CHANGED = "rippers:profile-photo-changed";
+const LEGACY_CURRENT_BIKE_KEY = "rippers:current-bike:v2";
 
 // Gear recommendations per riding style
 type GearItem = { icon: string; name: string; desc: string; url: string };
@@ -293,6 +297,10 @@ export default function ProfilePage() {
 
   // Current bike
   const { entry: currentBikeEntry, save: saveCurrentBike } = useCurrentBike();
+  const currentBikeStorageKey = useMemo(
+    () => (activeRiderId ? currentBikeStorageKeyForRider(activeRiderId) : LEGACY_CURRENT_BIKE_KEY),
+    [activeRiderId]
+  );
   const [bikeSearch, setBikeSearch] = useState("");
   const [bikeSearchOpen, setBikeSearchOpen] = useState(false);
   const [customBikeName, setCustomBikeName] = useState("");
@@ -887,6 +895,22 @@ export default function ProfilePage() {
                 ) : currentBikeEntry.type === "custom" && currentBikeEntry.photo ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={currentBikeEntry.photo} alt="My bike" className="h-full w-full object-cover" />
+                ) : currentBikeEntry.type === "custom" &&
+                  currentBikeEntry.lookup?.status === "ok" &&
+                  currentBikeEntry.lookup.imageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={`/api/bike-img-proxy?url=${encodeURIComponent(currentBikeEntry.lookup.imageUrl)}`}
+                    alt=""
+                    className="h-full w-full object-contain p-0.5"
+                  />
+                ) : currentBikeEntry.type === "custom" && currentBikeEntry.lookup?.status === "loading" ? (
+                  <div className="flex h-full w-full items-center justify-center">
+                    <span
+                      className="h-7 w-7 animate-spin rounded-full border-2 border-[var(--r-border)] border-t-[var(--r-orange)]"
+                      aria-hidden
+                    />
+                  </div>
                 ) : (
                   <div className="flex h-full w-full items-center justify-center text-2xl">🚵</div>
                 )}
@@ -914,6 +938,36 @@ export default function ProfilePage() {
                     {currentBikeEntry.year && (
                       <p className="mt-0.5 text-[12px] text-[var(--r-muted)]">{currentBikeEntry.year}</p>
                     )}
+                    {currentBikeEntry.lookup?.status === "loading" ? (
+                      <p className="mt-1 text-[11px] text-[var(--r-muted)]">Looking up photo &amp; specs from the web…</p>
+                    ) : currentBikeEntry.lookup?.status === "failed" ? (
+                      <p className="mt-1 text-[11px] text-[var(--r-muted)]">
+                        No confident match online — edit brand / model / year or tap Refresh.
+                      </p>
+                    ) : currentBikeEntry.lookup?.status === "ok" && webLookupSpecSummary(currentBikeEntry.lookup.specs) ? (
+                      <p className="mt-1 text-[11px] leading-snug text-[var(--r-muted)]">
+                        {webLookupSpecSummary(currentBikeEntry.lookup.specs)}
+                      </p>
+                    ) : null}
+                    {currentBikeEntry.lookup?.status === "ok" && currentBikeEntry.lookup.sourceUrl ? (
+                      <a
+                        href={currentBikeEntry.lookup.sourceUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-1 inline-block text-[11px] font-semibold text-[var(--r-orange)]"
+                      >
+                        Source ↗
+                      </a>
+                    ) : null}
+                    <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1">
+                      <button
+                        type="button"
+                        onClick={() => forceWebBikeLookupRefresh(currentBikeStorageKey)}
+                        className="text-[11px] font-semibold text-[var(--r-muted)] underline-offset-2 hover:text-[var(--r-orange)] hover:underline"
+                      >
+                        Refresh image &amp; specs
+                      </button>
+                    </div>
                   </>
                 ) : null}
               </div>

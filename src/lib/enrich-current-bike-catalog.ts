@@ -224,5 +224,11 @@ export function enrichCurrentBikeWithCatalog(entry: CurrentBikeEntry | null): Cu
 }
 
 export function persistEnrichedCurrentBikeForRider(riderId: string, entry: CurrentBikeEntry | null): void {
-  writeCurrentBikeStorage(riderId, enrichCurrentBikeWithCatalog(entry));
+  const enriched = enrichCurrentBikeWithCatalog(entry);
+  writeCurrentBikeStorage(riderId, enriched);
+  if (typeof window !== "undefined" && enriched?.type === "custom") {
+    void import("@/src/lib/bike-web-lookup-client").then((m) =>
+      m.startWebBikeLookupForEntry(currentBikeStorageKeyForRider(riderId), enriched)
+    );
+  }
 }

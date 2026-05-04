@@ -93,6 +93,20 @@ function FamilyRiderCard({
           ) : entry?.type === "custom" && entry.photo ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={entry.photo} alt="" className="h-full w-full object-cover" />
+          ) : entry?.type === "custom" && entry.lookup?.status === "ok" && entry.lookup.imageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={`/api/bike-img-proxy?url=${encodeURIComponent(entry.lookup.imageUrl)}`}
+              alt=""
+              className="h-full w-full object-contain p-0.5"
+            />
+          ) : entry?.type === "custom" && entry.lookup?.status === "loading" ? (
+            <div className="flex h-full w-full items-center justify-center">
+              <span
+                className="h-6 w-6 animate-spin rounded-full border-2 border-[var(--r-border)] border-t-[var(--r-orange)]"
+                aria-hidden
+              />
+            </div>
           ) : (
             <div className="flex h-full w-full items-center justify-center text-xl opacity-40">🚵</div>
           )}

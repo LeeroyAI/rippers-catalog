@@ -1,10 +1,20 @@
+import type { CustomBikeWebLookup } from "@/src/domain/bike-lookup";
+
 /**
  * Stored current ride for a rider (scoped per rider id in localStorage).
  * Kept in domain so rider profile context can persist without importing React hooks.
  */
 export type CurrentBikeEntry =
   | { type: "catalog"; bikeId: number; brand: string; model: string; year: number }
-  | { type: "custom"; name: string; brand: string; year: string; photo: string | null };
+  | {
+      type: "custom";
+      name: string;
+      brand: string;
+      year: string;
+      photo: string | null;
+      /** Optional Brave + Claude web enrichment (image + specs for UI only). */
+      lookup?: CustomBikeWebLookup;
+    };
 
 export function currentBikeStorageKeyForRider(riderId: string): string {
   return `rippers:current-bike:${riderId}:v2`;

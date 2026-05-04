@@ -46,7 +46,11 @@ export type RippersBackupV2 = {
   savedTripsByRider: Record<string, string | null>;
   /** Per-rider saved bikes (may be absent on older exports). */
   favouritesByRider?: Record<string, string | null>;
-  /** Per-rider current ride JSON (may be absent on older exports). */
+  /**
+   * Per-rider current ride JSON (may be absent on older exports).
+   * Each value is the raw `CurrentBikeEntry` JSON string — including optional `lookup`
+   * (web image + specs) when present.
+   */
   currentBikeByRider?: Record<string, string | null>;
 };
 

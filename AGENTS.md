@@ -106,7 +106,7 @@ node scripts/import_dashboard_data.js
 vercel deploy --prod
 ```
 
-Requires `BRAVE_SEARCH_API_KEY` and `ANTHROPIC_API_KEY` in the Vercel project when using that function.
+Requires `BRAVE_SEARCH_API_KEY` and `ANTHROPIC_API_KEY` in the Vercel project when using that function (same keys power **`app/api/bike-lookup`** for per-rider “current ride” web image + specs).
 
 ---
 
@@ -119,7 +119,7 @@ Browser (rippers-app PWA)
   ├── Next.js App Router     — pages, layouts, client components
   ├── src/state/*            — filters, rider profile context, favourites, current bike, …
   ├── src/domain/*           — filter engine, match score, rider profile, trip helpers
-  └── app/api/*              — ask, geocode, overpass, bike-img (Route Handlers)
+  └── app/api/*              — ask, geocode, overpass, bike-img, bike-img-proxy, bike-lookup (Route Handlers)
 
 Optional / shared backend
   └── api/search.js (Vercel) — Brave + Claude live bike extraction (same repo root)
