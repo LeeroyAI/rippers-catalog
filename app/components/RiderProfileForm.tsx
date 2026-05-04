@@ -80,6 +80,9 @@ export default function RiderProfileForm({
   const [bikeModel, setBikeModel] = useState("");
   const [bikeYear, setBikeYear] = useState("");
 
+  // Sync core fields only when rider data actually changes — not when parents pass a
+  // freshly allocated `initialDraft` object each render (e.g. edit modal), which used
+  // to wipe optional bike inputs and optionalBikeTouched mid-edit.
   useEffect(() => {
     startTransition(() => {
       setNickname(initialDraft.nickname);
@@ -95,7 +98,13 @@ export default function RiderProfileForm({
       setOptionalBikeTouched(false);
       setProfilePhoto(null);
     });
-  }, [initialDraft]);
+  }, [
+    initialDraft.nickname,
+    initialDraft.heightCm,
+    initialDraft.weightKg,
+    initialDraft.style,
+    initialDraft.preferEbike,
+  ]);
 
   const catalogHits = useMemo(() => {
     const q = bikeQuery.trim().toLowerCase();

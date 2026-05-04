@@ -5,6 +5,7 @@ import { startTransition, useEffect, useLayoutEffect, useRef, useState } from "r
 import RiderProfileForm from "@/app/components/RiderProfileForm";
 import { defaultRiderDraft } from "@/src/domain/rider-profile";
 import { useDialogFocus } from "@/src/hooks/use-dialog-focus";
+import { addRiderSavedMessage } from "@/src/lib/rider-save-confirmations";
 import { useRiderProfile } from "@/src/state/rider-profile-context";
 
 type Props = {
@@ -14,6 +15,7 @@ type Props = {
 
 export default function CreateFamilyModal({ open, onClose }: Props) {
   const panelRef = useRef<HTMLDivElement>(null);
+  const savedConfirmationRef = useRef<HTMLDivElement>(null);
   const { addRider } = useRiderProfile();
   const [formKey, setFormKey] = useState(0);
   const [notice, setNotice] = useState<string | null>(null);
@@ -47,6 +49,13 @@ export default function CreateFamilyModal({ open, onClose }: Props) {
     }
   }, [open]);
 
+  useEffect(() => {
+    if (!notice) return;
+    requestAnimationFrame(() => {
+      savedConfirmationRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+  }, [notice]);
+
   if (!open) return null;
 
   return (
@@ -70,11 +79,6 @@ export default function CreateFamilyModal({ open, onClose }: Props) {
             Enter their height, weight, and how they ride. Add an optional profile photo and current bike from the
             catalogue or as a custom bike — same as onboarding, without leaving Profile.
           </p>
-          {notice ? (
-            <p className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-[12px] font-medium text-emerald-900">
-              {notice}
-            </p>
-          ) : null}
           <RiderProfileForm
             key={formKey}
             initialDraft={defaultRiderDraft()}
@@ -83,10 +87,20 @@ export default function CreateFamilyModal({ open, onClose }: Props) {
             includeOptionalCurrentBike
             onSubmit={(vals, initialBike, photo) => {
               addRider(vals, initialBike, photo);
-              setNotice(`Added ${vals.nickname.trim() || "new rider"} — they are now the active rider.`);
+              setNotice(addRiderSavedMessage(vals.nickname, initialBike ?? null));
               setFormKey((k) => k + 1);
             }}
           />
+          {notice ? (
+            <div
+              ref={savedConfirmationRef}
+              role="status"
+              aria-live="polite"
+              className="mt-4 rounded-xl border-2 border-emerald-400/80 bg-emerald-50 px-4 py-3 shadow-sm shadow-emerald-900/10"
+            >
+              <p className="text-[13px] font-semibold leading-snug text-emerald-950">{notice}</p>
+            </div>
+          ) : null}
         </div>
 
         <div className="order-1 flex shrink-0 items-center justify-between gap-3 border-b border-[var(--r-border)] px-5 py-4 sm:px-6">

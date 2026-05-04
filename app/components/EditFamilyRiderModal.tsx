@@ -16,6 +16,7 @@ import { notifyRiderPhotoUpdated } from "@/src/lib/rider-photo-events";
 import { resizePhotoToDataUrl } from "@/src/lib/resize-photo-to-data-url";
 import { readRiderPhoto, writeRiderPhoto } from "@/src/domain/rider-photo";
 import { useDialogFocus } from "@/src/hooks/use-dialog-focus";
+import { editRiderSavedMessage } from "@/src/lib/rider-save-confirmations";
 import { useRiderProfile } from "@/src/state/rider-profile-context";
 import type { Bike } from "@/src/domain/types";
 
@@ -30,6 +31,7 @@ type Props = {
 export default function EditFamilyRiderModal({ rider, open, onClose, onViewCatalogBike }: Props) {
   const panelRef = useRef<HTMLDivElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
+  const savedConfirmationRef = useRef<HTMLDivElement>(null);
   const { updateRiderProfile } = useRiderProfile();
   const [photo, setPhoto] = useState<string | null>(null);
   const [photoError, setPhotoError] = useState<string | null>(null);
@@ -81,6 +83,13 @@ export default function EditFamilyRiderModal({ rider, open, onClose, onViewCatal
     return () => window.removeEventListener(CURRENT_BIKE_UPDATED_EVENT, bump);
   }, [open, riderId]);
 
+  useEffect(() => {
+    if (!savedHint) return;
+    requestAnimationFrame(() => {
+      savedConfirmationRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+  }, [savedHint]);
+
   const entry = useMemo(() => {
     void bikeBump;
     if (riderId == null) return null;
@@ -95,6 +104,23 @@ export default function EditFamilyRiderModal({ rider, open, onClose, onViewCatal
       null
     );
   }, [entry]);
+
+  const formInitialDraft = useMemo(
+    () => ({
+      nickname: rider?.nickname ?? "",
+      heightCm: rider?.heightCm ?? 0,
+      weightKg: rider?.weightKg ?? 0,
+      style: rider?.style ?? ("trail" as const),
+      preferEbike: rider?.preferEbike ?? false,
+    }),
+    [
+      rider?.nickname,
+      rider?.heightCm,
+      rider?.weightKg,
+      rider?.style,
+      rider?.preferEbike,
+    ]
+  );
 
   if (!open || !rider || riderId == null) return null;
 
@@ -233,29 +259,29 @@ export default function EditFamilyRiderModal({ rider, open, onClose, onViewCatal
             — we match it to specs and the product image automatically.
           </p>
 
-          {savedHint ? (
-            <p className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-[12px] font-medium text-emerald-900">
-              {savedHint}
-            </p>
-          ) : null}
-
           <RiderProfileForm
             key={formKey}
-            initialDraft={{
-              nickname: rider.nickname,
-              heightCm: rider.heightCm,
-              weightKg: rider.weightKg,
-              style: rider.style,
-              preferEbike: rider.preferEbike,
-            }}
+            initialDraft={formInitialDraft}
             submitLabel="Save rider"
             includeOptionalCurrentBike
             freezeOptionalBikeUnlessTouched
             onSubmit={(vals, bike) => {
               updateRiderProfile(rider.id, vals, bike);
-              setSavedHint("Saved.");
+              setSavedHint(editRiderSavedMessage(bike));
+              if (bike !== undefined) setBikeBump((x) => x + 1);
             }}
           />
+
+          {savedHint ? (
+            <div
+              ref={savedConfirmationRef}
+              role="status"
+              aria-live="polite"
+              className="mt-4 rounded-xl border-2 border-emerald-400/80 bg-emerald-50 px-4 py-3 shadow-sm shadow-emerald-900/10"
+            >
+              <p className="text-[13px] font-semibold leading-snug text-emerald-950">{savedHint}</p>
+            </div>
+          ) : null}
         </div>
 
         <div className="order-1 flex shrink-0 items-center justify-between gap-3 border-b border-[var(--r-border)] px-5 py-3 sm:px-6">

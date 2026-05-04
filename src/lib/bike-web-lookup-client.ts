@@ -76,6 +76,14 @@ function specsLookSubstantial(specs: BikeSpecsLookup | null): boolean {
   return core.length >= 2;
 }
 
+/** One strong text signal + category (Haiku often lowballs confidence on kids’/obscure AU lines). */
+function specsLookDecent(specs: BikeSpecsLookup | null): boolean {
+  if (!specs) return false;
+  const desc = (specs.description ?? "").trim();
+  if (desc.length >= 36) return true;
+  return Boolean(specs.category && (specs.wheel || specs.travel || specs.suspension));
+}
+
 function mergeLookupOk(entry: CurrentBikeEntry, data: LookupApiOk, keyHash: string): CurrentBikeEntry {
   if (entry.type !== "custom") return entry;
   const specs = sanitizeSpecs(data.specs);
@@ -86,7 +94,8 @@ function mergeLookupOk(entry: CurrentBikeEntry, data: LookupApiOk, keyHash: stri
   const usable =
     hasImage ||
     (hasSpecs && confidence >= 0.32) ||
-    (hasSpecs && specsLookSubstantial(specs) && confidence >= 0.22);
+    (hasSpecs && specsLookSubstantial(specs) && confidence >= 0.22) ||
+    (hasSpecs && specsLookDecent(specs) && confidence >= 0.17);
 
   const lookup: CustomBikeWebLookup = usable
     ? {

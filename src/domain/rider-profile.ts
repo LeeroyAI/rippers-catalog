@@ -72,8 +72,12 @@ export function suggestedBikeCategory(profile: RiderProfileV1): string | null {
   if (profile.preferEbike) {
     return "eBike";
   }
-  if (profile.style === "crossCountry") {
-    return "Trail";
+  switch (profile.style) {
+    case "crossCountry":
+      return "XC / Cross-Country";
+    case "gravity":
+      return "Enduro";
+    default:
+      return "Trail";
   }
-  return "Trail";
 }

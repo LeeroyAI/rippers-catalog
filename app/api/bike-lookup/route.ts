@@ -17,9 +17,30 @@ type LookupOk = {
 const memoryCache = new Map<string, { at: number; body: LookupOk }>();
 const CACHE_MS = 86_400_000;
 
+let warnedBraveKeyMissingDev = false;
+
+/** Normalize `http://`, `//`, etc. — hero images and Brave snippets must satisfy the https-only `/api/bike-img-proxy`. */
+function normalizeHttpsUrl(raw: string | null | undefined): string | null {
+  const s = typeof raw === "string" ? raw.trim() : "";
+  if (!s) return null;
+  try {
+    if (s.startsWith("//")) return new URL(`https:${s}`).href;
+    if (s.startsWith("http://")) {
+      const u = new URL(s);
+      u.protocol = "https:";
+      return u.href;
+    }
+    if (s.startsWith("https://")) return new URL(s).href;
+  } catch {
+    return null;
+  }
+  return null;
+}
+
 async function braveSearch(query: string): Promise<BraveSnippet[]> {
   const key = process.env.BRAVE_SEARCH_API_KEY?.trim();
-  if (!key) throw new Error("BRAVE_SEARCH_API_KEY missing");
+  /** Local dev often omits Brave; degrade to Claude-only instead of 502-ing every `/api/bike-lookup`. */
+  if (!key) return [];
 
   const url = new URL(BRAVE_BASE);
   url.searchParams.set("q", query);
@@ -47,11 +68,12 @@ async function braveSearch(query: string): Promise<BraveSnippet[]> {
 
   const out: BraveSnippet[] = [];
   for (const item of json.web?.results ?? []) {
+    const thumbRaw = item.thumbnail?.original ?? item.thumbnail?.src ?? "";
     out.push({
       url: item.url,
       title: item.title,
       description: item.description ?? "",
-      imageUrl: item.thumbnail?.original ?? item.thumbnail?.src ?? "",
+      imageUrl: normalizeHttpsUrl(thumbRaw) ?? "",
     });
   }
   return out;
@@ -93,15 +115,22 @@ async function extractWithClaude(snippets: BraveSnippet[], brand: string, model:
   const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
   if (!apiKey) throw new Error("ANTHROPIC_API_KEY missing");
 
+  const snippetSection =
+    snippets.length > 0
+      ? (["Web search snippets (retailer / editorial pages):", snippetBlock(snippets), ""] as const)
+      : ([
+          "Live web snippets: (none — Brave Search is not configured on this deployment or queries returned nothing yet).",
+          "Infer specs from reliable training knowledge for this brand+model. Set imageUrl and sourceUrl to null (no guesses).",
+          "",
+        ] as const);
+
   const userMessage = [
     `User typed this bike (may include wheel size in the model name):`,
     `Brand: ${brand}`,
     `Model / name line: ${model}`,
     `Year field (may be empty or wrong): ${year || "(none)"}`,
     "",
-    "Web search snippets (retailer / editorial pages):",
-    snippetBlock(snippets),
-    "",
+    ...snippetSection,
     "Return a SINGLE JSON object (no markdown) with EXACTLY these keys:",
     `{ "confidence": <number 0-1>, "imageUrl": <string|null — direct https URL to a product hero image if visible in snippets; else null>,`,
     `  "sourceUrl": <string|null — best authoritative page URL from snippets for this exact bike; else null>,`,
@@ -117,8 +146,14 @@ async function extractWithClaude(snippets: BraveSnippet[], brand: string, model:
     "- Prefer specs from your training knowledge for this brand+model (+ year if plausible). Snippets are mainly for imageUrl and sourceUrl.",
     "- If you genuinely cannot infer the bike line at all (unknown brand/word salad), keep confidence ≤0.3 and omit specs/image.",
     "- If you recognize a real AU-sold range (kids/junior, entry hardtails, supermarket-adjacent MTB families), fill specs from knowledge even when snippets are thin — typical confidence 0.38–0.72; omit imageUrl/sourceUrl only when URLs are not credible.",
-    "- imageUrl must be https and look like a real image file or CDN path when present.",
-  ].join("\n");
+    '- Silverback "Spyke" (sometimes misspelled Spike) is a real junior/entry MTB line from Silverback often sold in AU/NZ retailers — recognize it whenever brand+model tokens match.',
+    "- imageUrl must be https (convert http thumbnails to https when the same host supports TLS) and look like a real image file or CDN path when present.",
+    snippets.length === 0
+      ? "- With no snippets, keep imageUrl and sourceUrl null (do not guess retailer CDNs)."
+      : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
 
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -151,8 +186,8 @@ async function extractWithClaude(snippets: BraveSnippet[], brand: string, model:
   };
 
   const confidence = typeof parsed.confidence === "number" && Number.isFinite(parsed.confidence) ? parsed.confidence : 0;
-  const imageUrl = typeof parsed.imageUrl === "string" && parsed.imageUrl.startsWith("https://") ? parsed.imageUrl : null;
-  const sourceUrl = typeof parsed.sourceUrl === "string" && parsed.sourceUrl.startsWith("https://") ? parsed.sourceUrl : null;
+  const imageUrl = normalizeHttpsUrl(typeof parsed.imageUrl === "string" ? parsed.imageUrl : null);
+  const sourceUrl = normalizeHttpsUrl(typeof parsed.sourceUrl === "string" ? parsed.sourceUrl : null);
   const specs = parsed.specs && typeof parsed.specs === "object" ? parsed.specs : null;
 
   return { imageUrl, sourceUrl, specs, confidence };
@@ -199,8 +234,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing brand and model" }, { status: 400 });
   }
 
+  const braveKey = Boolean(process.env.BRAVE_SEARCH_API_KEY?.trim());
+
   // Bump when fallback / extraction shape changes so in-memory TTL doesn’t serve stale empty images across deploys.
-  const key = `${cacheKey(brand, model, year)}|v4-au-triple-query`;
+  const key = `${cacheKey(brand, model, year)}|v6-au-${braveKey ? "brave" : "nobrave"}`;
   const hit = memoryCache.get(key);
   if (hit && Date.now() - hit.at < CACHE_MS) {
     return NextResponse.json(hit.body, {
@@ -209,16 +246,29 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    if (!process.env.NODE_ENV?.startsWith("prod") && !braveKey && !warnedBraveKeyMissingDev) {
+      warnedBraveKeyMissingDev = true;
+      console.warn(
+        "[bike-lookup] BRAVE_SEARCH_API_KEY unset — skipping Brave (Claude-only; product images usually need the key). Add it to `.env.local` for full lookups."
+      );
+    }
+
     const q1 = [brand, model, year, "mountain bike specifications Australia"].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
     const q2 = [brand, model, year, "mountain bike review site:vitalmtb.com OR site:bikesonline.com.au"].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
     const q3 = [brand, model, year, "bike buy AU site:99bikes.com.au OR site:bikebug.com.au OR site:bicycleonline.com.au"].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
+    const q4 = [`"${brand}"`, model, year, "mountain bike AU product image"].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
 
-    const [r1, r2, r3] = await Promise.all([braveSearch(q1), braveSearch(q2), braveSearch(q3)]);
-    const snippets = mergeSnippets(mergeSnippets(r1, r2, 24), r3, 28);
-    if (snippets.length === 0) {
-      const empty: LookupOk = { imageUrl: null, sourceUrl: null, specs: null, confidence: 0 };
-      memoryCache.set(key, { at: Date.now(), body: empty });
-      return NextResponse.json(empty);
+    const [r1, r2, r3, r4] = await Promise.all([braveSearch(q1), braveSearch(q2), braveSearch(q3), braveSearch(q4)]);
+    const snippets = mergeSnippets(mergeSnippets(mergeSnippets(r1, r2, 24), r3, 28), r4, 34);
+
+    if (!process.env.ANTHROPIC_API_KEY?.trim()) {
+      return NextResponse.json(
+        {
+          error:
+            "ANTHROPIC_API_KEY missing — set it in .env.local (local) or project env (Vercel); bike lookup requires it.",
+        },
+        { status: 503 }
+      );
     }
 
     const extracted = withBraveThumbnailFallback(snippets, await extractWithClaude(snippets, brand, model, year));

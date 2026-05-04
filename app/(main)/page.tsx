@@ -30,6 +30,27 @@ import { forceWebBikeLookupRefresh } from "@/src/lib/bike-web-lookup-client";
 
 const PROFILE_PHOTO_CHANGED = "rippers:profile-photo-changed";
 const LEGACY_CURRENT_BIKE_KEY = "rippers:current-bike:v2";
+/** Session keys so leaving Home and coming back does not wipe manual filters unless the active rider or intent changed */
+const HOME_LAST_RIDER_KEY = "rippers:home:last-synced-rider:v1";
+const HOME_LAST_INTENT_KEY = "rippers:home:last-profile-intent:v1";
+
+function sessionGet(key: string): string | null {
+  if (typeof sessionStorage === "undefined") return null;
+  try {
+    const v = sessionStorage.getItem(key);
+    return v != null && v.length > 0 ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+function sessionSet(key: string, value: string): void {
+  try {
+    sessionStorage.setItem(key, value);
+  } catch {
+    /* ignore */
+  }
+}
 
 function filtersSummaryLine(filters: FilterState): string {
   const parts: string[] = [];
@@ -91,8 +112,6 @@ function HomePageContent() {
   const { filters, filteredBikes, updateFilters, resetFilters } = useFilterStore();
   const { hydrated, profile, riders, activeRiderId } = useRiderProfile();
   const { toggle, has } = useFavourites();
-  /** Tracks last rider we synced Home filters for — avoids one-time sync missing household switches */
-  const prevHomeRiderFiltersRef = useRef<string | null>(null);
   const [matchBike, setMatchBike] = useState<Bike | null>(null);
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [whatIsOpen, setWhatIsOpen] = useState(true);
@@ -205,19 +224,21 @@ function HomePageContent() {
   }, []);
 
   /**
-   * Rebuild Home filtering for the active household rider: category mirrors their profile/eBike prefs,
-   * and switching riders clears text search, budget cap, and shortlist scope so results aren’t stuck on a child’s session.
+   * Home filters track the active household rider + their eBike / style intent. Switching riders performs a full
+   * dashboard reset (search text, budget, sort, personalised shortlist); returning to Home keeps prior manual filters
+   * until rider or riding intent changes (session-backed).
    */
   useEffect(() => {
     if (!hydrated || !profile || !activeRiderId) return;
 
-    const prev = prevHomeRiderFiltersRef.current;
-    const riderChanged = prev !== activeRiderId;
-    prevHomeRiderFiltersRef.current = activeRiderId;
+    const lastRider = sessionGet(HOME_LAST_RIDER_KEY);
+    const intentSig = `${activeRiderId}|${profile.preferEbike}|${profile.style}`;
+    const riderSwitched = lastRider != null && lastRider !== activeRiderId;
+    const firstVisit = lastRider === null;
 
     const cat = suggestedBikeCategory(profile) ?? null;
 
-    if (riderChanged) {
+    if (firstVisit || riderSwitched) {
       updateFilters({
         category: cat,
         query: "",
@@ -225,11 +246,18 @@ function HomePageContent() {
         sort: "bestMatch",
       });
       startTransition(() => setListScope("personalised"));
+      sessionSet(HOME_LAST_RIDER_KEY, activeRiderId);
+      sessionSet(HOME_LAST_INTENT_KEY, intentSig);
       return;
     }
 
-    updateFilters({ category: cat });
-  }, [hydrated, activeRiderId, profile.preferEbike, profile.style, updateFilters]);
+    sessionSet(HOME_LAST_RIDER_KEY, activeRiderId);
+    const prevIntent = sessionGet(HOME_LAST_INTENT_KEY);
+    if (prevIntent !== intentSig) {
+      sessionSet(HOME_LAST_INTENT_KEY, intentSig);
+      updateFilters({ category: cat });
+    }
+  }, [hydrated, activeRiderId, profile?.preferEbike, profile?.style, updateFilters]);
 
   const searchActive = Boolean(filters.query?.trim());
   const showMatchShortlist =
