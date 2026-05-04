@@ -6,6 +6,12 @@ import { fileURLToPath } from "node:url";
 const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 
 const nextConfig: NextConfig = {
+  /**
+   * Leaflet + react-leaflet can throw "Map container is being reused by another instance"
+   * under React StrictMode's dev-only double mount/unmount cycle.
+   * Disable strict mode to keep map lifecycle stable during local development.
+   */
+  reactStrictMode: false,
   turbopack: {
     root: projectRoot,
   },

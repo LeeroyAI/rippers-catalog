@@ -8,6 +8,13 @@ import { RiderContextBanner, RiderContextPicker } from "@/app/components/RiderSu
 import { householdAddRiderHref } from "@/src/lib/welcome-add-mode";
 import { groupTrailsForDisplay } from "@/app/trip/groupTrails";
 import type { TripShopPin, TripTrailLine } from "@/app/trip/TripMapInner";
+import {
+  appendTripToFile,
+  itineraryRecordFromStops,
+  parseSavedTripsFile,
+  savedTripsStorageKey,
+  type SavedTripPlaceV1,
+} from "@/src/domain/saved-trips";
 import { googleMapsDirectionsUrl, googleMapsSearchUrl, trailforksTrailsMapUrl } from "@/src/domain/map-links";
 import type { BicycleShopServices } from "@/src/domain/shop-profile-fit";
 import { describeShopServicesForRider, profileShopBoost } from "@/src/domain/shop-profile-fit";
@@ -49,7 +56,7 @@ type LoadLeg = "idle" | "loading" | "done" | "error";
 
 export default function TripMapExplorer() {
   const { profile, riders } = useRiderProfile();
-  const { trips: savedTrips, appendTrip, appendItineraryTrip } = useSavedTrips();
+  const { trips: savedTrips } = useSavedTrips();
   const [query, setQuery] = useState("");
   const [hits, setHits] = useState<GeocodeHit[]>([]);
   const [selectOpen, setSelectOpen] = useState(false);
@@ -70,12 +77,17 @@ export default function TripMapExplorer() {
   const [legShops, setLegShops] = useState<LoadLeg>("idle");
   const [legTrails, setLegTrails] = useState<LoadLeg>("idle");
   const [tripSavePaywallOpen, setTripSavePaywallOpen] = useState(false);
+  const [saveProfilePickerOpen, setSaveProfilePickerOpen] = useState(false);
+  const [saveTargetRiderId, setSaveTargetRiderId] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
   const mapFetchRef = useRef<AbortController | null>(null);
   /** After pickHit / geolocation, geocode must not reopen suggestions for the same query. */
   const committedQueryRef = useRef<string | null>(null);
+  const appendNextStopRef = useRef(false);
+  const itineraryRef = useRef<GeocodeHit[]>([]);
   const placeRef = useRef<GeocodeHit | null>(null);
   const geocodeGenRef = useRef(0);
 
@@ -88,6 +100,9 @@ export default function TripMapExplorer() {
   useEffect(() => {
     placeRef.current = place;
   }, [place]);
+  useEffect(() => {
+    itineraryRef.current = itinerary;
+  }, [itinerary]);
 
   /** Short label displayed in search after picking a hit (geo suggestions lock against this value). */
   function shortDestinationLabel(hit: GeocodeHit): string {
@@ -98,6 +113,31 @@ export default function TripMapExplorer() {
     const short = shortDestinationLabel(hit);
     committedQueryRef.current = short.toLowerCase();
     setQuery(short);
+  }
+
+  function focusSearchInput() {
+    searchInputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    searchInputRef.current?.focus();
+  }
+
+  function setAppendMode(next: boolean) {
+    appendNextStopRef.current = next;
+    setAppendNextStop(next);
+    if (next) {
+      // Entering add-stop mode should always start with a fresh query box.
+      geocodeGenRef.current += 1;
+      committedQueryRef.current = null;
+      setQuery("");
+      setHits([]);
+      setSelectOpen(false);
+      setLoadingPlaces(false);
+      return;
+    }
+    // Leaving add-stop mode: restore active-stop label in the search box.
+    const active = placeRef.current;
+    if (active) {
+      syncCommittedQuery(active);
+    }
   }
 
   const center: [number, number] = place ? [place.lat, place.lon] : DEFAULT_CENTER;
@@ -308,17 +348,19 @@ export default function TripMapExplorer() {
     let nextActive: number;
     const planner = isPremiumRidePlannerUnlocked();
 
-    if (appendNextStop && planner) {
-      nextLegs = [...itinerary, hit];
+    const currentLegs = itineraryRef.current;
+
+    if (appendNextStopRef.current && planner) {
+      nextLegs = [...currentLegs, hit];
       nextActive = nextLegs.length - 1;
-      setAppendNextStop(false);
+      setAppendMode(false);
       setNotice(null);
-    } else if (itinerary.length === 0) {
+    } else if (currentLegs.length === 0) {
       nextLegs = [hit];
       nextActive = 0;
       setNotice(null);
     } else {
-      nextLegs = itinerary.map((leg, idx) => (idx === activeStopIdx ? hit : leg));
+      nextLegs = currentLegs.map((leg, idx) => (idx === activeStopIdx ? hit : leg));
       nextActive = activeStopIdx;
       setNotice(null);
     }
@@ -346,10 +388,11 @@ export default function TripMapExplorer() {
 
         let nextLegs: GeocodeHit[];
         let nextActive: number;
-        if (appendNextStop && isPremiumRidePlannerUnlocked()) {
-          nextLegs = [...itinerary, me];
+        const currentLegs = itineraryRef.current;
+        if (appendNextStopRef.current && isPremiumRidePlannerUnlocked()) {
+          nextLegs = [...currentLegs, me];
           nextActive = nextLegs.length - 1;
-          setAppendNextStop(false);
+          setAppendMode(false);
         } else {
           nextLegs = [me];
           nextActive = 0;
@@ -398,7 +441,7 @@ export default function TripMapExplorer() {
       geocodeGenRef.current += 1;
       nextActive = 0;
       setQuery("");
-      setAppendNextStop(false);
+      setAppendMode(false);
     } else if (activeStopIdx === idx) {
       nextActive = Math.min(idx, next.length - 1);
     } else if (activeStopIdx > idx) {
@@ -427,32 +470,68 @@ export default function TripMapExplorer() {
     return parts.join(" → ");
   }
 
-  /** Premium: save legs as single record with `stops` when ≥ 2 destinations. */
-  function saveTripToDevice(): number | null {
-    if (!place) return null;
-    if (itinerary.length >= 2) {
-      const stops = itinerary.map((h): { label: string; lat: number; lon: number } => ({
-        label: h.label,
-        lat: h.lat,
-        lon: h.lon,
-      }));
-      const rec = appendItineraryTrip({
-        stops,
-        radiusKm,
-        trailCount: loadSummary?.trails,
-        shopCount: loadSummary?.shops,
-      });
-      if (!rec) return null;
-      return savedTrips.length + 1;
+  /** Save itinerary into a specific family rider profile's local trip store. */
+  function saveTripToRider(riderId: string): number | null {
+    if (typeof localStorage === "undefined" || !place) return null;
+    const key = savedTripsStorageKey(riderId);
+    const prev = parseSavedTripsFile(localStorage.getItem(key));
+    const payload =
+      itinerary.length >= 2
+        ? itineraryRecordFromStops(
+            itinerary.map(
+              (h): SavedTripPlaceV1 => ({
+                label: h.label,
+                lat: h.lat,
+                lon: h.lon,
+              })
+            ),
+            radiusKm,
+            loadSummary?.trails,
+            loadSummary?.shops
+          )
+        : {
+            place: { label: place.label, lat: place.lat, lon: place.lon },
+            radiusKm,
+            trailCount: loadSummary?.trails,
+            shopCount: loadSummary?.shops,
+          };
+    const next = appendTripToFile(prev, payload);
+    try {
+      localStorage.setItem(key, JSON.stringify(next));
+      return next.trips.length;
+    } catch {
+      return null;
     }
-    const rec = appendTrip({
-      place: { label: place.label, lat: place.lat, lon: place.lon },
-      radiusKm,
-      trailCount: loadSummary?.trails,
-      shopCount: loadSummary?.shops,
-    });
-    if (!rec) return null;
-    return savedTrips.length + 1;
+  }
+
+  function openSaveProfilePicker() {
+    if (riders.length === 0) {
+      setNotice("Create a family rider profile first, then save this trip.");
+      return;
+    }
+    setSaveTargetRiderId((prev) => prev ?? riders[0]?.id ?? null);
+    setSaveProfilePickerOpen(true);
+  }
+
+  function closeSaveProfilePicker() {
+    setSaveProfilePickerOpen(false);
+  }
+
+  function confirmSaveToProfile() {
+    const riderId = saveTargetRiderId;
+    if (!riderId) {
+      setNotice("Select a family rider profile to save this trip.");
+      return;
+    }
+    const riderName = riders.find((r) => r.id === riderId)?.nickname?.trim() || "selected rider";
+    const count = saveTripToRider(riderId);
+    if (count === null) {
+      setNotice("Couldn’t save — open a rider profile and try again.");
+      return;
+    }
+    const summary = itinerary.length >= 2 ? itineraryDraftTitle(itinerary) : place?.label ?? "trip";
+    setNotice(`Saved “${summary}” to ${riderName} (${count} trips on this device).`);
+    setSaveProfilePickerOpen(false);
   }
 
   const hasResults = rankedShops.length > 0 || trails.length > 0;
@@ -491,7 +570,7 @@ export default function TripMapExplorer() {
         ref={panelRef}
         className="absolute left-3 right-3 z-[1100] md:right-auto md:w-[min(400px,calc(100vw-1.5rem))] top-[calc(var(--r-shell-pad-top)+0.75rem)]"
       >
-        <div className="overflow-hidden rounded-2xl border border-[var(--r-border)] bg-white/98 shadow-[0_16px_48px_rgba(18,16,12,0.12)] ring-1 ring-black/[0.03] backdrop-blur-md">
+        <div className="max-h-[calc(100dvh-var(--r-shell-pad-top)-1.5rem)] overflow-y-auto overscroll-contain rounded-2xl border border-[var(--r-border)] bg-white/98 shadow-[0_16px_48px_rgba(18,16,12,0.12)] ring-1 ring-black/[0.03] backdrop-blur-md">
 
           {/* Search row */}
           <div className="relative flex gap-2.5 p-4 pb-4">
@@ -501,6 +580,7 @@ export default function TripMapExplorer() {
                 <path d="m21 21-4.35-4.35" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
               </svg>
               <input
+                ref={searchInputRef}
                 type="search"
                 value={query}
                 onChange={(e) => {
@@ -508,17 +588,21 @@ export default function TripMapExplorer() {
                   setQuery(v);
                   const t = v.trim();
                   if (!t) {
-                    setItinerary([]);
-                    setActiveStopIdx(0);
-                    setAppendNextStop(false);
+                    if (!appendNextStopRef.current) {
+                      setItinerary([]);
+                      setActiveStopIdx(0);
+                      setAppendMode(false);
+                    }
                     committedQueryRef.current = null;
                     return;
                   }
                   const locked = committedQueryRef.current;
                   if (locked != null && t.toLowerCase() !== locked.toLowerCase()) {
-                    setItinerary([]);
-                    setActiveStopIdx(0);
-                    setAppendNextStop(false);
+                    if (!appendNextStopRef.current) {
+                      setItinerary([]);
+                      setActiveStopIdx(0);
+                      setAppendMode(false);
+                    }
                     committedQueryRef.current = null;
                   }
                 }}
@@ -612,11 +696,34 @@ export default function TripMapExplorer() {
               <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                 <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--r-muted)]">Trip legs</p>
                 <div className="flex flex-wrap items-center gap-1.5">
+                  {itinerary.length >= 2 ? (
+                    <div className="mr-1 inline-flex rounded-full border border-[var(--r-border)] bg-neutral-50">
+                      <button
+                        type="button"
+                        onClick={() => selectStop(Math.max(0, activeStopIdx - 1))}
+                        disabled={activeStopIdx <= 0}
+                        className="rounded-l-full px-2.5 py-1 text-[10px] font-semibold text-[var(--r-muted)] disabled:opacity-35"
+                      >
+                        Prev
+                      </button>
+                      <span className="border-l border-r border-[var(--r-border)] px-2 py-1 text-[10px] font-bold text-[var(--foreground)]">
+                        {activeStopIdx + 1}/{itinerary.length}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => selectStop(Math.min(itinerary.length - 1, activeStopIdx + 1))}
+                        disabled={activeStopIdx >= itinerary.length - 1}
+                        className="rounded-r-full px-2.5 py-1 text-[10px] font-semibold text-[var(--r-muted)] disabled:opacity-35"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  ) : null}
                   {appendNextStop ? (
                     <button
                       type="button"
                       onClick={() => {
-                        setAppendNextStop(false);
+                        setAppendMode(false);
                         setNotice(null);
                       }}
                       className="rounded-full border border-[var(--r-border)] bg-white px-2.5 py-1 text-[10px] font-semibold text-[var(--r-muted)]"
@@ -628,8 +735,9 @@ export default function TripMapExplorer() {
                     type="button"
                     disabled={loadingMap}
                     onClick={() => {
-                      setAppendNextStop(true);
+                      setAppendMode(true);
                       setNotice("Search and pick the next stop — it is added as a new leg on your trip.");
+                      focusSearchInput();
                     }}
                     className="rounded-full border border-[var(--r-orange)]/45 bg-[rgba(229,71,26,0.06)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-[var(--r-orange)] disabled:opacity-40"
                   >
@@ -642,6 +750,15 @@ export default function TripMapExplorer() {
                   Waiting for next destination — suggestions below add another leg without replacing Stop {activeStopIdx + 1}
                   .
                 </p>
+              ) : null}
+              {appendNextStop ? (
+                <button
+                  type="button"
+                  onClick={focusSearchInput}
+                  className="mb-2 inline-flex items-center rounded-full border border-amber-300 bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-amber-900"
+                >
+                  Type next destination
+                </button>
               ) : null}
               <ol className="space-y-1.5" aria-label="Trip stops in visit order">
                 {itinerary.map((hit, idx) => {
@@ -705,10 +822,37 @@ export default function TripMapExplorer() {
                 })}
               </ol>
               {itinerary.length >= 2 ? (
-                <p className="mt-2 text-[10px] leading-relaxed text-[var(--r-muted)]">
-                  Dashed line on the map is straight-line order only — use it to eyeball driving days, not turn-by-turn
-                  routing.
-                </p>
+                <div className="mt-2 space-y-2">
+                  <p className="text-[10px] leading-relaxed text-[var(--r-muted)]">
+                    Dashed line on the map is straight-line order only — use it to eyeball driving days, not turn-by-turn
+                    routing.
+                  </p>
+                  <div className="rounded-xl border border-[var(--r-border)] bg-neutral-50/75 p-2.5">
+                    <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wide text-[var(--r-muted)]">
+                      Navigate legs
+                    </p>
+                    <div className="flex flex-col gap-1.5">
+                      {itinerary.slice(0, -1).map((from, idx) => {
+                        const to = itinerary[idx + 1];
+                        if (!to) return null;
+                        return (
+                          <a
+                            key={`${from.id}-${to.id}-${idx}`}
+                            href={`https://www.google.com/maps/dir/?api=1&origin=${from.lat.toFixed(6)},${from.lon.toFixed(6)}&destination=${to.lat.toFixed(6)},${to.lon.toFixed(6)}&travelmode=driving&dir_action=navigate`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-between rounded-lg border border-[var(--r-border)] bg-white px-2.5 py-2 text-[11px] font-semibold text-[#2563eb]"
+                          >
+                            <span className="truncate pr-2">
+                              Leg {idx + 1}: {shortDestinationLabel(from)} to {shortDestinationLabel(to)}
+                            </span>
+                            <span className="shrink-0">Go ↗</span>
+                          </a>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
               ) : null}
             </div>
           ) : null}
@@ -746,16 +890,7 @@ export default function TripMapExplorer() {
                     onClick={() => {
                       if (!place) return;
                       if (isPremiumTripSaveUnlocked()) {
-                        const n = saveTripToDevice();
-                        if (n !== null) {
-                          const summary =
-                            itinerary.length >= 2 ? itineraryDraftTitle(itinerary) : place.label;
-                          setNotice(
-                            `Saved “${summary}” on this device (${n} in your list). Export a backup from Profile when you want a copy.`
-                          );
-                        } else {
-                          setNotice("Couldn’t save — open a rider profile and try again.");
-                        }
+                        openSaveProfilePicker();
                       } else {
                         setTripSavePaywallOpen(true);
                       }
@@ -1151,6 +1286,64 @@ export default function TripMapExplorer() {
                 )}
               </ul>
             )}
+          </div>
+        </div>
+      )}
+
+      {saveProfilePickerOpen && (
+        <div
+          className="fixed inset-0 z-[4050] flex items-end justify-center bg-black/45 p-4 sm:items-center"
+          role="dialog"
+          aria-modal
+          aria-labelledby="trip-save-family-title"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeSaveProfilePicker();
+          }}
+        >
+          <div className="w-full max-w-md rounded-2xl border border-[var(--r-border)] bg-white p-5 shadow-2xl">
+            <p id="trip-save-family-title" className="text-[15px] font-bold text-[var(--foreground)]">
+              Save trip to family profile
+            </p>
+            <p className="mt-2 text-[13px] leading-relaxed text-[var(--r-muted)]">
+              Choose which rider profile should own this saved trip.
+            </p>
+            <div className="mt-3 space-y-2">
+              {riders.map((r) => (
+                <label
+                  key={r.id}
+                  className={`flex cursor-pointer items-center justify-between rounded-xl border px-3 py-2.5 ${
+                    saveTargetRiderId === r.id
+                      ? "border-[var(--r-orange)] bg-[rgba(229,71,26,0.06)]"
+                      : "border-[var(--r-border)] bg-white"
+                  }`}
+                >
+                  <span className="text-[13px] font-semibold text-[var(--foreground)]">{r.nickname || "Rider"}</span>
+                  <input
+                    type="radio"
+                    name="save-trip-rider"
+                    className="h-4 w-4 accent-[var(--r-orange)]"
+                    checked={saveTargetRiderId === r.id}
+                    onChange={() => setSaveTargetRiderId(r.id)}
+                  />
+                </label>
+              ))}
+            </div>
+            <div className="mt-5 flex flex-wrap justify-end gap-2">
+              <button
+                type="button"
+                className="rounded-xl border border-[var(--r-border)] bg-white px-4 py-2.5 text-[13px] font-semibold text-[var(--foreground)]"
+                onClick={closeSaveProfilePicker}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="rounded-xl bg-[var(--r-orange)] px-4 py-2.5 text-[13px] font-semibold text-white shadow-[0_4px_14px_rgba(229,71,26,0.35)]"
+                onClick={confirmSaveToProfile}
+              >
+                Save to profile
+              </button>
+            </div>
           </div>
         </div>
       )}
