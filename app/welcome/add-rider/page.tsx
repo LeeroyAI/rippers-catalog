@@ -6,6 +6,7 @@ import { useLayoutEffect, useMemo, useState } from "react";
 import RiderProfileForm from "@/app/components/RiderProfileForm";
 import { defaultRiderDraft } from "@/src/domain/rider-profile";
 import { parseRidersState, RIDERS_STORAGE_KEY } from "@/src/domain/riders-storage";
+import { enterAppAfterOnboarding } from "@/src/lib/enter-app-after-onboarding";
 import { safeInternalNextPath } from "@/src/lib/safe-next-path";
 import { useRiderProfile } from "@/src/state/rider-profile-context";
 
@@ -32,22 +33,19 @@ export default function AddHouseholdRiderPage() {
   );
 
   const { hydrated, riders, addRider } = useRiderProfile();
-  const [lsHasRiders, setLsHasRiders] = useState<boolean | null>(null);
 
   useLayoutEffect(() => {
+    if (!hydrated) return;
+    let hasInLs = false;
     try {
       const st = parseRidersState(localStorage.getItem(RIDERS_STORAGE_KEY));
-      setLsHasRiders(st != null && st.riders.length > 0);
+      hasInLs = st != null && st.riders.length > 0;
     } catch {
-      setLsHasRiders(false);
+      /* ignore */
     }
-  }, []);
-
-  useLayoutEffect(() => {
-    if (!hydrated || lsHasRiders === null) return;
-    if (riders.length > 0 || lsHasRiders) return;
+    if (riders.length > 0 || hasInLs) return;
     router.replace("/welcome");
-  }, [hydrated, lsHasRiders, riders.length, router]);
+  }, [hydrated, riders.length, router]);
 
   return (
     <div className="r-home-bg r-welcome-viewport">
@@ -55,7 +53,7 @@ export default function AddHouseholdRiderPage() {
         <button
           type="button"
           className="text-[13px] font-semibold text-[var(--r-orange)] underline-offset-4 hover:underline"
-          onClick={() => router.replace(afterSave)}
+          onClick={() => enterAppAfterOnboarding(afterSave)}
         >
           ← Back
         </button>
@@ -72,7 +70,7 @@ export default function AddHouseholdRiderPage() {
           includeOptionalCurrentBike
           onSubmit={(vals, initialBike, photo) => {
             addRider(vals, initialBike, photo);
-            router.replace(afterSave);
+            enterAppAfterOnboarding(afterSave);
           }}
         />
       </div>

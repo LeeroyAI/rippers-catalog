@@ -9,6 +9,7 @@ import RippersBackupImporter from "@/app/components/RippersBackupImporter";
 import RiderProfileForm from "@/app/components/RiderProfileForm";
 import { ridingStyleLabels } from "@/src/domain/riding-style";
 import { defaultRiderDraft } from "@/src/domain/rider-profile";
+import { enterAppAfterOnboarding } from "@/src/lib/enter-app-after-onboarding";
 import { safeInternalNextPath } from "@/src/lib/safe-next-path";
 import {
   clearAddHouseholdRiderNavigationIntent,
@@ -119,7 +120,7 @@ export default function WelcomeSetupPage() {
             <button
               type="button"
               className="rounded-lg px-2 py-1.5 text-[13px] font-semibold text-[var(--r-orange)] underline-offset-4 hover:underline"
-              onClick={() => router.replace(afterOnboarding)}
+              onClick={() => enterAppAfterOnboarding(afterOnboarding)}
             >
               Skip to app
             </button>
@@ -204,7 +205,7 @@ export default function WelcomeSetupPage() {
                 router.replace(householdAddRiderHref(afterOnboarding));
                 return;
               }
-              router.replace(afterOnboarding);
+              enterAppAfterOnboarding(afterOnboarding);
             }}
           />
         </div>
