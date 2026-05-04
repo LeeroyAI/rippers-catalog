@@ -62,11 +62,6 @@ export function loadRiderProfileFromStorage(raw: string | null): RiderProfileV1 
   }
 }
 
-/** Trailforks ride planner centres the web map at the given coordinates when opened. */
-export function trailforksPlannerUrl(lat: number, lng: number): string {
-  return `https://www.trailforks.com/ridelog/planner/?lat=${lat}&lng=${lng}`;
-}
-
 export function approximateFrameReachCm(heightCm: number): number {
   /* Very rough XS–XL midpoint for cockpit reach; sizing is brand-specific. */
   return Math.round((heightCm - 135) / 8) * 5 + 400;

@@ -9,8 +9,9 @@ import { catalog } from "@/src/data/catalog";
 import {
   type CurrentBikeEntry,
   readCurrentBikeForRider,
+  writeCurrentBikeForRider,
 } from "@/src/domain/current-bike-entry";
-import { CURRENT_BIKE_UPDATED_EVENT } from "@/src/lib/current-bike-events";
+import { CURRENT_BIKE_UPDATED_EVENT, notifyCurrentBikeUpdated } from "@/src/lib/current-bike-events";
 import { enrichCurrentBikeWithCatalog } from "@/src/lib/enrich-current-bike-catalog";
 import type { RiderRecord } from "@/src/domain/riders-storage";
 import { useRiderPhotoSnapshot } from "@/src/hooks/use-rider-photo-snapshot";
@@ -21,7 +22,13 @@ function useRiderCurrentBikeEntry(riderId: string): CurrentBikeEntry | null {
   const [entry, setEntry] = useState<CurrentBikeEntry | null>(null);
   useEffect(() => {
     function refresh() {
-      setEntry(enrichCurrentBikeWithCatalog(readCurrentBikeForRider(riderId)));
+      const raw = readCurrentBikeForRider(riderId);
+      const enriched = enrichCurrentBikeWithCatalog(raw);
+      if (enriched && JSON.stringify(enriched) !== JSON.stringify(raw)) {
+        writeCurrentBikeForRider(riderId, enriched);
+        notifyCurrentBikeUpdated();
+      }
+      setEntry(enriched);
     }
     refresh();
     window.addEventListener(CURRENT_BIKE_UPDATED_EVENT, refresh);

@@ -471,8 +471,9 @@ function HomePageContent() {
                             {`${ce.brand} ${ce.name}`.trim() || "Custom bike"}
                           </p>
                           <p className="max-w-[16rem] text-[11px] leading-snug text-white/45">
-                            Not linked to catalogue yet — pick a catalogue bike in Profile when you can so we show product
-                            photos and AU pricing here.
+                            We couldn&apos;t match this to a model in the AU catalogue snapshot — open Profile → Ride and
+                            pick from &quot;Search catalogue&quot; (or add the bike to the dataset) for product photos and
+                            specs here.
                           </p>
                         </div>
                       )}

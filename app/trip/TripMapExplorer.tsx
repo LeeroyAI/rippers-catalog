@@ -8,10 +8,9 @@ import { RiderContextBanner, RiderContextPicker } from "@/app/components/RiderSu
 import { householdAddRiderHref } from "@/src/lib/welcome-add-mode";
 import { groupTrailsForDisplay } from "@/app/trip/groupTrails";
 import type { TripShopPin, TripTrailLine } from "@/app/trip/TripMapInner";
-import { googleMapsSearchUrl } from "@/src/domain/map-links";
+import { googleMapsSearchUrl, trailforksTrailsMapUrl } from "@/src/domain/map-links";
 import type { BicycleShopServices } from "@/src/domain/shop-profile-fit";
 import { describeShopServicesForRider, profileShopBoost } from "@/src/domain/shop-profile-fit";
-import { trailforksPlannerUrl } from "@/src/domain/rider-profile";
 import { ridingStyleLabels } from "@/src/domain/riding-style";
 import { bboxFromCenter } from "@/src/domain/trip-bbox";
 import { isPremiumTripSaveUnlocked } from "@/src/lib/premium";
@@ -634,7 +633,10 @@ export default function TripMapExplorer() {
               </div>
               {place && (
                 <a
-                  href={trailforksPlannerUrl(place.lat, place.lon)}
+                  href={trailforksTrailsMapUrl(place.lat, place.lon, {
+                    zoom: 12,
+                    locationLabel: place.label,
+                  })}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex shrink-0 items-center justify-center gap-1.5 self-start rounded-xl border border-[var(--r-orange)]/40 bg-white px-3.5 py-2 text-[12px] font-semibold text-[var(--r-orange)] shadow-sm transition hover:bg-[rgba(229,71,26,0.06)] sm:self-auto"
@@ -753,7 +755,14 @@ export default function TripMapExplorer() {
                       {t.kmFromCenter.toFixed(1)} km
                     </span>
                     <div className="flex shrink-0 gap-1.5">
-                      <a href={trailforksPlannerUrl(t.centroidLat, t.centroidLon)} target="_blank" rel="noopener noreferrer"
+                      <a
+                        href={trailforksTrailsMapUrl(t.centroidLat, t.centroidLon, {
+                          zoom: 15,
+                          trailName: t.name,
+                          locationLabel: locationShort ?? undefined,
+                        })}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="rounded-full bg-[var(--r-orange-soft)] px-2.5 py-1 text-[10px] font-bold text-[var(--r-orange)] hover:brightness-95">
                         Trailforks
                       </a>

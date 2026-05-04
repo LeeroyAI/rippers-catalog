@@ -4,6 +4,7 @@ import { startTransition, useEffect, useMemo, useState } from "react";
 
 import { catalog } from "@/src/data/catalog";
 import type { CurrentBikeEntry } from "@/src/domain/current-bike-entry";
+import { enrichCurrentBikeWithCatalog } from "@/src/lib/enrich-current-bike-catalog";
 import {
   approximateFrameReachCm,
   suggestedBikeCategory,
@@ -114,13 +115,14 @@ export default function RiderProfileForm({
     const model = bikeModel.trim();
     const year = bikeYear.trim();
     if (!brand && !model) return null;
-    return {
+    const draft: CurrentBikeEntry = {
       type: "custom",
       name: model || brand,
       brand: brand || model,
       year,
       photo: null,
     };
+    return enrichCurrentBikeWithCatalog(draft);
   }
 
   function handleSubmit(e: React.FormEvent) {

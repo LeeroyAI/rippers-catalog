@@ -44,11 +44,62 @@ function brandAppearsInHaystack(hay: string, brandNorm: string): boolean {
 }
 
 /**
- * Last-resort match: user may type "Silverback Spyke 24" in one field, or brand+model split oddly.
- * Scores catalogue rows by brand word hit + model token overlap + year.
+ * Rim / junior size hints often appear in user free text (“Spyke 26”) but omit from catalogue model strings.
+ */
+function stripWheelSizes(s: string): string {
+  return norm(
+    s.replace(/\b(16|18|20|24|26|27\.5|29|650b|700c)\b/gi, " ")
+  );
+}
+
+/** Avoid matching very short queries like “trek” to random lines. */
+function querySpecificEnough(q: string): boolean {
+  if (q.length >= 9) return true;
+  if (q.includes(" ") && q.length >= 6) return true;
+  if (/\d/.test(q) && q.length >= 5) return true;
+  return q.length >= 7;
+}
+
+function lineMatchesHay(catalogFullLine: string, userHay: string): boolean {
+  const h = norm(userHay);
+  const lines = Array.from(new Set([norm(catalogFullLine), stripWheelSizes(norm(catalogFullLine))]));
+  const queries = Array.from(new Set([h, stripWheelSizes(h)]));
+
+  for (const ln of lines) {
+    if (ln.length < 6) continue;
+    for (const q of queries) {
+      if (!querySpecificEnough(q)) continue;
+      if (ln.includes(q)) return true;
+      if (q.includes(ln) && ln.length >= 8) return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * When free text nests cleanly inside one catalogue row (Profile “search catalogue” behaviour).
+ */
+function uniqueCatalogGeometryMatch(hay: string, year: number | null): Bike | undefined {
+  const nh = norm(hay);
+  if (!querySpecificEnough(nh)) return undefined;
+
+  const hits = catalog.filter((b) => lineMatchesHay(`${b.brand} ${b.model}`, hay));
+  if (hits.length === 0) return undefined;
+  if (hits.length === 1) return hits[0];
+  if (year != null) {
+    const yr = hits.filter((b) => b.year === year);
+    if (yr.length === 1) return yr[0];
+  }
+  return undefined;
+}
+
+/**
+ * Last-resort match: user may type brand+model awkwardly — score catalogue rows by brand + model overlap + year.
  */
 function findBestCatalogFromHaystack(hay: string, year: number | null): Bike | undefined {
   if (!hay.trim()) return undefined;
+
+  const hayVariants = Array.from(new Set([norm(hay), stripWheelSizes(hay)].filter(Boolean)));
 
   const scored: { bike: Bike; score: number }[] = [];
 
@@ -56,32 +107,40 @@ function findBestCatalogFromHaystack(hay: string, year: number | null): Bike | u
     const bb = norm(b.brand);
     const bm = norm(b.model);
     if (bb.length < 2) continue;
-    if (!brandAppearsInHaystack(hay, bb)) continue;
 
-    let score = 40;
-    if (hay.includes(bm) && bm.length >= 4) {
-      score += 80;
-    } else {
-      const want = significantModelTokens(bm);
-      if (want.length === 0) {
-        score += 10;
+    let bestScore = 0;
+
+    for (const hv of hayVariants) {
+      if (!brandAppearsInHaystack(hv, bb)) continue;
+
+      let score = 40;
+
+      if (hv.includes(bm) && bm.length >= 4) {
+        score += 80;
       } else {
-        let hits = 0;
-        for (const t of want) {
-          if (hay.includes(t)) hits++;
+        const want = significantModelTokens(bm);
+        if (want.length === 0) {
+          score += 10;
+        } else {
+          let hits = 0;
+          for (const t of want) {
+            if (hv.includes(t)) hits++;
+          }
+          const need = Math.min(want.length, Math.max(2, Math.ceil(want.length * 0.6)));
+          if (hits < need) continue;
+          score += 30 + hits * 8;
         }
-        const need = Math.min(want.length, Math.max(2, Math.ceil(want.length * 0.6)));
-        if (hits < need) continue;
-        score += 30 + hits * 8;
       }
+
+      if (year != null) {
+        if (b.year === year) score += 35;
+        else if (Math.abs(b.year - year) === 1) score += 12;
+      }
+
+      if (score > bestScore) bestScore = score;
     }
 
-    if (year != null) {
-      if (b.year === year) score += 35;
-      else if (Math.abs(b.year - year) === 1) score += 12;
-    }
-
-    scored.push({ bike: b, score });
+    if (bestScore > 0) scored.push({ bike: b, score: bestScore });
   }
 
   if (scored.length === 0) return undefined;
@@ -89,7 +148,8 @@ function findBestCatalogFromHaystack(hay: string, year: number | null): Bike | u
   const best = scored[0]!;
   if (scored.length === 1) return best.bike;
   const second = scored[1]!;
-  if (best.score >= second.score + 18) return best.bike;
+  const margin = best.score >= 120 ? 14 : 18;
+  if (best.score >= second.score + margin) return best.bike;
   return undefined;
 }
 
@@ -124,6 +184,9 @@ export function enrichCurrentBikeWithCatalog(entry: CurrentBikeEntry | null): Cu
   const exact = catalog.find((b) => norm(b.brand) === brand && norm(b.model) === model);
   if (exact) return toCatalogEntry(exact);
 
+  const geo = uniqueCatalogGeometryMatch(hay, year);
+  if (geo) return toCatalogEntry(geo);
+
   if (brand) {
     const sameBrand = catalog.filter((b) => norm(b.brand) === brand);
     if (!model) {
@@ -133,10 +196,15 @@ export function enrichCurrentBikeWithCatalog(entry: CurrentBikeEntry | null): Cu
       }
     } else {
       const tokens = model.split(" ").filter((w) => w.length > 1);
+      const modelStripped = stripWheelSizes(model);
       let narrowed = sameBrand.filter((b) => {
         const bm = norm(b.model);
-        if (bm === model) return true;
+        const bmStripped = stripWheelSizes(bm);
+        if (bm === model || bm === modelStripped || modelStripped === bm || modelStripped === bmStripped)
+          return true;
         if (bm.includes(model) || model.includes(bm)) return true;
+        if (modelStripped.length >= 4 && (bm.includes(modelStripped) || bmStripped.includes(modelStripped)))
+          return true;
         return tokens.length > 0 && tokens.every((t) => bm.includes(t));
       });
 

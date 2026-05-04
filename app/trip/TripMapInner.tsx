@@ -11,8 +11,7 @@ import {
   useMap,
 } from "react-leaflet";
 
-import { appleMapsUrl, googleMapsSearchUrl } from "@/src/domain/map-links";
-import { trailforksPlannerUrl } from "@/src/domain/rider-profile";
+import { appleMapsUrl, googleMapsSearchUrl, trailforksTrailsMapUrl } from "@/src/domain/map-links";
 
 import "leaflet/dist/leaflet.css";
 
@@ -189,7 +188,10 @@ export default function TripMapInner({
                 names and closures).
               </p>
               <a
-                href={trailforksPlannerUrl(trail.centroidLat, trail.centroidLon)}
+                href={trailforksTrailsMapUrl(trail.centroidLat, trail.centroidLon, {
+                  zoom: 15,
+                  trailName: trail.name,
+                })}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="mt-2 inline-block font-semibold text-[#E5470A] underline underline-offset-2"
@@ -197,8 +199,8 @@ export default function TripMapInner({
                 Jump to Trailforks map
               </a>
               <span className="mt-2 block text-[10px] text-neutral-700">
-                Trailforks opens ride planner centred on this polyline midpoint so you see official MTB
-                trails layered there.
+                Opens Trailforks’ trail map centred here (with the name in search when supported) so official MTB
+                layers appear in context.
               </span>
             </div>
           </Popup>
