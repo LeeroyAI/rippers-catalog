@@ -84,6 +84,17 @@ function specsLookDecent(specs: BikeSpecsLookup | null): boolean {
   return Boolean(specs.category && (specs.wheel || specs.travel || specs.suspension));
 }
 
+/** Loosest bar: Haiku sometimes returns usable rows at very low numeric confidence. */
+function specsLookInformative(specs: BikeSpecsLookup | null): boolean {
+  if (!specs) return false;
+  const desc = (specs.description ?? "").trim();
+  if (desc.length >= 28) return true;
+  const facets = [specs.category, specs.wheel, specs.travel, specs.suspension].filter(
+    (s) => typeof s === "string" && s.trim().length >= 2
+  );
+  return facets.length >= 2;
+}
+
 function mergeLookupOk(entry: CurrentBikeEntry, data: LookupApiOk, keyHash: string): CurrentBikeEntry {
   if (entry.type !== "custom") return entry;
   const specs = sanitizeSpecs(data.specs);
@@ -95,7 +106,8 @@ function mergeLookupOk(entry: CurrentBikeEntry, data: LookupApiOk, keyHash: stri
     hasImage ||
     (hasSpecs && confidence >= 0.32) ||
     (hasSpecs && specsLookSubstantial(specs) && confidence >= 0.22) ||
-    (hasSpecs && specsLookDecent(specs) && confidence >= 0.17);
+    (hasSpecs && specsLookDecent(specs) && confidence >= 0.17) ||
+    (hasSpecs && specsLookInformative(specs) && confidence >= 0.1);
 
   const lookup: CustomBikeWebLookup = usable
     ? {
@@ -233,14 +245,21 @@ export function retryStaleWebBikeLookupIfNeeded(storageKey: string): void {
   }
 }
 
-const failedAutoRetryKeys = new Set<string>();
+const failedAutoThrottle = new Map<string, number>();
 
-/** One retry per browser session after backend/merge fixes (avoid hammering `/api/bike-lookup`). */
+const FAILED_LOOKUP_AUTO_RETRY_GAP_MS = 75_000;
+
+/**
+ * Re-run failed lookups on a cooldown. After fixing API keys or deploying lookup fixes, users aren’t stuck for the whole tab session.
+ */
 export function retryFailedWebBikeLookupOnce(storageKey: string): void {
-  if (!storageKey || failedAutoRetryKeys.has(storageKey)) return;
+  if (!storageKey) return;
+  const now = Date.now();
+  const prev = failedAutoThrottle.get(storageKey) ?? 0;
+  if (now - prev < FAILED_LOOKUP_AUTO_RETRY_GAP_MS) return;
   const entry = readEntry(storageKey);
   if (!entry || entry.type !== "custom") return;
   if (entry.lookup?.status !== "failed") return;
-  failedAutoRetryKeys.add(storageKey);
+  failedAutoThrottle.set(storageKey, now);
   startWebBikeLookupForEntry(storageKey, entry);
 }

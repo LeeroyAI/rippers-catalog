@@ -147,6 +147,7 @@ async function extractWithClaude(snippets: BraveSnippet[], brand: string, model:
     "- If you genuinely cannot infer the bike line at all (unknown brand/word salad), keep confidence ≤0.3 and omit specs/image.",
     "- If you recognize a real AU-sold range (kids/junior, entry hardtails, supermarket-adjacent MTB families), fill specs from knowledge even when snippets are thin — typical confidence 0.38–0.72; omit imageUrl/sourceUrl only when URLs are not credible.",
     '- Silverback "Spyke" (sometimes misspelled Spike) is a real junior/entry MTB line from Silverback often sold in AU/NZ retailers — recognize it whenever brand+model tokens match.',
+    "- If specs.category AND specs.description are non-empty strings describing a plausible real product family, confidence MUST be ≥ 0.42 unless snippets clearly contradict.",
     "- imageUrl must be https (convert http thumbnails to https when the same host supports TLS) and look like a real image file or CDN path when present.",
     snippets.length === 0
       ? "- With no snippets, keep imageUrl and sourceUrl null (do not guess retailer CDNs)."
@@ -214,6 +215,37 @@ function withBraveThumbnailFallback(snippets: BraveSnippet[], extracted: LookupO
   return { ...extracted, imageUrl, confidence };
 }
 
+/** Haiku often returns confidence≈0.12–0.25 with a usable spec block — lift so client + UI agree it’s actionable. */
+function boostConfidenceWhenSpecsDense(body: LookupOk): LookupOk {
+  const sp = body.specs;
+  if (!sp || typeof sp !== "object") return body;
+
+  let filled = 0;
+  const keys = [
+    "category",
+    "travel",
+    "wheel",
+    "suspension",
+    "frame",
+    "drivetrain",
+    "fork",
+    "shock",
+    "weight",
+    "brakes",
+    "description",
+  ] as const;
+  for (const k of keys) {
+    const v = sp[k];
+    if (typeof v === "string" && v.trim().length >= 2) filled++;
+  }
+
+  const desc = typeof sp.description === "string" ? sp.description.trim() : "";
+  let c = body.confidence;
+  if (filled >= 3 && c < 0.38) c = Math.max(c, 0.38);
+  if (filled >= 2 && desc.length >= 40 && c < 0.4) c = Math.max(c, 0.4);
+  return c === body.confidence ? body : { ...body, confidence: c };
+}
+
 function cacheKey(brand: string, model: string, year: string): string {
   return `${brand.trim().toLowerCase()}|${model.trim().toLowerCase()}|${year.trim().toLowerCase()}`;
 }
@@ -237,7 +269,7 @@ export async function POST(req: NextRequest) {
   const braveKey = Boolean(process.env.BRAVE_SEARCH_API_KEY?.trim());
 
   // Bump when fallback / extraction shape changes so in-memory TTL doesn’t serve stale empty images across deploys.
-  const key = `${cacheKey(brand, model, year)}|v6-au-${braveKey ? "brave" : "nobrave"}`;
+  const key = `${cacheKey(brand, model, year)}|v7-au-${braveKey ? "brave" : "nobrave"}`;
   const hit = memoryCache.get(key);
   if (hit && Date.now() - hit.at < CACHE_MS) {
     return NextResponse.json(hit.body, {
@@ -259,7 +291,14 @@ export async function POST(req: NextRequest) {
     const q4 = [`"${brand}"`, model, year, "mountain bike AU product image"].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
 
     const [r1, r2, r3, r4] = await Promise.all([braveSearch(q1), braveSearch(q2), braveSearch(q3), braveSearch(q4)]);
-    const snippets = mergeSnippets(mergeSnippets(mergeSnippets(r1, r2, 24), r3, 28), r4, 34);
+    let snippets = mergeSnippets(mergeSnippets(mergeSnippets(r1, r2, 24), r3, 28), r4, 34);
+
+    /** Retail sites often spell “Spyke” as “Spike”; extra query improves thumbs + grounding. */
+    const hay = `${brand} ${model}`.toLowerCase();
+    if (hay.includes("silverback") && /spyke|spike/.test(hay)) {
+      const r5 = await braveSearch(`${brand} Spike ${year} kids MTB Australia shop`.trim());
+      snippets = mergeSnippets(snippets, r5, 42);
+    }
 
     if (!process.env.ANTHROPIC_API_KEY?.trim()) {
       return NextResponse.json(
@@ -271,7 +310,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const extracted = withBraveThumbnailFallback(snippets, await extractWithClaude(snippets, brand, model, year));
+    let extracted = withBraveThumbnailFallback(snippets, await extractWithClaude(snippets, brand, model, year));
+    extracted = boostConfidenceWhenSpecsDense(extracted);
     memoryCache.set(key, { at: Date.now(), body: extracted });
 
     return NextResponse.json(extracted, {
