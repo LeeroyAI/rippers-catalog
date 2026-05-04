@@ -8,12 +8,12 @@ import { RiderContextBanner, RiderContextPicker } from "@/app/components/RiderSu
 import { householdAddRiderHref } from "@/src/lib/welcome-add-mode";
 import { groupTrailsForDisplay } from "@/app/trip/groupTrails";
 import type { TripShopPin, TripTrailLine } from "@/app/trip/TripMapInner";
-import { googleMapsSearchUrl, trailforksTrailsMapUrl } from "@/src/domain/map-links";
+import { googleMapsDirectionsUrl, googleMapsSearchUrl, trailforksTrailsMapUrl } from "@/src/domain/map-links";
 import type { BicycleShopServices } from "@/src/domain/shop-profile-fit";
 import { describeShopServicesForRider, profileShopBoost } from "@/src/domain/shop-profile-fit";
 import { ridingStyleLabels } from "@/src/domain/riding-style";
 import { bboxFromCenter } from "@/src/domain/trip-bbox";
-import { isPremiumTripSaveUnlocked } from "@/src/lib/premium";
+import { isPremiumRidePlannerUnlocked, isPremiumTripSaveUnlocked } from "@/src/lib/premium";
 import { useRiderProfile } from "@/src/state/rider-profile-context";
 import { useSavedTrips } from "@/src/state/saved-trips-store";
 
@@ -49,11 +49,14 @@ type LoadLeg = "idle" | "loading" | "done" | "error";
 
 export default function TripMapExplorer() {
   const { profile, riders } = useRiderProfile();
-  const { trips: savedTrips, appendTrip } = useSavedTrips();
+  const { trips: savedTrips, appendTrip, appendItineraryTrip } = useSavedTrips();
   const [query, setQuery] = useState("");
   const [hits, setHits] = useState<GeocodeHit[]>([]);
   const [selectOpen, setSelectOpen] = useState(false);
-  const [place, setPlace] = useState<GeocodeHit | null>(null);
+  /** Ordered legs; trails/shops load for active stop (`activeStopIdx`). */
+  const [itinerary, setItinerary] = useState<GeocodeHit[]>([]);
+  const [activeStopIdx, setActiveStopIdx] = useState(0);
+  const [appendNextStop, setAppendNextStop] = useState(false);
   const [radiusKm, setRadiusKm] = useState(12);
   const [shops, setShops] = useState<TripShopPin[]>([]);
   const [trails, setTrails] = useState<TripTrailLine[]>([]);
@@ -67,6 +70,7 @@ export default function TripMapExplorer() {
   const [legShops, setLegShops] = useState<LoadLeg>("idle");
   const [legTrails, setLegTrails] = useState<LoadLeg>("idle");
   const [tripSavePaywallOpen, setTripSavePaywallOpen] = useState(false);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const mapFetchRef = useRef<AbortController | null>(null);
@@ -74,12 +78,44 @@ export default function TripMapExplorer() {
   const committedQueryRef = useRef<string | null>(null);
   const placeRef = useRef<GeocodeHit | null>(null);
   const geocodeGenRef = useRef(0);
+
+  const place = useMemo(() => {
+    if (itinerary.length === 0) return null;
+    const idx = Math.min(Math.max(activeStopIdx, 0), itinerary.length - 1);
+    return itinerary[idx] ?? null;
+  }, [itinerary, activeStopIdx]);
+
   useEffect(() => {
     placeRef.current = place;
   }, [place]);
 
+  /** Short label displayed in search after picking a hit (geo suggestions lock against this value). */
+  function shortDestinationLabel(hit: GeocodeHit): string {
+    return hit.label.split(",").slice(0, 2).join(",").trim();
+  }
+
+  function syncCommittedQuery(hit: GeocodeHit) {
+    const short = shortDestinationLabel(hit);
+    committedQueryRef.current = short.toLowerCase();
+    setQuery(short);
+  }
+
   const center: [number, number] = place ? [place.lat, place.lon] : DEFAULT_CENTER;
-  const zoom = place ? 13 : DEFAULT_ZOOM;
+  const zoom = place ? (itinerary.length >= 2 ? 11 : 13) : DEFAULT_ZOOM;
+
+  const itineraryPins =
+    itinerary.length >= 2
+      ? itinerary.map((h, i) => ({
+          seq: i + 1,
+          lat: h.lat,
+          lon: h.lon,
+          label: h.label,
+          isActive: i === activeStopIdx,
+        }))
+      : undefined;
+
+  const itineraryRouteCoords =
+    itinerary.length >= 2 ? itinerary.map((h): [number, number] => [h.lat, h.lon]) : undefined;
 
   const rankedShops = useMemo(() => {
     const copy = [...shops];
@@ -265,31 +301,158 @@ export default function TripMapExplorer() {
   }, [place, loadFeatures]);
 
   function pickHit(hit: GeocodeHit) {
-    const short = hit.label.split(",").slice(0, 2).join(",").trim();
-    committedQueryRef.current = short.toLowerCase();
     geocodeGenRef.current += 1;
     setLoadingPlaces(false);
-    setPlace(hit);
-    setQuery(short);
+
+    let nextLegs: GeocodeHit[];
+    let nextActive: number;
+    const planner = isPremiumRidePlannerUnlocked();
+
+    if (appendNextStop && planner) {
+      nextLegs = [...itinerary, hit];
+      nextActive = nextLegs.length - 1;
+      setAppendNextStop(false);
+      setNotice(null);
+    } else if (itinerary.length === 0) {
+      nextLegs = [hit];
+      nextActive = 0;
+      setNotice(null);
+    } else {
+      nextLegs = itinerary.map((leg, idx) => (idx === activeStopIdx ? hit : leg));
+      nextActive = activeStopIdx;
+      setNotice(null);
+    }
+
+    setItinerary(nextLegs);
+    setActiveStopIdx(nextActive);
+    syncCommittedQuery(nextLegs[nextActive] ?? hit);
+
     setHits([]);
     setSelectOpen(false);
   }
 
   function useMyLocation() {
-    if (!navigator.geolocation) { setNotice("Geolocation not supported in this browser."); return; }
+    if (!navigator.geolocation) {
+      setNotice("Geolocation not supported in this browser.");
+      return;
+    }
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const { latitude: lat, longitude: lon } = pos.coords;
-        committedQueryRef.current = "my location";
+        const me: GeocodeHit = { id: `me-${lat}-${lon}`, lat, lon, label: "My location" };
+        setUserLocation({ lat, lon });
         geocodeGenRef.current += 1;
         setLoadingPlaces(false);
-        setPlace({ id: `me-${lat}-${lon}`, lat, lon, label: "My location" });
+
+        let nextLegs: GeocodeHit[];
+        let nextActive: number;
+        if (appendNextStop && isPremiumRidePlannerUnlocked()) {
+          nextLegs = [...itinerary, me];
+          nextActive = nextLegs.length - 1;
+          setAppendNextStop(false);
+        } else {
+          nextLegs = [me];
+          nextActive = 0;
+        }
+        committedQueryRef.current = "my location";
+        setItinerary(nextLegs);
+        setActiveStopIdx(nextActive);
         setQuery("My location");
         setNotice(null);
       },
       () => setNotice("Location denied — search a suburb instead."),
       { enableHighAccuracy: true, maximumAge: 60_000, timeout: 20_000 }
     );
+  }
+
+  function selectStop(i: number) {
+    if (!itinerary[i]) return;
+    geocodeGenRef.current += 1;
+    setActiveStopIdx(i);
+    syncCommittedQuery(itinerary[i]!);
+    setHits([]);
+    setSelectOpen(false);
+    setNotice(null);
+  }
+
+  function moveStop(idx: number, dir: -1 | 1) {
+    const j = idx + dir;
+    if (j < 0 || j >= itinerary.length) return;
+    setItinerary((prev) => {
+      const next = [...prev];
+      [next[idx], next[j]] = [next[j]!, next[idx]!];
+      return next;
+    });
+    setActiveStopIdx((a) => {
+      if (a === idx) return j;
+      if (a === j) return idx;
+      return a;
+    });
+  }
+
+  function removeStop(idx: number) {
+    const next = itinerary.filter((_, leg) => leg !== idx);
+    let nextActive = activeStopIdx;
+    if (next.length === 0) {
+      committedQueryRef.current = null;
+      geocodeGenRef.current += 1;
+      nextActive = 0;
+      setQuery("");
+      setAppendNextStop(false);
+    } else if (activeStopIdx === idx) {
+      nextActive = Math.min(idx, next.length - 1);
+    } else if (activeStopIdx > idx) {
+      nextActive = activeStopIdx - 1;
+    }
+    setItinerary(next);
+    setActiveStopIdx(Math.max(0, nextActive));
+
+    const focus = next[Math.min(Math.max(nextActive, 0), Math.max(next.length - 1, 0))];
+    if (focus) {
+      syncCommittedQuery(focus);
+    }
+    geocodeGenRef.current += 1;
+    setHits([]);
+    setSelectOpen(false);
+  }
+
+  /** Join short place names for itinerary save confirmations. */
+  function itineraryDraftTitle(legs: GeocodeHit[]): string {
+    const parts = legs.map((h) =>
+      h.label
+        .split(",")
+        .slice(0, 1)[0]
+        ?.trim() || h.label.trim()
+    );
+    return parts.join(" → ");
+  }
+
+  /** Premium: save legs as single record with `stops` when ≥ 2 destinations. */
+  function saveTripToDevice(): number | null {
+    if (!place) return null;
+    if (itinerary.length >= 2) {
+      const stops = itinerary.map((h): { label: string; lat: number; lon: number } => ({
+        label: h.label,
+        lat: h.lat,
+        lon: h.lon,
+      }));
+      const rec = appendItineraryTrip({
+        stops,
+        radiusKm,
+        trailCount: loadSummary?.trails,
+        shopCount: loadSummary?.shops,
+      });
+      if (!rec) return null;
+      return savedTrips.length + 1;
+    }
+    const rec = appendTrip({
+      place: { label: place.label, lat: place.lat, lon: place.lon },
+      radiusKm,
+      trailCount: loadSummary?.trails,
+      shopCount: loadSummary?.shops,
+    });
+    if (!rec) return null;
+    return savedTrips.length + 1;
   }
 
   const hasResults = rankedShops.length > 0 || trails.length > 0;
@@ -307,8 +470,19 @@ export default function TripMapExplorer() {
 
       {/* Map */}
       <div className="absolute inset-x-0 bottom-0 top-[var(--r-shell-pad-top)] z-0">
-        <TripMapInner center={center} zoom={zoom} shops={rankedShops} trails={trails}
-          focusLabel={place?.label ?? "Sydney preview — search anywhere in AU to reposition"}
+        <TripMapInner
+          center={center}
+          zoom={zoom}
+          shops={rankedShops}
+          trails={trails}
+          userLocation={userLocation}
+          focusLabel={
+            itinerary.length >= 2 && place
+              ? `Itinerary — ${shortDestinationLabel(place)} (${activeStopIdx + 1} of ${itinerary.length})`
+              : (place?.label ?? "Sydney preview — search anywhere in AU to reposition")
+          }
+          itineraryPins={itineraryPins}
+          itineraryRoute={itineraryRouteCoords}
         />
       </div>
 
@@ -334,13 +508,17 @@ export default function TripMapExplorer() {
                   setQuery(v);
                   const t = v.trim();
                   if (!t) {
-                    setPlace(null);
+                    setItinerary([]);
+                    setActiveStopIdx(0);
+                    setAppendNextStop(false);
                     committedQueryRef.current = null;
                     return;
                   }
                   const locked = committedQueryRef.current;
                   if (locked != null && t.toLowerCase() !== locked.toLowerCase()) {
-                    setPlace(null);
+                    setItinerary([]);
+                    setActiveStopIdx(0);
+                    setAppendNextStop(false);
                     committedQueryRef.current = null;
                   }
                 }}
@@ -404,6 +582,137 @@ export default function TripMapExplorer() {
             </div>
           ) : null}
 
+          {place && !isPremiumRidePlannerUnlocked() ? (
+            <div className="border-t border-[var(--r-border)] bg-gradient-to-r from-amber-50/80 to-white px-4 py-3 sm:px-5">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-amber-900/90">Multi-stop trip planner</p>
+              <p className="mt-1 text-[12px] leading-snug text-[var(--r-muted)]">
+                Premium adds Google Maps–style legs: stack towns or trail heads, then load trails, hire, and bike shops for
+                each stop in one flow.
+              </p>
+              <button
+                type="button"
+                onClick={() => setTripSavePaywallOpen(true)}
+                className="mt-2.5 inline-flex items-center gap-1.5 rounded-full border border-amber-200/90 bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-amber-950 shadow-sm"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="text-amber-700" aria-hidden>
+                  <path
+                    d="M7 11V7a5 5 0 0 1 10 0v4M6 11h12v10H6V11Z"
+                    stroke="currentColor"
+                    strokeWidth="1.75"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                Premium — trip planner
+              </button>
+            </div>
+          ) : null}
+
+          {place && isPremiumRidePlannerUnlocked() ? (
+            <div className="border-t border-[var(--r-border)] px-4 py-3 sm:px-5">
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--r-muted)]">Trip legs</p>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {appendNextStop ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAppendNextStop(false);
+                        setNotice(null);
+                      }}
+                      className="rounded-full border border-[var(--r-border)] bg-white px-2.5 py-1 text-[10px] font-semibold text-[var(--r-muted)]"
+                    >
+                      Cancel add
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    disabled={loadingMap}
+                    onClick={() => {
+                      setAppendNextStop(true);
+                      setNotice("Search and pick the next stop — it is added as a new leg on your trip.");
+                    }}
+                    className="rounded-full border border-[var(--r-orange)]/45 bg-[rgba(229,71,26,0.06)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-[var(--r-orange)] disabled:opacity-40"
+                  >
+                    Add stop
+                  </button>
+                </div>
+              </div>
+              {appendNextStop ? (
+                <p className="mb-2 rounded-xl border border-amber-200/80 bg-amber-50/90 px-2.5 py-2 text-[11px] leading-snug text-amber-950">
+                  Waiting for next destination — suggestions below add another leg without replacing Stop {activeStopIdx + 1}
+                  .
+                </p>
+              ) : null}
+              <ol className="space-y-1.5" aria-label="Trip stops in visit order">
+                {itinerary.map((hit, idx) => {
+                  const brief = shortDestinationLabel(hit);
+                  const active = idx === activeStopIdx;
+                  return (
+                    <li key={`${hit.id}-${idx}-${hit.lat}`}>
+                      <div className={`flex gap-1.5 rounded-xl border px-2 py-2 ${active ? "border-[var(--r-orange)]/55 bg-[rgba(229,71,26,0.05)] shadow-[inset_0_0_0_1px_rgba(229,71,26,0.08)]" : "border-[var(--r-border)] bg-neutral-50/60"}`}>
+                        <button
+                          type="button"
+                          className="min-w-0 flex-1 text-left"
+                          onClick={() => selectStop(idx)}
+                          aria-current={active ? "step" : undefined}
+                        >
+                          <span className="inline-flex items-baseline gap-1.5">
+                            <span className="tabular-nums text-[12px] font-black text-[var(--r-orange)]">{idx + 1}.</span>
+                            <span className={`truncate text-[12px] font-semibold ${active ? "text-[var(--foreground)]" : "text-[var(--r-muted)]"}`}>
+                              {brief}
+                            </span>
+                          </span>
+                          {active ? (
+                            <span className="mt-0.5 block text-[10px] font-medium text-[var(--r-orange)]">Active — map and lists</span>
+                          ) : (
+                            <span className="mt-0.5 block text-[10px] text-[var(--r-muted)]">Tap to plan this stop</span>
+                          )}
+                        </button>
+                        <div className="flex shrink-0 flex-col gap-0.5">
+                          <button
+                            type="button"
+                            title="Move up"
+                            aria-label={`Move ${brief} up`}
+                            disabled={idx === 0}
+                            onClick={() => moveStop(idx, -1)}
+                            className="flex h-7 w-7 items-center justify-center rounded-lg border border-[var(--r-border)] bg-white text-[11px] font-bold text-[var(--r-muted)] disabled:opacity-30"
+                          >
+                            ↑
+                          </button>
+                          <button
+                            type="button"
+                            title="Move down"
+                            aria-label={`Move ${brief} down`}
+                            disabled={idx === itinerary.length - 1}
+                            onClick={() => moveStop(idx, 1)}
+                            className="flex h-7 w-7 items-center justify-center rounded-lg border border-[var(--r-border)] bg-white text-[11px] font-bold text-[var(--r-muted)] disabled:opacity-30"
+                          >
+                            ↓
+                          </button>
+                          <button
+                            type="button"
+                            title="Remove stop"
+                            aria-label={`Remove ${brief} from trip`}
+                            onClick={() => removeStop(idx)}
+                            className="flex h-7 w-7 items-center justify-center rounded-lg border border-red-200 bg-white text-[11px] font-bold text-red-600"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ol>
+              {itinerary.length >= 2 ? (
+                <p className="mt-2 text-[10px] leading-relaxed text-[var(--r-muted)]">
+                  Dashed line on the map is straight-line order only — use it to eyeball driving days, not turn-by-turn
+                  routing.
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+
           {/* Radius pills */}
           <div className="flex flex-wrap items-center gap-2 border-t border-[var(--r-border)] px-4 py-3">
             <span className="shrink-0 text-[11px] font-bold uppercase tracking-wide text-[var(--r-muted)]">Radius</span>
@@ -437,16 +746,12 @@ export default function TripMapExplorer() {
                     onClick={() => {
                       if (!place) return;
                       if (isPremiumTripSaveUnlocked()) {
-                        const rec = appendTrip({
-                          place: { label: place.label, lat: place.lat, lon: place.lon },
-                          radiusKm,
-                          trailCount: loadSummary?.trails,
-                          shopCount: loadSummary?.shops,
-                        });
-                        if (rec) {
-                          const n = savedTrips.length + 1;
+                        const n = saveTripToDevice();
+                        if (n !== null) {
+                          const summary =
+                            itinerary.length >= 2 ? itineraryDraftTitle(itinerary) : place.label;
                           setNotice(
-                            `Saved “${place.label}” on this device (${n} in your list). Export a backup from Profile when you want a copy.`
+                            `Saved “${summary}” on this device (${n} in your list). Export a backup from Profile when you want a copy.`
                           );
                         } else {
                           setNotice("Couldn’t save — open a rider profile and try again.");
@@ -781,7 +1086,13 @@ export default function TripMapExplorer() {
               <ul className="divide-y divide-[var(--r-border)]">
                 {rankedShops.map((s) => {
                   const svc = describeShopServicesForRider(profile, shopServices(s));
-                  const websiteHref = s.website ? (s.website.startsWith("http") ? s.website : `https://${s.website}`) : null;
+                  const websiteHref = s.website
+                    ? s.website.startsWith("http")
+                      ? s.website
+                      : `https://${s.website}`
+                    : googleMapsSearchUrl(s.lat, s.lon, s.name);
+                  const phone = s.phone?.trim() || "Phone not listed";
+                  const hours = s.openingHours?.trim() || "Hours not listed";
                   return (
                     <li key={s.id} className="px-4 py-3.5 hover:bg-neutral-50">
                       <div className="flex items-start gap-3">
@@ -803,19 +1114,29 @@ export default function TripMapExplorer() {
                             )}
                           </div>
                           {svc && <p className="mt-0.5 text-[11px] text-[var(--r-muted)]">{svc}</p>}
-                          {s.openingHours && <p className="mt-0.5 text-[10px] text-[var(--r-muted)]">{s.openingHours}</p>}
-                          <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
-                            {websiteHref && (
-                              <a href={websiteHref} target="_blank" rel="noopener noreferrer"
-                                className="text-[11px] font-semibold text-[var(--r-orange)]">Website ↗</a>
-                            )}
-                            <a href={googleMapsSearchUrl(s.lat, s.lon, s.name)} target="_blank" rel="noopener noreferrer"
-                              className="text-[11px] font-semibold text-[#2563eb]">Directions →</a>
-                            {s.phone && (
-                              <a href={`tel:${s.phone}`} className="text-[11px] font-semibold text-[var(--foreground)]">
-                                {s.phone}
+                          <p className="mt-0.5 text-[10px] text-[var(--r-muted)]">{hours}</p>
+                          <p className="mt-1 text-[10px] text-[var(--r-muted)]">
+                            Contact:{" "}
+                            {s.phone ? (
+                              <a href={`tel:${s.phone}`} className="font-semibold text-[var(--foreground)] underline underline-offset-2">
+                                {phone}
                               </a>
+                            ) : (
+                              <span className="font-medium text-[var(--foreground)]">{phone}</span>
                             )}
+                          </p>
+                          <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+                            <a href={websiteHref} target="_blank" rel="noopener noreferrer" className="text-[11px] font-semibold text-[var(--r-orange)]">
+                              {s.website ? "Website ↗" : "Website not listed — listing ↗"}
+                            </a>
+                            <a
+                              href={googleMapsDirectionsUrl(s.lat, s.lon, s.name, userLocation ?? undefined)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[11px] font-semibold text-[#2563eb]"
+                            >
+                              Directions from my location →
+                            </a>
                           </div>
                         </div>
                         <span className="mt-0.5 shrink-0 rounded-full bg-neutral-100 px-2 py-0.5 text-[11px] font-semibold tabular-nums text-[var(--r-muted)]">
@@ -846,11 +1167,11 @@ export default function TripMapExplorer() {
         >
           <div className="w-full max-w-md rounded-2xl border border-[var(--r-border)] bg-white p-5 shadow-2xl">
             <p id="trip-save-premium-title" className="text-[15px] font-bold text-[var(--foreground)]">
-              Save trips — Premium
+              Trip planner and saved trips — Premium
             </p>
             <p className="mt-2 text-[13px] leading-relaxed text-[var(--r-muted)]">
-              Saved routes, offline packs, verified hire flags, and shareable family itineraries will ship as a Premium
-              layer. The live map preview stays free while we finish billing and sync.
+              Multi-stop ride planning (trails, hire, shops per stop), saved trips per rider on this device, and future sync
+              are Premium. Live map browsing stays free while billing is wired.
             </p>
             <div className="mt-5 flex flex-wrap justify-end gap-2">
               <button

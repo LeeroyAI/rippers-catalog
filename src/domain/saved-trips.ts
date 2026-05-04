@@ -18,6 +18,8 @@ export type SavedTripRecordV1 = {
   radiusKm: number;
   trailCount?: number;
   shopCount?: number;
+  /** Premium: ordered legs; when length ≥ 2 this is a multi-stop itinerary. */
+  stops?: SavedTripPlaceV1[];
 };
 
 export type SavedTripsFileV1 = {
@@ -52,6 +54,21 @@ export function parseSavedTripsFile(raw: string | null): SavedTripsFileV1 {
         typeof o.trailCount === "number" && Number.isFinite(o.trailCount) ? Math.round(o.trailCount) : undefined;
       const shopCount =
         typeof o.shopCount === "number" && Number.isFinite(o.shopCount) ? Math.round(o.shopCount) : undefined;
+      let stops: SavedTripPlaceV1[] | undefined;
+      const rawStops = o.stops;
+      if (Array.isArray(rawStops)) {
+        const parsed: SavedTripPlaceV1[] = [];
+        for (const s of rawStops) {
+          if (!s || typeof s !== "object") continue;
+          const so = s as Record<string, unknown>;
+          const sl = typeof so.label === "string" ? so.label : "";
+          const sLat = typeof so.lat === "number" && Number.isFinite(so.lat) ? so.lat : NaN;
+          const sLon = typeof so.lon === "number" && Number.isFinite(so.lon) ? so.lon : NaN;
+          if (!sl || !Number.isFinite(sLat) || !Number.isFinite(sLon)) continue;
+          parsed.push({ label: sl, lat: sLat, lon: sLon });
+        }
+        if (parsed.length >= 2) stops = parsed;
+      }
       out.push({
         id,
         savedAt,
@@ -59,6 +76,7 @@ export function parseSavedTripsFile(raw: string | null): SavedTripsFileV1 {
         radiusKm,
         trailCount,
         shopCount,
+        stops,
       });
     }
     return { version: 1, trips: out.slice(-MAX_TRIPS) };
@@ -80,7 +98,30 @@ export function appendTripToFile(
     radiusKm: trip.radiusKm,
     trailCount: trip.trailCount,
     shopCount: trip.shopCount,
+    stops: trip.stops,
   };
   const trips = [...file.trips, next].slice(-MAX_TRIPS);
   return { version: 1, trips };
+}
+
+function shortPlaceLabel(label: string): string {
+  return label.split(",").slice(0, 1).join(",").trim() || label.trim();
+}
+
+/** Build a summary place + stops[] for multi-leg rides (premium). */
+export function itineraryRecordFromStops(
+  stops: SavedTripPlaceV1[],
+  radiusKm: number,
+  trailCount?: number,
+  shopCount?: number
+): Omit<SavedTripRecordV1, "id" | "savedAt"> {
+  const first = stops[0]!;
+  const joined = stops.map((s) => shortPlaceLabel(s.label)).join(" → ");
+  return {
+    place: { ...first, label: joined },
+    radiusKm,
+    trailCount,
+    shopCount,
+    stops,
+  };
 }

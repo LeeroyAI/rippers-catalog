@@ -43,6 +43,30 @@ export function googleMapsSearchUrl(lat: number, lng: number, name: string): str
   return `https://www.google.com/maps/search/?api=1&query=${q}`;
 }
 
+/**
+ * Directions link targeting a destination bike shop.
+ * If `origin` is omitted, Google Maps uses the device's current location.
+ */
+export function googleMapsDirectionsUrl(
+  lat: number,
+  lng: number,
+  _name: string,
+  origin?: { lat: number; lon: number }
+): string {
+  const sp = new URLSearchParams({
+    api: "1",
+    destination: `${lat.toFixed(6)},${lng.toFixed(6)}`,
+    travelmode: "driving",
+  });
+  if (origin) {
+    sp.set("origin", `${origin.lat.toFixed(6)},${origin.lon.toFixed(6)}`);
+  } else {
+    sp.set("origin", "My Location");
+  }
+  sp.set("dir_action", "navigate");
+  return `https://www.google.com/maps/dir/?${sp.toString()}`;
+}
+
 export function appleMapsUrl(lat: number, lng: number, name: string): string {
   return `http://maps.apple.com/?ll=${lat},${lng}&q=${encodeURIComponent(name.trim())}`;
 }

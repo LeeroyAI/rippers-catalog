@@ -1,17 +1,24 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
+import L from "leaflet";
 import type { LatLngExpression } from "leaflet";
 import {
   CircleMarker,
   MapContainer,
+  Marker,
   Polyline,
   Popup,
   TileLayer,
   useMap,
 } from "react-leaflet";
 
-import { appleMapsUrl, googleMapsSearchUrl, trailforksTrailsMapUrl } from "@/src/domain/map-links";
+import {
+  appleMapsUrl,
+  googleMapsDirectionsUrl,
+  googleMapsSearchUrl,
+  trailforksTrailsMapUrl,
+} from "@/src/domain/map-links";
 
 import "leaflet/dist/leaflet.css";
 
@@ -41,9 +48,53 @@ export type TripTrailLine = {
 function MapFocus({ center, zoom }: { center: [number, number]; zoom: number }) {
   const map = useMap();
   useEffect(() => {
-    map.setView(center, zoom, { animate: true });
+    // Avoid animated panning during rapid layer swaps; this prevents occasional
+    // Leaflet pane-position runtime errors in dev/hot updates.
+    map.setView(center, zoom, { animate: false });
   }, [center, zoom, map]);
   return null;
+}
+
+function FitItineraryRoute({ route }: { route: [number, number][] }) {
+  const map = useMap();
+  useEffect(() => {
+    if (route.length < 2) return;
+    const bounds = L.latLngBounds(route);
+    if (!bounds.isValid()) return;
+    // Keep itinerary re-focus stable when markers/stops update quickly.
+    map.fitBounds(bounds, { padding: [48, 48], animate: false, maxZoom: 11 });
+  }, [map, route]);
+  return null;
+}
+
+export type TripItineraryPin = {
+  seq: number;
+  lat: number;
+  lon: number;
+  label: string;
+  isActive: boolean;
+};
+
+function ItineraryNumberedPin({ pin }: { pin: TripItineraryPin }) {
+  const icon = useMemo(
+    () =>
+      L.divIcon({
+        className: "r-itin-marker",
+        html: `<span class="r-itin-marker__badge${pin.isActive ? " r-itin-marker__badge--active" : ""}">${pin.seq}</span>`,
+        iconSize: [30, 30],
+        iconAnchor: [15, 28],
+      }),
+    [pin.seq, pin.isActive]
+  );
+  return (
+    <Marker position={[pin.lat, pin.lon]} icon={icon}>
+      <Popup>
+        <span className="text-sm font-semibold">
+          Stop {pin.seq}: {pin.label.split(",").slice(0, 2).join(",").trim() || pin.label}
+        </span>
+      </Popup>
+    </Marker>
+  );
 }
 
 function serviceLine(sales: boolean, repair: boolean, rental: boolean): string {
@@ -66,6 +117,10 @@ type Props = {
   shops: TripShopPin[];
   trails: TripTrailLine[];
   focusLabel: string;
+  userLocation?: { lat: number; lon: number } | null;
+  /** Multi-stop itinerary: numbered pins + optional dashed leg line. */
+  itineraryPins?: TripItineraryPin[];
+  itineraryRoute?: [number, number][];
 };
 
 export default function TripMapInner({
@@ -74,7 +129,13 @@ export default function TripMapInner({
   shops,
   trails,
   focusLabel,
+  userLocation,
+  itineraryPins,
+  itineraryRoute,
 }: Props) {
+  const fitRoute = Boolean(itineraryRoute && itineraryRoute.length >= 2);
+  const showMultiItinerary = Boolean(itineraryPins && itineraryPins.length >= 2);
+
   return (
     <MapContainer
       center={center}
@@ -82,23 +143,40 @@ export default function TripMapInner({
       className="trip-leaflet z-0 w-full border-0 shadow-none outline-none ring-0"
       scrollWheelZoom
     >
-      <MapFocus center={center} zoom={zoom} />
+      {fitRoute && itineraryRoute ? <FitItineraryRoute route={itineraryRoute} /> : <MapFocus center={center} zoom={zoom} />}
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-      <CircleMarker
-        center={center}
-        radius={9}
-        pathOptions={{
-          color: "#E5470A",
-          fillColor: "#E5470A",
-          fillOpacity: 1,
-          weight: 2,
-        }}
-      >
-        <Popup>{focusLabel}</Popup>
-      </CircleMarker>
+      {itineraryRoute && itineraryRoute.length >= 2 ? (
+        <Polyline
+          positions={itineraryRoute as LatLngExpression[]}
+          pathOptions={{
+            color: "#E5470A",
+            weight: 3,
+            opacity: 0.42,
+            dashArray: "10 14",
+            lineCap: "round",
+          }}
+        />
+      ) : null}
+
+      {!showMultiItinerary ? (
+        <CircleMarker
+          center={center}
+          radius={9}
+          pathOptions={{
+            color: "#E5470A",
+            fillColor: "#E5470A",
+            fillOpacity: 1,
+            weight: 2,
+          }}
+        >
+          <Popup>{focusLabel}</Popup>
+        </CircleMarker>
+      ) : (
+        itineraryPins!.map((pin) => <ItineraryNumberedPin key={`${pin.seq}-${pin.lat}-${pin.lon}`} pin={pin} />)
+      )}
 
       {shops.map((shop) => (
         <CircleMarker
@@ -125,32 +203,39 @@ export default function TripMapInner({
               <div className="mt-1.5 text-[11px] text-neutral-600">
                 {serviceLine(shop.sales, shop.repair, shop.rental)}
               </div>
-              {shop.openingHours && (
-                <div className="mt-1 text-[10px] text-neutral-500">{shop.openingHours}</div>
-              )}
-              {shop.phone && (
-                <a href={`tel:${shop.phone}`} className="mt-1.5 block text-[11px] font-semibold text-neutral-700">
-                  {shop.phone}
-                </a>
-              )}
-              <div className="mt-2 flex flex-col gap-1 text-[11px] font-semibold">
-                {shop.website && (
-                  <a
-                    href={shop.website.startsWith("http") ? shop.website : `https://${shop.website}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[#E5470A] underline underline-offset-2"
-                  >
-                    Visit website ↗
+              <div className="mt-1 text-[10px] text-neutral-500">{shop.openingHours ?? "Hours not listed"}</div>
+              <div className="mt-1.5 text-[11px] text-neutral-700">
+                Contact:{" "}
+                {shop.phone ? (
+                  <a href={`tel:${shop.phone}`} className="font-semibold underline underline-offset-2">
+                    {shop.phone}
                   </a>
+                ) : (
+                  <span className="font-medium">Phone not listed</span>
                 )}
+              </div>
+              <div className="mt-2 flex flex-col gap-1 text-[11px] font-semibold">
                 <a
-                  href={googleMapsSearchUrl(shop.lat, shop.lon, shop.name)}
+                  href={
+                    shop.website
+                      ? shop.website.startsWith("http")
+                        ? shop.website
+                        : `https://${shop.website}`
+                      : googleMapsSearchUrl(shop.lat, shop.lon, shop.name)
+                  }
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#E5470A] underline underline-offset-2"
+                >
+                  {shop.website ? "Visit website ↗" : "Website not listed — open listing ↗"}
+                </a>
+                <a
+                  href={googleMapsDirectionsUrl(shop.lat, shop.lon, shop.name, userLocation ?? undefined)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-[#2563EB] underline underline-offset-2"
                 >
-                  Directions (Google)
+                  Directions from my location (Google)
                 </a>
                 <a
                   href={appleMapsUrl(shop.lat, shop.lon, shop.name)}

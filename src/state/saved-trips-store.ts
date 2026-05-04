@@ -4,6 +4,7 @@ import { useCallback, useMemo, useState } from "react";
 
 import {
   appendTripToFile,
+  itineraryRecordFromStops,
   parseSavedTripsFile,
   savedTripsStorageKey,
   type SavedTripPlaceV1,
@@ -38,6 +39,7 @@ export function useSavedTrips() {
       radiusKm: number;
       trailCount?: number;
       shopCount?: number;
+      stops?: SavedTripPlaceV1[];
     }): SavedTripRecordV1 | null => {
       if (!storageKey) return null;
       const prev = readFile(storageKey);
@@ -46,6 +48,7 @@ export function useSavedTrips() {
         radiusKm: input.radiusKm,
         trailCount: input.trailCount,
         shopCount: input.shopCount,
+        stops: input.stops,
       });
       const added = next.trips[next.trips.length - 1];
       try {
@@ -59,5 +62,28 @@ export function useSavedTrips() {
     [storageKey]
   );
 
-  return { trips: file.trips, appendTrip };
+  const appendItineraryTrip = useCallback(
+    (input: {
+      stops: SavedTripPlaceV1[];
+      radiusKm: number;
+      trailCount?: number;
+      shopCount?: number;
+    }): SavedTripRecordV1 | null => {
+      if (!storageKey || input.stops.length < 2) return null;
+      const prev = readFile(storageKey);
+      const payload = itineraryRecordFromStops(input.stops, input.radiusKm, input.trailCount, input.shopCount);
+      const next = appendTripToFile(prev, payload);
+      const added = next.trips[next.trips.length - 1];
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(next));
+      } catch {
+        /* ignore */
+      }
+      setTick((t) => t + 1);
+      return added ?? null;
+    },
+    [storageKey]
+  );
+
+  return { trips: file.trips, appendTrip, appendItineraryTrip };
 }
