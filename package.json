@@ -1,15 +1,31 @@
 {
-  "name": "rippers-api",
-  "version": "1.0.0",
+  "name": "rippers-app",
+  "version": "0.1.0",
   "private": true,
-  "type": "module",
   "scripts": {
-    "web:sync-catalog": "cd rippers-app && npm run sync-catalog",
-    "web:dev": "cd rippers-app && npm run dev",
-    "web:build": "cd rippers-app && npm run build",
-    "web:lint": "cd rippers-app && npm run lint"
+    "sync-catalog": "cp ./catalog.json ./src/data/catalog.json",
+    "dev": "bash scripts/dev.sh",
+    "dev:local": "RIPPERS_DEV_HOST=localhost bash scripts/dev.sh",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.27.0"
+    "leaflet": "^1.9.4",
+    "next": "16.2.4",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "react-leaflet": "^5.0.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/leaflet": "^1.9.21",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.4",
+    "tailwindcss": "^4",
+    "typescript": "^5"
   }
 }

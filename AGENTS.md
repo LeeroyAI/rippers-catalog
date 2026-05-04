@@ -68,18 +68,17 @@ When a new expertise is needed:
 
 ---
 
-# Rippers — Codebase guide (web app first)
+# Rippers — Codebase guide
 
-The **maintained product** is the **Next.js PWA** in **`rippers-app/`**. The **`Rippers/`** SwiftUI tree and **`Rippers.xcodeproj`** are a **legacy prototype**; do not treat them as the primary app surface. See **`README.md`** and **`README-RUN-IN-XCODE.md`**.
+The **maintained product** is the **Next.js PWA** at repo root. The legacy SwiftUI prototype has been removed.
 
 ---
 
-## Commands (`rippers-app/`)
+## Commands (Next.js app)
 
 ```bash
-cd rippers-app
 npm install
-npm run sync-catalog    # ../catalog.json → src/data/catalog.json
+npm run sync-catalog    # catalog.json → src/data/catalog.json
 npm run dev             # Next dev server, port 3000, localhost
 npm run build
 npm run lint
@@ -87,9 +86,9 @@ npm run lint
 
 ---
 
-## Commands (repo root — data & serverless)
+## Commands (data & serverless)
 
-**Import from `dashboard.html`** (regenerates `catalog.json`, Swift data under `Rippers/Data/`, etc.):
+**Import from `dashboard.html`** (regenerates `catalog.json`):
 
 ```bash
 node scripts/import_dashboard_data.js
@@ -126,7 +125,7 @@ Optional / shared backend
   └── api/search.js (Vercel) — Brave + Claude live bike extraction (same repo root)
 ```
 
-Catalogue data for the web app is **`rippers-app/src/data/catalog.json`**, produced by the import script at the repo root and copied in via **`npm run sync-catalog`**. Typed access is through **`src/data/catalog.ts`** (re-exports parsed catalogue).
+Catalogue data for the web app is **`src/data/catalog.json`**, produced by the import script and copied in via **`npm run sync-catalog`**. Typed access is through **`src/data/catalog.ts`** (re-exports parsed catalogue).
 
 ### Client state (high level)
 
@@ -154,7 +153,7 @@ Node ESM serverless function (example: `https://rippers-pied.vercel.app`):
 
 - Brave Search for AU retailer snippets; Claude for structured bike JSON.
 - Env: `BRAVE_SEARCH_API_KEY`, `ANTHROPIC_API_KEY`.
-- The web app may integrate the same endpoint later; the legacy iOS client used `LiveSearchService.swift` against this style of URL.
+- The web app may integrate the same endpoint later.
 
 ### Retailer prices and stock (catalog model)
 
@@ -163,29 +162,3 @@ Aligned between web types and imported JSON:
 - **`prices`**: retailer id → AUD price
 - **`inStock`**: list of retailer ids with stock
 - Best price is the minimum over in-stock retailers where applicable
-
----
-
-## Legacy Swift / Xcode (reference only)
-
-**Simulator build:**
-
-```bash
-xcodebuild -project Rippers.xcodeproj -scheme Rippers \
-  -destination "platform=iOS Simulator,id=<uuid>" -quiet
-```
-
-**Swift tests only** (`Package.swift` — no SwiftUI in the package):
-
-```bash
-swift test
-swift test --filter BikeFilterEngineTests/testCategoryFilter
-```
-
-**Regenerate Xcode project** after adding/removing `.swift` files under `Rippers/`:
-
-```bash
-ruby scripts/generate_xcodeproj.rb
-```
-
-Swift **`FilterStore` / `AppState`**, **`BikeFilterEngine`**, SwiftData models, and **`LiveSearchService`** described in older docs map conceptually to the web layers above; do not duplicate iOS-specific UI work in `Package.swift`.
