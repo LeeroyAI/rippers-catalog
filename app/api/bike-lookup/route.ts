@@ -19,6 +19,28 @@ const CACHE_MS = 86_400_000;
 
 let warnedBraveKeyMissingDev = false;
 
+let warnedBraveKeyRejected = false;
+
+/**
+ * Env copy/paste issues (BOM, quotes, newlines) cause Brave 422 “invalid token” even when the dashboard key is fine.
+ * Accept `BRAVE_SEARCH_API_KEY` or `BRAVE_API_KEY`.
+ */
+function readBraveSubscriptionKey(): string {
+  const raw =
+    process.env.BRAVE_SEARCH_API_KEY ??
+    process.env.BRAVE_API_KEY ??
+    "";
+  if (typeof raw !== "string") return "";
+  let s = raw.trim().replace(/^[\uFEFF\u200B]+/, "").replace(/[\uFEFF\u200B]+$/, "");
+  if (
+    (s.startsWith('"') && s.endsWith('"') && s.length >= 2) ||
+    (s.startsWith("'") && s.endsWith("'") && s.length >= 2)
+  ) {
+    s = s.slice(1, -1).trim();
+  }
+  return s.replace(/[\r\n\t]/g, "").trim();
+}
+
 /** Normalize `http://`, `//`, etc. — hero images and Brave snippets must satisfy the https-only `/api/bike-img-proxy`. */
 function normalizeHttpsUrl(raw: string | null | undefined): string | null {
   const s = typeof raw === "string" ? raw.trim() : "";
@@ -38,7 +60,7 @@ function normalizeHttpsUrl(raw: string | null | undefined): string | null {
 }
 
 async function braveSearch(query: string): Promise<BraveSnippet[]> {
-  const key = process.env.BRAVE_SEARCH_API_KEY?.trim();
+  const key = readBraveSubscriptionKey();
   /** Local dev often omits Brave; degrade to Claude-only instead of 502-ing every `/api/bike-lookup`. */
   if (!key) return [];
 
@@ -50,15 +72,30 @@ async function braveSearch(query: string): Promise<BraveSnippet[]> {
   url.searchParams.set("result_filter", "web");
 
   const response = await fetch(url.toString(), {
+    cache: "no-store",
     headers: {
       Accept: "application/json",
+      "Accept-Encoding": "gzip",
       "X-Subscription-Token": key,
     },
-    next: { revalidate: 86_400 },
   });
 
   if (!response.ok) {
     const text = await response.text();
+    /** Brave returns 422 "subscription token is invalid" for wrong/expired keys — don’t kill the whole lookup. */
+    const authRejected =
+      response.status === 401 || response.status === 403 || response.status === 422;
+    if (authRejected) {
+      if (!warnedBraveKeyRejected) {
+        warnedBraveKeyRejected = true;
+        console.warn(
+          `[bike-lookup] Brave Search rejected X-Subscription-Token (HTTP ${response.status}). ` +
+            `Loaded key length=${key.length} prefix=${key.slice(0, 4)}… — dashboard key often differs from what's in env: strip quotes/newlines/` +
+            `BOM around the value, one line without spaces, restart dev server. Alias BRAVE_API_KEY also works. Using Claude-only (no thumbnails).`
+        );
+      }
+      return [];
+    }
     throw new Error(`Brave ${response.status}: ${text.slice(0, 200)}`);
   }
 
@@ -266,10 +303,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing brand and model" }, { status: 400 });
   }
 
-  const braveKey = Boolean(process.env.BRAVE_SEARCH_API_KEY?.trim());
+  const braveKey = Boolean(readBraveSubscriptionKey());
 
   // Bump when fallback / extraction shape changes so in-memory TTL doesn’t serve stale empty images across deploys.
-  const key = `${cacheKey(brand, model, year)}|v7-au-${braveKey ? "brave" : "nobrave"}`;
+  const key = `${cacheKey(brand, model, year)}|v9-au-${braveKey ? "brave" : "nobrave"}`;
   const hit = memoryCache.get(key);
   if (hit && Date.now() - hit.at < CACHE_MS) {
     return NextResponse.json(hit.body, {
@@ -281,7 +318,7 @@ export async function POST(req: NextRequest) {
     if (!process.env.NODE_ENV?.startsWith("prod") && !braveKey && !warnedBraveKeyMissingDev) {
       warnedBraveKeyMissingDev = true;
       console.warn(
-        "[bike-lookup] BRAVE_SEARCH_API_KEY unset — skipping Brave (Claude-only; product images usually need the key). Add it to `.env.local` for full lookups."
+        "[bike-lookup] BRAVE_SEARCH_API_KEY / BRAVE_API_KEY unset — skipping Brave (Claude-only; product images usually need the key). Add one to `.env.local` for full lookups."
       );
     }
 
