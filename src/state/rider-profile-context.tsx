@@ -132,6 +132,7 @@ export function RiderProfileProvider({ children }: { children: ReactNode }) {
       }
       if (next && next.riders.length === 1) {
         migrateLegacyProfilePhotoToRiderIfNeeded(next.activeRiderId);
+        notifyRiderPhotoUpdated(next.activeRiderId);
       }
       // Do not wrap in startTransition — that defers updates and keeps Welcome / Profile on
       // "Preparing…" until React schedules a low-priority render (feels hung on slow devices).

@@ -10,11 +10,10 @@ import {
   type CurrentBikeEntry,
   readCurrentBikeForRider,
 } from "@/src/domain/current-bike-entry";
-import { readRiderPhoto } from "@/src/domain/rider-photo";
 import { CURRENT_BIKE_UPDATED_EVENT } from "@/src/lib/current-bike-events";
 import { enrichCurrentBikeWithCatalog } from "@/src/lib/enrich-current-bike-catalog";
-import { RIDER_PHOTO_UPDATED_EVENT } from "@/src/lib/rider-photo-events";
 import type { RiderRecord } from "@/src/domain/riders-storage";
+import { useRiderPhotoSnapshot } from "@/src/hooks/use-rider-photo-snapshot";
 import type { Bike } from "@/src/domain/types";
 import { ridingStyleLabels } from "@/src/domain/riding-style";
 
@@ -29,19 +28,6 @@ function useRiderCurrentBikeEntry(riderId: string): CurrentBikeEntry | null {
     return () => window.removeEventListener(CURRENT_BIKE_UPDATED_EVENT, refresh);
   }, [riderId]);
   return entry;
-}
-
-function useRiderPhotoUrl(riderId: string): string | null {
-  const [url, setUrl] = useState<string | null>(null);
-  useEffect(() => {
-    function refresh() {
-      setUrl(readRiderPhoto(riderId));
-    }
-    refresh();
-    window.addEventListener(RIDER_PHOTO_UPDATED_EVENT, refresh);
-    return () => window.removeEventListener(RIDER_PHOTO_UPDATED_EVENT, refresh);
-  }, [riderId]);
-  return url;
 }
 
 function FamilyRiderCard({
@@ -59,7 +45,7 @@ function FamilyRiderCard({
   onEdit: () => void;
   onViewSpecs: (bike: Bike) => void;
 }) {
-  const photoUrl = useRiderPhotoUrl(rider.id);
+  const photoUrl = useRiderPhotoSnapshot(rider.id);
   const entry = useRiderCurrentBikeEntry(rider.id);
   const catBike = useMemo(() => {
     if (!entry || entry.type !== "catalog") return null;

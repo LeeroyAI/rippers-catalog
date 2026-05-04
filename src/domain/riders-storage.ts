@@ -45,9 +45,16 @@ export function parseRidersState(raw: string | null): RidersStateV1 | null {
     }
     const riders = o.riders.map(riderFromUnknown).filter((r): r is RiderRecord => r !== null);
     if (riders.length === 0) return null;
-    const activeOk = riders.some((r) => r.id === o.activeRiderId);
-    const activeRiderId = activeOk ? o.activeRiderId : riders[0].id;
-    return { version: 1, activeRiderId, riders };
+    const seen = new Set<string>();
+    const uniqueRiders = riders.filter((r) => {
+      if (seen.has(r.id)) return false;
+      seen.add(r.id);
+      return true;
+    });
+    if (uniqueRiders.length === 0) return null;
+    const activeOk = uniqueRiders.some((r) => r.id === o.activeRiderId);
+    const activeRiderId = activeOk ? o.activeRiderId : uniqueRiders[0].id;
+    return { version: 1, activeRiderId, riders: uniqueRiders };
   } catch {
     return null;
   }
