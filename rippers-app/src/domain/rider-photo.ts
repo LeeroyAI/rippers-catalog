@@ -27,7 +27,11 @@ export function writeRiderPhoto(riderId: string, dataUrl: string | null): void {
   }
 }
 
-/** If this rider has no scoped photo yet, copy the legacy single-profile image so the first household member keeps the old hero shot. */
+/**
+ * One-time: if this rider has no scoped photo yet, copy the legacy single-profile image.
+ * **Only call for a single-rider household** — for 2+ riders, copying the same legacy blob into each
+ * scoped key would make every card show the same face.
+ */
 export function migrateLegacyProfilePhotoToRiderIfNeeded(riderId: string): void {
   if (typeof localStorage === "undefined" || !riderId) return;
   try {

@@ -234,11 +234,12 @@ export default function MyFamilySection({
 
       <div className="space-y-4 rounded-2xl border border-[var(--r-border)] bg-white px-4 py-5 shadow-sm sm:px-6 sm:py-6">
         <p className="text-[12px] leading-relaxed text-[var(--r-muted)]">
-          Each rider has their own profile photo, match scores, Watch list, current ride, and trip saves — nothing is
-          shared between people. Use <strong className="text-[var(--foreground)]">Create / add family</strong> to add
-          someone (photo and bike optional), <strong className="text-[var(--foreground)]">Edit rider</strong> to change
-          anyone anytime, or switch riders before you shop from{" "}
-          <strong className="text-[var(--foreground)]">Home</strong> or <strong className="text-[var(--foreground)]">Ride</strong>.
+          Each rider has their own profile photo, match scores, Watch list, current ride, and trip saves — stored
+          separately per person (not copied from whoever is active). Use{" "}
+          <strong className="text-[var(--foreground)]">Create / add family</strong> to add someone (photo and bike optional),{" "}
+          <strong className="text-[var(--foreground)]">Edit rider</strong> to change anyone anytime, or switch riders before
+          you shop from <strong className="text-[var(--foreground)]">Home</strong> or{" "}
+          <strong className="text-[var(--foreground)]">Ride</strong>.
         </p>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

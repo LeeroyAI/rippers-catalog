@@ -57,10 +57,14 @@ export function useCurrentBike() {
   const [entry, setEntry] = useState<CurrentBikeEntry | null>(null);
   const [storeHydrated, setStoreHydrated] = useState(false);
 
-  /** layoutEffect: scoped key + enrichment before paint so Home hero matches switched rider immediately. */
+  /**
+   * layoutEffect pulls the active rider scoped key from localStorage (with catalogue enrichment writes)
+   * as soon as the rider id changes — avoids showing the previous rider's bike until a paint.
+   */
   useLayoutEffect(() => {
     if (!hydrated) return;
     if (activeRiderId) migrateLegacyToScoped(activeRiderId);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync subscribed store (LS) → React entry
     setEntry(read(storageKey));
     setStoreHydrated(true);
   }, [hydrated, activeRiderId, storageKey]);

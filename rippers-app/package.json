@@ -5,6 +5,7 @@
   "scripts": {
     "sync-catalog": "cp ../catalog.json ./src/data/catalog.json",
     "dev": "bash scripts/dev.sh",
+    "dev:local": "RIPPERS_DEV_HOST=localhost bash scripts/dev.sh",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"

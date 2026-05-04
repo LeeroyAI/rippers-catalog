@@ -15,7 +15,6 @@ import { catalog } from "@/src/data/catalog";
 import { getBestPrice, getDisplayPrice } from "@/src/domain/bike-helpers";
 import { matchBreakdownForBike, matchPercentForBike } from "@/src/domain/match-score";
 import { ridingStyleLabels } from "@/src/domain/riding-style";
-import type { CurrentBikeEntry } from "@/src/domain/current-bike-entry";
 import { suggestedBikeCategory, type RiderProfileV1 } from "@/src/domain/rider-profile";
 import type { Bike, FilterState } from "@/src/domain/types";
 import { useFilterStore } from "@/src/state/filter-store";
@@ -264,7 +263,7 @@ function HomePageContent() {
 
   const carouselItems = rankedCarousel.slice(0, 6);
 
-  /** Prefer this rider&apos;s researched catalogue bike, else their custom bike, else only then a carousel top pick. */
+  /** Prefer this rider's researched catalogue bike, else their custom bike, else only then a carousel top pick. */
   const heroBikeDisplay = useMemo(() => {
     if (currentCatalogBike) return { mode: "catalog" as const, bike: currentCatalogBike };
     if (currentBikeEntry?.type === "custom") return { mode: "custom" as const, entry: currentBikeEntry };
@@ -278,8 +277,8 @@ function HomePageContent() {
     return row?.m ?? null;
   }
 
-  /** Show Norco Fluid in caption but Silverback carousel — custom bikes show their own panel. */
-  function heroCustomSubtitle(e: Extract<CurrentBikeEntry, { type: "custom" }>): string | null {
+  /** Supplementary line under a custom hero (brand · model vs year already in title elsewhere). */
+  function heroCustomSubtitle(e: { brand: string; name: string; year: string }): string | null {
     const bits = [
       [e.brand, e.name].filter((x) => x.trim()).join(" ").trim(),
       e.year.trim() || null,
@@ -413,19 +412,93 @@ function HomePageContent() {
           {/* ── Right column — desktop hero bike ── */}
           <div className="hidden md:flex md:w-[48%] md:items-center md:justify-center md:py-10 md:pr-10">
             {(() => {
-              const heroBike = currentCatalogBike ?? carouselItems[0]?.bike ?? null;
-              const matchPct = heroBike ? carouselItems.find(c => c.bike.id === heroBike.id)?.m ?? null : null;
-              const isCurrentRide = heroBike && currentCatalogBike?.id === heroBike.id;
-              const price = heroBike ? getBestPrice(heroBike) : null;
-              if (!heroBike) return (
-                <div className="flex flex-col items-center gap-4 text-center">
-                  <div className="text-6xl opacity-20">🚵</div>
-                  <p className="text-[13px] text-white/30">Add a bike to your profile to see it here</p>
-                  <Link href="/profile" className="rounded-full border border-white/20 px-4 py-2 text-[12px] font-semibold text-white/60 no-underline hover:text-white/90">
-                    Set up profile →
-                  </Link>
-                </div>
-              );
+              if (!heroBikeDisplay) {
+                return (
+                  <div className="flex flex-col items-center gap-4 text-center">
+                    <div className="text-6xl opacity-20">🚵</div>
+                    <p className="text-[13px] text-white/30">Add a bike to your profile to see it here</p>
+                    <Link
+                      href="/profile"
+                      className="rounded-full border border-white/20 px-4 py-2 text-[12px] font-semibold text-white/60 no-underline hover:text-white/90"
+                    >
+                      Set up profile →
+                    </Link>
+                  </div>
+                );
+              }
+
+              if (heroBikeDisplay.mode === "custom") {
+                const ce = heroBikeDisplay.entry;
+                const line = heroCustomSubtitle(ce);
+                return (
+                  <div className="relative flex w-full max-w-[480px] flex-col items-center">
+                    <div className="pointer-events-none absolute inset-0 rounded-3xl bg-[radial-gradient(ellipse_80%_60%_at_50%_60%,rgba(229,71,26,0.22),transparent_70%)]" />
+                    <div className="relative z-10 mb-2 flex flex-col items-center gap-1.5">
+                      <div className="flex flex-wrap items-center justify-center gap-2">
+                        <span className="rounded-full border border-white/20 bg-white/[0.08] px-3 py-1 text-[11px] font-semibold text-white/70">
+                          My current ride
+                        </span>
+                      </div>
+                      {profile ? (
+                        <p className="max-w-[20rem] text-center text-[10px] leading-snug text-white/45">
+                          Matches for{" "}
+                          <span className="font-semibold text-white/70">{profile.nickname.trim() || "Rider"}</span>
+                          {currentRideLabel ? (
+                            <>
+                              {" "}
+                              · current bike: <span className="text-white/65">{currentRideLabel}</span>
+                            </>
+                          ) : (
+                            <> · no current bike on file</>
+                          )}
+                        </p>
+                      ) : null}
+                    </div>
+                    <div className="relative z-10 flex aspect-[4/3] w-full items-center justify-center overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.04]">
+                      {ce.photo ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={ce.photo}
+                          alt=""
+                          className="max-h-[min(100%,320px)] w-full max-w-full object-contain object-center drop-shadow-[0_24px_48px_rgba(0,0,0,0.55)]"
+                        />
+                      ) : (
+                        <div className="flex flex-col items-center gap-3 px-6 py-12 text-center">
+                          <span className="text-6xl opacity-85" aria-hidden>
+                            🚵
+                          </span>
+                          <p className="text-[13px] font-semibold leading-snug text-white/70">
+                            {`${ce.brand} ${ce.name}`.trim() || "Custom bike"}
+                          </p>
+                          <p className="max-w-[16rem] text-[11px] leading-snug text-white/45">
+                            Not linked to catalogue yet — pick a catalogue bike in Profile when you can so we show product
+                            photos and AU pricing here.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                    <div className="relative z-10 mt-2 w-full rounded-2xl border border-white/[0.10] bg-white/[0.06] px-5 py-3.5 text-left backdrop-blur-sm">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-white/40">Your bike</p>
+                      <p className="mt-1 text-[17px] font-bold leading-tight text-white">
+                        {`${ce.brand} ${ce.name}`.trim() || "Custom"}
+                      </p>
+                      {line ? <p className="mt-1 text-[12px] text-white/50">{line}</p> : null}
+                      <Link
+                        href="/profile#profile-ride"
+                        className="mt-2 inline-block text-[11px] font-semibold text-[var(--r-orange)] no-underline hover:underline"
+                      >
+                        Update in Profile →
+                      </Link>
+                    </div>
+                  </div>
+                );
+              }
+
+              const heroBike = heroBikeDisplay.bike;
+              const mode = heroBikeDisplay.mode;
+              const matchPct = mode === "topPick" ? matchPctForBikeId(heroBike.id) : null;
+              const badgeLabel = mode === "topPick" ? "Your top pick" : "My current ride";
+              const price = getBestPrice(heroBike);
               return (
                 <div className="relative flex w-full max-w-[480px] flex-col items-center">
                   {/* Glow ring behind bike */}
@@ -435,13 +508,13 @@ function HomePageContent() {
                   <div className="relative z-10 mb-2 flex flex-col items-center gap-1.5">
                     <div className="flex flex-wrap items-center justify-center gap-2">
                       <span className="rounded-full border border-white/20 bg-white/[0.08] px-3 py-1 text-[11px] font-semibold text-white/70">
-                        {isCurrentRide ? "My current ride" : "Your top pick"}
+                        {badgeLabel}
                       </span>
-                      {matchPct !== null && !isCurrentRide && (
+                      {mode === "topPick" && matchPct !== null ? (
                         <span className="rounded-full bg-[rgba(229,71,26,0.25)] px-2.5 py-1 text-[11px] font-bold text-[#ff8060]">
                           {matchPct}% match
                         </span>
-                      )}
+                      ) : null}
                     </div>
                     {profile ? (
                       <p className="max-w-[20rem] text-center text-[10px] leading-snug text-white/45">
@@ -478,9 +551,13 @@ function HomePageContent() {
                       </p>
                     </div>
                     <div className="shrink-0 text-right">
-                      {price && (
+                      {typeof price === "number" && (
                         <p className="text-[20px] font-bold text-[var(--r-price-green)]">
-                          {new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD", maximumFractionDigits: 0 }).format(price)}
+                          {new Intl.NumberFormat("en-AU", {
+                            style: "currency",
+                            currency: "AUD",
+                            maximumFractionDigits: 0,
+                          }).format(price)}
                         </p>
                       )}
                       <button

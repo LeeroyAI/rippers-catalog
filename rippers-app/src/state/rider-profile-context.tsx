@@ -3,7 +3,6 @@
 import {
   createContext,
   type ReactNode,
-  startTransition,
   useCallback,
   useContext,
   useEffect,
@@ -130,12 +129,12 @@ export function RiderProfileProvider({ children }: { children: ReactNode }) {
           next = migrated;
         }
       }
-      if (next && next.riders.length > 0) {
+      if (next && next.riders.length === 1) {
         migrateLegacyProfilePhotoToRiderIfNeeded(next.activeRiderId);
       }
-      startTransition(() => {
-        setRidersState(next);
-      });
+      // Do not wrap in startTransition — that defers updates and keeps Welcome / Profile on
+      // "Preparing…" until React schedules a low-priority render (feels hung on slow devices).
+      setRidersState(next);
       if (typeof document !== "undefined") {
         if (next && next.riders.length > 0) {
           setOnboardedCookie();
@@ -144,16 +143,12 @@ export function RiderProfileProvider({ children }: { children: ReactNode }) {
         }
       }
     } catch {
-      startTransition(() => {
-        setRidersState(null);
-      });
+      setRidersState(null);
       if (typeof document !== "undefined" && document.cookie.includes("rippers_onboarded=1")) {
         clearOnboardedCookie();
       }
     }
-    startTransition(() => {
-      setHydrated(true);
-    });
+    setHydrated(true);
   }, []);
 
   const activeRecord = useMemo(() => activeRiderRecord(ridersState), [ridersState]);

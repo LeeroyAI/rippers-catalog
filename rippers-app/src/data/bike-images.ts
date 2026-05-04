@@ -51,6 +51,7 @@ export const BIKE_IMAGE_URLS: Record<number, string> = {
   46: "https://cdn.shopify.com/s/files/1/0931/9455/1645/files/2025_MARIN_BIKES_RIFT_ZONE_JR_24_GREEN_SIDE.png?v=1753783522",
   47: "https://cdn.shopify.com/s/files/1/0008/9738/4508/files/large-425206_8265_A_1.png?v=1762321439",
   48: "https://cdn.shopify.com/s/files/1/0295/7574/1488/files/Precaliber248speedSuspension_23_36846_A_Primary.jpg?v=1765001780",
+  49: "https://silverbackbikes.de/cdn/shop/files/MY24SPYKE24DUnisex_DS_1000px.jpg?v=1741122671",
 };
 
 export function bikeImageUrlForId(id: number): string | undefined {

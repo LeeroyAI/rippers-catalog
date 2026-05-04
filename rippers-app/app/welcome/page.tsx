@@ -1,202 +1,262 @@
 "use client";
 
+import type { ReactNode } from "react";
 import Image from "next/image";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, startTransition, useLayoutEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { useLayoutEffect, useMemo, useState } from "react";
 
-import RiderProfileForm from "@/app/components/RiderProfileForm";
-import { ridingStyleLabels } from "@/src/domain/riding-style";
-import { defaultRiderDraft } from "@/src/domain/rider-profile";
+import RippersBackupImporter from "@/app/components/RippersBackupImporter";
 import { safeInternalNextPath } from "@/src/lib/safe-next-path";
 import {
-  clearAddHouseholdRiderNavigationIntent,
   peekAddHouseholdRiderNavigationIntent,
-  welcomeSubmitShouldAddHouseholdRider,
   welcomeUrlIndicatesAddRider,
 } from "@/src/lib/welcome-add-mode";
 import { useRiderProfile } from "@/src/state/rider-profile-context";
 
-function WelcomeFallback() {
+function readSearchQueryClient(): string {
+  if (typeof window === "undefined") return "";
+  return window.location.search.startsWith("?")
+    ? window.location.search.slice(1)
+    : window.location.search;
+}
+
+function FeatureBlock({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
   return (
-    <div className="r-splash-orange flex min-h-dvh flex-col items-center justify-center px-8 text-[15px] text-white">
-      <span className="h-11 w-11 animate-spin rounded-full border-[3px] border-white border-t-transparent" />
-      <p className="mt-5 text-[13px] text-white/90">Preparing onboarding…</p>
+    <div className="r-results-card min-w-0 px-5 py-5">
+      <h3 className="text-[15px] font-semibold tracking-tight text-[var(--foreground)]">{title}</h3>
+      <div className="mt-2.5 text-[13px] leading-relaxed text-[var(--r-muted)]">{children}</div>
     </div>
   );
 }
 
-function WelcomePageContent() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const afterOnboarding = useMemo(
-    () => safeInternalNextPath(searchParams.get("next")),
-    [searchParams]
-  );
-  const addQueryKey = searchParams.toString();
-  const urlAddMode = useMemo(
-    () => welcomeUrlIndicatesAddRider(new URLSearchParams(addQueryKey)),
-    [addQueryKey]
-  );
-  const [intentAddMode, setIntentAddMode] = useState(false);
-  useLayoutEffect(() => {
-    const fromNavIntent = peekAddHouseholdRiderNavigationIntent();
-    startTransition(() => {
-      setIntentAddMode(fromNavIntent);
-    });
-  }, [addQueryKey]);
-  const addMode = urlAddMode || intentAddMode;
-  const { hydrated, profile, saveProfile, addRider } = useRiderProfile();
-  const [phase, setPhase] = useState<"splash" | "form">("splash");
-
-  useLayoutEffect(() => {
-    if (!hydrated) return;
-    startTransition(() => {
-      if (addMode) setPhase("form");
-      else if (profile) setPhase("form");
-    });
-  }, [hydrated, profile, addMode]);
-
-  const draft = useMemo(() => {
-    if (addMode) return defaultRiderDraft();
-    if (profile != null) {
-      return {
-        nickname: profile.nickname,
-        heightCm: profile.heightCm,
-        weightKg: profile.weightKg,
-        style: profile.style,
-        preferEbike: profile.preferEbike,
-      };
-    }
-    return defaultRiderDraft();
-  }, [addMode, profile]);
-
-  if (!hydrated) {
-    return (
-      <div className="r-splash-orange flex min-h-dvh flex-col items-center justify-center px-8 text-[15px] text-white">
-        <span className="h-11 w-11 animate-spin rounded-full border-[3px] border-white border-t-transparent" />
-        <p className="mt-5 text-[13px] text-white/90">Preparing onboarding…</p>
-      </div>
-    );
+/** Stable setup URL from synced query string (works with plain navigation if JS is slow). */
+function welcomeSetupHref(queryKey: string, entry: "solo" | "family"): string {
+  const sp = new URLSearchParams(queryKey);
+  if (!sp.get("next")?.trim()) {
+    sp.set("next", "/");
   }
-
-  if (phase === "splash") {
-    return (
-      <div className="r-splash-orange flex min-h-dvh flex-col items-center px-8 pb-[max(28px,env(safe-area-inset-bottom)+20px)] pt-[max(3.5rem,calc(env(safe-area-inset-top)+36px))] text-center text-white">
-        <div className="rounded-[1.85rem] border border-white/40 bg-black/95 p-[18px] shadow-[0_32px_80px_rgba(0,0,0,0.35)] ring-8 ring-black/55">
-          <Image
-            src="/icons/icon-512.png"
-            alt="Rippers"
-            width={112}
-            height={112}
-            priority
-            className="rounded-2xl"
-          />
-        </div>
-        <h1 className="mt-8 text-[2.25rem] font-semibold tracking-tight">Rippers</h1>
-        <p className="mx-auto mt-4 w-full max-w-none text-[16px] font-medium leading-relaxed text-white/95">
-          Ride what fits. Find what lasts.
-        </p>
-
-        <div className="r-splash-card mt-11 w-full max-w-none rounded-3xl px-6 py-6 text-left text-[14px] font-medium leading-snug backdrop-blur-sm">
-          <ul className="space-y-4">
-            <li className="flex gap-4">
-              <span className="mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/70 bg-white/15 text-[12px] font-bold shadow-inner">
-                ✓
-              </span>
-              <span>Matched picks from real AU retailers — web ships with synced catalogue snapshots.</span>
-            </li>
-            <li className="flex gap-4">
-              <span className="mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/70 bg-white/15 text-[12px] font-bold shadow-inner">
-                ✓
-              </span>
-              <span>Sizing, budget & rider profile tailor matches on every device.</span>
-            </li>
-            <li className="flex gap-4">
-              <span className="mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/70 bg-white/15 text-[12px] font-bold shadow-inner">
-                ✓
-              </span>
-              <span>
-                Ask about bikes in plain English (rolling out on web). Trip planner maps AU trails and nearby shops.
-              </span>
-            </li>
-          </ul>
-        </div>
-
-        <div className="mt-auto flex w-full max-w-none flex-col gap-4 pt-14">
-          <button
-            type="button"
-            className="w-full rounded-full bg-white py-[1.125rem] text-[17px] font-semibold tracking-tight text-[#99431a] shadow-[0_20px_50px_rgba(0,0,0,0.25)]"
-            onClick={() => setPhase("form")}
-          >
-            Get Started
-          </button>
-          {profile ? (
-            <button
-              type="button"
-              className="text-[14px] font-semibold text-white/90 underline underline-offset-4 decoration-white/50"
-              onClick={() => router.replace(afterOnboarding)}
-            >
-              Already set up — skip to Home
-            </button>
-          ) : null}
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-dvh overflow-x-hidden pb-[max(4rem,env(safe-area-inset-bottom)+16px)] pt-[max(2rem,calc(env(safe-area-inset-top)+28px))]">
-      <div className="mx-auto w-full min-w-0 max-w-xl px-5 sm:px-6 md:max-w-2xl md:px-8 xl:px-10">
-        <button
-          type="button"
-          className="text-[13px] font-semibold text-[var(--r-orange)] underline-offset-4 hover:underline"
-          onClick={() => setPhase("splash")}
-        >
-          ‹ Back to intro
-        </button>
-        <h1 className="mt-6 text-2xl font-semibold tracking-tight text-[var(--foreground)]">
-          {addMode ? "Add a household rider" : "Rider profile"}
-        </h1>
-        <p className="mt-3 text-[14px] leading-relaxed text-[var(--r-muted)]">
-          {addMode
-            ? "Each rider gets their own match scores, saved bikes, and current ride on this device. Switch riders anytime from Profile."
-            : "Used for match scoring, sizing hints and trip-shop ranking. Tune anytime under Profile."}
-        </p>
-        {!addMode && profile ? (
-          <p className="mt-4 rounded-2xl border border-[var(--r-border)] bg-white px-5 py-4 text-[13px] leading-snug shadow-sm text-[var(--r-muted)]">
-            Updating how you ride as{" "}
-            <strong className="text-[var(--foreground)]">{ridingStyleLabels(profile.style)}</strong>? Save again to refresh
-            home recommendations.
-          </p>
-        ) : null}
-        <RiderProfileForm
-          key={addMode ? "welcome-add-household" : "welcome-profile"}
-          initialDraft={draft}
-          submitLabel={
-            addMode ? "Add rider & continue" : profile ? "Save and continue" : "Continue to home"
-          }
-          includeProfilePhoto={addMode || !profile}
-          includeOptionalCurrentBike={!profile || addMode}
-          onSubmit={(vals, initialBike, photo) => {
-            const isAddRider =
-              typeof window !== "undefined"
-                ? welcomeSubmitShouldAddHouseholdRider(window.location.search)
-                : urlAddMode;
-            if (isAddRider) addRider(vals, initialBike, photo);
-            else saveProfile(vals, initialBike, photo);
-            clearAddHouseholdRiderNavigationIntent();
-            router.replace(afterOnboarding);
-          }}
-        />
-      </div>
-    </div>
-  );
+  sp.set("entry", entry);
+  return `/welcome/setup?${sp.toString()}`;
 }
 
 export default function WelcomePage() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const [queryKey, setQueryKey] = useState("");
+
+  useLayoutEffect(() => {
+    setQueryKey(readSearchQueryClient());
+  }, [pathname]);
+
+  const searchParamsMemo = useMemo(() => new URLSearchParams(queryKey), [queryKey]);
+  const afterOnboarding = useMemo(
+    () => safeInternalNextPath(searchParamsMemo.get("next")),
+    [searchParamsMemo]
+  );
+
+  const [intentAddMode, setIntentAddMode] = useState(false);
+  useLayoutEffect(() => {
+    setIntentAddMode(peekAddHouseholdRiderNavigationIntent());
+  }, [queryKey]);
+
+  const urlAddMode = useMemo(
+    () => welcomeUrlIndicatesAddRider(new URLSearchParams(queryKey)),
+    [queryKey]
+  );
+  const addMode = urlAddMode || intentAddMode;
+  const { hydrated, profile } = useRiderProfile();
+
+  useLayoutEffect(() => {
+    if (!hydrated) return;
+    if (profile != null || addMode) {
+      const q = readSearchQueryClient();
+      router.replace(q ? `/welcome/setup?${q}` : "/welcome/setup");
+    }
+  }, [hydrated, profile, addMode, router]);
+
+  if (hydrated && (profile != null || addMode)) {
+    return (
+      <div className="r-home-bg r-welcome-viewport flex items-center justify-center">
+        <div className="r-welcome-inner flex w-full justify-center py-10">
+          <p className="text-[14px] text-[var(--r-muted)]">Loading your profile…</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <Suspense fallback={<WelcomeFallback />}>
-      <WelcomePageContent />
-    </Suspense>
+    <div className="r-home-bg r-welcome-viewport">
+      <div className="r-welcome-inner pb-[max(5rem,env(safe-area-inset-bottom)+24px)] pt-[max(1.25rem,calc(env(safe-area-inset-top)+20px))]">
+        <header className="r-home-hero relative w-full overflow-hidden px-5 py-8 sm:px-8 sm:py-10 lg:px-10 lg:py-11">
+          <div className="pointer-events-none absolute left-0 top-0 h-full w-1 bg-gradient-to-b from-[var(--r-orange)]/80 via-[var(--r-orange)]/30 to-transparent" />
+          <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-start sm:gap-8 sm:text-left lg:gap-10 xl:gap-12 2xl:gap-14">
+            <div className="shrink-0 rounded-2xl border border-[var(--r-border)] bg-[var(--r-bg-well)] p-4 shadow-[0_10px_28px_rgba(18,16,12,0.08)]">
+              <Image
+                src="/icons/icon-512.png"
+                alt="Rippers"
+                width={88}
+                height={88}
+                priority
+                className="rounded-xl"
+              />
+            </div>
+            <div className="min-w-0 flex-1 text-center sm:text-left">
+              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--r-orange)]">What is Rippers?</p>
+              <h1 className="mt-2 text-[1.5rem] font-semibold leading-tight tracking-tight text-[var(--foreground)] sm:text-[1.75rem] lg:text-[2rem] xl:text-[2.25rem] 2xl:text-[2.4rem]">
+                The Australian MTB workspace for research, trips, and everyone who rides with you.
+              </h1>
+              <p className="mt-4 max-w-none text-[15px] leading-relaxed text-[var(--r-muted)] sm:text-[16px] lg:text-[17px] lg:leading-relaxed">
+                Rippers is <strong className="font-semibold text-[var(--foreground)]">dynamic research and planning</strong>{" "}
+                for riders who buy from Australian shops, ride real trails, and often line up bikes for a partner or
+                juniors too. Market and trail context keep moving; your profile steers match scores, sizing hints, trip
+                stops, and shortlists so the app stays useful week to week. Data stays on{" "}
+                <strong className="font-semibold text-[var(--foreground)]">this device</strong> unless you move it — use{" "}
+                <strong className="font-semibold text-[var(--foreground)]">Export / Import</strong> (below or in Profile)
+                to continue on another phone or tablet. <strong className="font-semibold text-[var(--foreground)]">You</strong>{" "}
+                stay in control, with no account wall.
+              </p>
+
+              <div className="mt-8 border-t border-[var(--r-border)]/80 pt-6">
+                <p className="mb-3 text-center text-[12px] font-medium uppercase tracking-wide text-[var(--r-muted)] sm:text-left">
+                  Start in one tap
+                </p>
+                <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
+                  <Link
+                    href={welcomeSetupHref(queryKey, "solo")}
+                    prefetch={false}
+                    className="r-btn-orange relative z-10 inline-flex min-h-[48px] w-full min-w-0 flex-1 items-center justify-center rounded-[10px] px-4 py-3.5 text-center text-[15px] font-semibold leading-snug text-white no-underline shadow-md transition active:scale-[0.99]"
+                  >
+                    Create my Profile
+                  </Link>
+                  <Link
+                    href={welcomeSetupHref(queryKey, "family")}
+                    prefetch={false}
+                    className="relative z-10 inline-flex min-h-[48px] w-full min-w-0 flex-1 items-center justify-center rounded-[10px] border-2 border-[var(--r-orange)] bg-[var(--r-bg-well)] px-4 py-3.5 text-center text-[15px] font-semibold leading-snug text-[var(--r-orange)] no-underline shadow-sm transition hover:bg-[var(--r-orange-muted)] active:scale-[0.99]"
+                  >
+                    Create my riding family
+                  </Link>
+                </div>
+                <p className="mt-3 text-center text-[12px] leading-relaxed text-[var(--r-muted)] sm:text-left">
+                  <span className="font-semibold text-[var(--foreground)]">Riding family:</span> save one rider now,
+                  then add the rest of the household on the next screen — each with their own matches and saves.
+                </p>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <section className="mt-6" aria-label="Continue on another device">
+          <h2 className="mb-2 text-[13px] font-bold uppercase tracking-[0.12em] text-[var(--r-muted)]">
+            Already set up elsewhere?
+          </h2>
+          <RippersBackupImporter redirectHref={afterOnboarding} variant="welcome" />
+        </section>
+
+        <section className="mt-8" aria-labelledby="welcome-why-heading">
+          <h2
+            id="welcome-why-heading"
+            className="text-center text-[13px] font-bold uppercase tracking-[0.12em] text-[var(--r-muted)] sm:text-left"
+          >
+            What you can do here
+          </h2>
+          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+            <FeatureBlock title="Research that stays personal">
+              Dig into builds with filters, pricing context, and{" "}
+              <strong className="font-semibold text-[var(--foreground)]">match %</strong> that react to how you ride
+              (gravity, XC, trail, park, e-MTB when you want it) — so comparisons stay relevant as the AU market and
+              your shortlist evolve.
+            </FeatureBlock>
+            <FeatureBlock title="Sizing & shopping signals">
+              Height and reach-style hints help you sanity-check frame sizes before you buy. Budget and category filters
+              stay in sync with your profile so shortlists stay relevant.
+            </FeatureBlock>
+            <FeatureBlock title="Household riders">
+              One phone or tablet can hold{" "}
+              <strong className="font-semibold text-[var(--foreground)]">several riders</strong> — each with a photo,
+              saved bikes, current ride, and trip history. Switch the active rider in Profile so matches and trips always
+              reflect who is on the bike today.
+            </FeatureBlock>
+            <FeatureBlock title="Trips, trails & shops">
+              Plan rides on AU trail context and surface nearby retailers when you need parts or a hire — tuned to the
+              active rider and how you actually ride.
+            </FeatureBlock>
+            <FeatureBlock title="Ask in plain language (web)">
+              Talk about bikes the way you would in the shop — richer natural-language help on web is rolling out so you
+              can steer research and comparisons without memorising spec codes.
+            </FeatureBlock>
+            <FeatureBlock title="Privacy by design">
+              Profiles, favourites, and trips live in your browser storage on this device — nothing is uploaded to our
+              servers. Use <strong className="font-semibold text-[var(--foreground)]">Export my data</strong> on your
+              first device and <strong className="font-semibold text-[var(--foreground)]">Import</strong> here or in
+              Profile to continue on a new phone or tablet. A small cookie marks onboarding complete; clear data
+              anytime from Profile.
+            </FeatureBlock>
+          </div>
+        </section>
+
+        <section className="r-stat-card mt-8 px-5 py-6 sm:px-7" aria-labelledby="welcome-steps-heading">
+          <h2 id="welcome-steps-heading" className="text-[15px] font-semibold text-[var(--foreground)]">
+            How it works
+          </h2>
+          <ol className="mt-4 space-y-4 text-[13px] leading-relaxed text-[var(--r-muted)]">
+            <li className="flex gap-3">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--r-orange-muted)] text-[12px] font-bold text-[var(--r-orange)]">
+                1
+              </span>
+              <span>
+                <strong className="text-[var(--foreground)]">Tell us who rides.</strong> Nickname (optional), height,
+                weight, style, and whether e-bikes matter — that's the engine behind match scores and trip relevance.
+              </span>
+            </li>
+            <li className="flex gap-3">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--r-orange-muted)] text-[12px] font-bold text-[var(--r-orange)]">
+                2
+              </span>
+              <span>
+                <strong className="text-[var(--foreground)]">Explore with confidence.</strong> Open bikes, compare
+                builds, save favourites, and lean on match breakdowns when you're shortlisting for yourself or someone
+                else in the crew.
+              </span>
+            </li>
+            <li className="flex gap-3">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--r-orange-muted)] text-[12px] font-bold text-[var(--r-orange)]">
+                3
+              </span>
+              <span>
+                <strong className="text-[var(--foreground)]">Ride & refine.</strong> Log current bikes, plan trips, add
+                household riders anytime — Rippers keeps context per person so the app grows with your garage.
+              </span>
+            </li>
+          </ol>
+        </section>
+
+        <section className="mt-10 border-t border-[var(--r-border)]/70 pt-8" aria-label="Start again after reading">
+          <p className="mb-3 text-center text-[13px] font-medium text-[var(--r-muted)] sm:text-left">Ready?</p>
+          <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
+            <Link
+              href={welcomeSetupHref(queryKey, "solo")}
+              prefetch={false}
+              className="r-btn-orange relative z-10 inline-flex min-h-[48px] w-full min-w-0 flex-1 items-center justify-center rounded-[10px] px-4 py-3.5 text-center text-[15px] font-semibold leading-snug text-white no-underline shadow-md transition active:scale-[0.99]"
+            >
+              Create my Profile
+            </Link>
+            <Link
+              href={welcomeSetupHref(queryKey, "family")}
+              prefetch={false}
+              className="relative z-10 inline-flex min-h-[48px] w-full min-w-0 flex-1 items-center justify-center rounded-[10px] border-2 border-[var(--r-orange)] bg-[var(--r-bg-well)] px-4 py-3.5 text-center text-[15px] font-semibold leading-snug text-[var(--r-orange)] no-underline shadow-sm transition hover:bg-[var(--r-orange-muted)] active:scale-[0.99]"
+            >
+              Create my riding family
+            </Link>
+          </div>
+        </section>
+      </div>
+    </div>
   );
 }

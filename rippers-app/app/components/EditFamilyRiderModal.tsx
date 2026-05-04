@@ -14,7 +14,7 @@ import {
 } from "@/src/lib/enrich-current-bike-catalog";
 import { notifyRiderPhotoUpdated } from "@/src/lib/rider-photo-events";
 import { resizePhotoToDataUrl } from "@/src/lib/resize-photo-to-data-url";
-import { LEGACY_PROFILE_PHOTO_KEY, readRiderPhoto, writeRiderPhoto } from "@/src/domain/rider-photo";
+import { readRiderPhoto, writeRiderPhoto } from "@/src/domain/rider-photo";
 import { useDialogFocus } from "@/src/hooks/use-dialog-focus";
 import { useRiderProfile } from "@/src/state/rider-profile-context";
 import type { Bike } from "@/src/domain/types";
@@ -53,14 +53,9 @@ export default function EditFamilyRiderModal({ rider, open, onClose, onViewCatal
   useEffect(() => {
     if (!open || riderId == null) return;
     startTransition(() => {
-      let p = readRiderPhoto(riderId);
-      if (!p && typeof localStorage !== "undefined") {
-        const legacy = localStorage.getItem(LEGACY_PROFILE_PHOTO_KEY);
-        if (legacy) {
-          writeRiderPhoto(riderId, legacy);
-          p = legacy;
-        }
-      }
+      const p = readRiderPhoto(riderId);
+      // Do not copy legacy global photo into this rider's scoped key — that made every household member
+      // share the same image once they'd been edited once. Scoped photo only; upload in-modal to set.
       setPhoto(p);
       setPhotoError(null);
       setSavedHint(null);

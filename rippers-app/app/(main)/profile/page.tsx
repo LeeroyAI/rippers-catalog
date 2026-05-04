@@ -15,13 +15,14 @@ import {
   RIDER_PROFILE_STORAGE_KEY,
   suggestedBikeCategory,
 } from "@/src/domain/rider-profile";
-import { savedTripsStorageKey } from "@/src/domain/saved-trips";
 import {
   LEGACY_PROFILE_PHOTO_KEY,
   readRiderPhoto,
   riderPhotoStorageKey,
   writeRiderPhoto,
 } from "@/src/domain/rider-photo";
+import RippersBackupImporter from "@/app/components/RippersBackupImporter";
+import { collectRippersBackupPayload, downloadRippersBackupJson } from "@/src/lib/rippers-device-backup";
 import { householdAddRiderHref } from "@/src/lib/welcome-add-mode";
 import { notifyRiderPhotoUpdated, RIDER_PHOTO_UPDATED_EVENT } from "@/src/lib/rider-photo-events";
 import { resizePhotoToDataUrl } from "@/src/lib/resize-photo-to-data-url";
@@ -318,13 +319,11 @@ export default function ProfilePage() {
     try {
       let p = readRiderPhoto(activeRiderId);
       if (!p) {
-        const legacy = localStorage.getItem(LEGACY_PROFILE_PHOTO_KEY);
-        if (legacy) {
-          writeRiderPhoto(activeRiderId, legacy);
-          p = legacy;
-        }
+        // Display-only fallback for the hero — never write legacy into scoped storage here, or every
+        // rider would get this same image the first time they become active (multi-rider bug).
+        p = localStorage.getItem(LEGACY_PROFILE_PHOTO_KEY);
       }
-      startTransition(() => setPhoto(p ?? null));
+      startTransition(() => setPhoto(p?.trim() ? p : null));
     } catch {
       startTransition(() => setPhoto(null));
     }
@@ -336,8 +335,9 @@ export default function ProfilePage() {
       const ce = e as CustomEvent<{ riderId?: string }>;
       if (ce.detail?.riderId != null && ce.detail.riderId !== activeRiderId) return;
       try {
-        const p = readRiderPhoto(activeRiderId);
-        startTransition(() => setPhoto(p ?? null));
+        let p = readRiderPhoto(activeRiderId);
+        if (!p) p = localStorage.getItem(LEGACY_PROFILE_PHOTO_KEY);
+        startTransition(() => setPhoto(p?.trim() ? p : null));
       } catch {
         startTransition(() => setPhoto(null));
       }
@@ -430,27 +430,8 @@ export default function ProfilePage() {
 
   function exportRippersBackup() {
     try {
-      const payload = {
-        exportedAt: new Date().toISOString(),
-        version: 2,
-        ridersState: localStorage.getItem(RIDERS_STORAGE_KEY),
-        riderProfileLegacy: localStorage.getItem(RIDER_PROFILE_STORAGE_KEY),
-        favouritesLegacy: localStorage.getItem("rippers:favourites:v1"),
-        profilePhoto: localStorage.getItem(LEGACY_PROFILE_PHOTO_KEY),
-        riderPhotos: Object.fromEntries(
-          riders.map((r) => [r.id, localStorage.getItem(riderPhotoStorageKey(r.id))])
-        ),
-        currentBikeLegacy: localStorage.getItem("rippers:current-bike:v2"),
-        savedTripsByRider: Object.fromEntries(
-          riders.map((r) => [r.id, localStorage.getItem(savedTripsStorageKey(r.id))])
-        ),
-      };
-      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = `rippers-backup-${new Date().toISOString().slice(0, 10)}.json`;
-      a.click();
-      URL.revokeObjectURL(a.href);
+      const payload = collectRippersBackupPayload(riders);
+      downloadRippersBackupJson(payload);
     } catch {
       setBackupNotice("Export failed — check download permissions.");
       setTimeout(() => setBackupNotice(null), 6000);
@@ -868,9 +849,13 @@ export default function ProfilePage() {
           >
             Export my data (JSON backup)
             <span className="mt-0.5 block text-[11px] font-normal text-[var(--r-muted)]">
-              Profile, saved bikes, photo, and current ride — for moving devices or your records.
+              Whole household: riders, per-rider saved bikes and photos, current rides, and trip saves — move to
+              another browser or device with Import below.
             </span>
           </button>
+          <div className="mt-3">
+            <RippersBackupImporter redirectHref="/" confirmReplace variant="profile" />
+          </div>
           {backupNotice && <p className="mt-2 text-[12px] font-medium text-red-600">{backupNotice}</p>}
         </div>
 
