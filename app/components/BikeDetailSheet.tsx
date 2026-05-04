@@ -1,15 +1,26 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import AskAISheet from "@/app/components/AskAISheet";
 import BikeProductImage from "@/app/components/BikeProductImage";
 import { getBestPrice } from "@/src/domain/bike-helpers";
+import {
+  currentRideDisplayTitle,
+  currentRideVersusRows,
+  resolveCatalogBikeForCurrentRide,
+} from "@/src/domain/current-ride-versus";
 import { matchBreakdownForBike, matchPercentForBike } from "@/src/domain/match-score";
+import { currentBikeStorageKeyForRider } from "@/src/domain/current-bike-entry";
 import { useDialogFocus } from "@/src/hooks/use-dialog-focus";
+import { forceWebBikeLookupRefresh } from "@/src/lib/bike-web-lookup-client";
+import { useCurrentBike } from "@/src/state/current-bike-store";
 import { useFavourites } from "@/src/state/favourites-store";
 import { useRiderProfile } from "@/src/state/rider-profile-context";
 import type { Bike } from "@/src/domain/types";
+
+const LEGACY_CURRENT_BIKE_KEY = "rippers:current-bike:v2";
 
 const RETAILER_LABELS: Record<string, string> = {
   "99bikes": "99 Bikes",
@@ -117,7 +128,22 @@ type Props = {
 
 export default function BikeDetailSheet({ bike, onClose }: Props) {
   const { toggle, has } = useFavourites();
-  const { profile } = useRiderProfile();
+  const { profile, activeRiderId } = useRiderProfile();
+  const { entry: currentBikeEntry } = useCurrentBike();
+  const currentBikeStorageKey = activeRiderId
+    ? currentBikeStorageKeyForRider(activeRiderId)
+    : LEGACY_CURRENT_BIKE_KEY;
+  const currentCatalogBike = resolveCatalogBikeForCurrentRide(currentBikeEntry);
+  const currentRideTitle = currentRideDisplayTitle(currentBikeEntry, currentCatalogBike);
+  const versusRows = useMemo(
+    () =>
+      bike ? currentRideVersusRows(bike, currentBikeEntry, currentCatalogBike) : [],
+    [bike, currentBikeEntry, currentCatalogBike]
+  );
+  const isViewingOwnCurrentBike =
+    bike != null &&
+    currentBikeEntry?.type === "catalog" &&
+    currentCatalogBike?.id === bike.id;
   const [askOpen, setAskOpen] = useState(false);
   const [sheetVisible, setSheetVisible] = useState(false);
   const [descExpanded, setDescExpanded] = useState(false);
@@ -424,6 +450,93 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
             ))}
           </div>
         </details>
+
+        {/* Vs current ride */}
+        {currentBikeEntry && !isViewingOwnCurrentBike && currentRideTitle && (
+          <div className="mx-4 mt-5 overflow-hidden rounded-2xl border border-[var(--r-border)] bg-gradient-to-b from-[rgba(229,71,26,0.06)] to-white">
+            <div className="border-b border-[var(--r-border)] bg-[rgba(229,71,26,0.05)] px-4 py-3">
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--r-orange)]">
+                Compared to your current ride
+              </p>
+              <p className="mt-1.5 text-[13px] font-semibold leading-snug text-[var(--foreground)]">{currentRideTitle}</p>
+              <p className="mt-1 text-[11px] leading-snug text-[var(--r-muted)]">
+                Here is how this catalogue snapshot lines up versus the bike saved on your profile — including web-sourced specs when your ride is custom or no longer in the snapshot.
+              </p>
+              {currentBikeEntry.type === "custom" && currentBikeEntry.lookup?.status === "loading" ? (
+                <p className="mt-2 flex items-center gap-2 text-[11px] font-medium text-[var(--r-muted)]">
+                  <span
+                    className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-[var(--r-border)] border-t-[var(--r-orange)]"
+                    aria-hidden
+                  />
+                  Fetching photo &amp; specs for your bike…
+                </p>
+              ) : null}
+              {currentBikeEntry.type === "custom" && currentBikeEntry.lookup?.status === "failed" ? (
+                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <p className="text-[11px] leading-snug text-amber-800">
+                    Couldn&apos;t confidently match your bike online — comparison may be incomplete.
+                  </p>
+                  <button
+                    type="button"
+                    className="text-[11px] font-semibold text-[var(--r-orange)] underline-offset-2 hover:underline"
+                    onClick={() => forceWebBikeLookupRefresh(currentBikeStorageKey)}
+                  >
+                    Retry lookup
+                  </button>
+                </div>
+              ) : null}
+            </div>
+            {versusRows.length === 0 ? (
+              <p className="px-4 py-4 text-[12px] leading-relaxed text-[var(--r-muted)]">
+                {currentBikeEntry.type === "custom" && currentBikeEntry.lookup?.status === "loading"
+                  ? "Hang tight — as soon as we have specs for your current bike, key differences will appear here."
+                  : "No overlapping spec lines yet — check both bikes below or update your current ride details in Profile."}
+                {" "}
+                <Link href="/profile#profile-ride" className="font-semibold text-[var(--r-orange)] underline-offset-2 hover:underline">
+                  Profile → Ride
+                </Link>
+              </p>
+            ) : (
+              <div className="divide-y divide-[var(--r-border)] border-t border-[var(--r-border)]">
+                <div className="grid grid-cols-[minmax(0,34%)_minmax(0,33%)_minmax(0,33%)] gap-2 bg-neutral-50/50 px-3 py-2 sm:px-4">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-[var(--r-muted)]">Spec</span>
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-[var(--r-muted)]">Your ride</span>
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-[var(--r-muted)]">This bike</span>
+                </div>
+                {versusRows.map((row) => {
+                  const cur = row.current ?? "—";
+                  const pr = row.prospect ?? "—";
+                  const diff =
+                    cur !== "—" &&
+                    pr !== "—" &&
+                    cur.trim().toLowerCase() !== pr.trim().toLowerCase();
+                  return (
+                    <div key={row.label} className="grid grid-cols-[minmax(0,34%)_minmax(0,33%)_minmax(0,33%)] gap-2 px-3 py-2.5 sm:px-4">
+                      <p className="text-[11px] font-semibold leading-snug text-[var(--r-muted)]">{row.label}</p>
+                      <p
+                        className={`text-[11px] leading-snug ${diff ? "font-semibold text-[var(--foreground)]" : "text-[var(--foreground)]/90"}`}
+                      >
+                        {cur}
+                      </p>
+                      <p
+                        className={`text-[11px] leading-snug ${diff ? "font-semibold text-[var(--foreground)]" : "text-[var(--foreground)]/90"}`}
+                      >
+                        {pr}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {isViewingOwnCurrentBike && (
+          <p className="mx-4 mt-5 rounded-2xl border border-[var(--r-border)] bg-neutral-50/60 px-4 py-3 text-[12px] leading-snug text-[var(--r-muted)]">
+            This listing is saved as{" "}
+            <span className="font-semibold text-[var(--foreground)]">your current ride</span>. Browse other bikes to see side-by-side spec comparisons.
+          </p>
+        )}
 
         {/* Sizes */}
         {bike.sizes && bike.sizes.length > 0 && (

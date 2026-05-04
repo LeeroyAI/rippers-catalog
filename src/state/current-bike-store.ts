@@ -23,15 +23,30 @@ function scopedKey(riderId: string | null): string {
   return riderId ? currentBikeStorageKeyForRider(riderId) : LEGACY_KEY;
 }
 
+function looksLikeCurrentBikePayload(raw: string | null): boolean {
+  if (!raw?.trim()) return false;
+  try {
+    const o = JSON.parse(raw) as { type?: string };
+    return o?.type === "catalog" || o?.type === "custom";
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Migrate `rippers:current-bike:v2` → per-rider key when scoped storage is missing or not a valid current-bike blob.
+ * A plain `localStorage.getItem(dest)` guard used to skip migration forever if the scoped key existed but held junk.
+ */
 function migrateLegacyToScoped(riderId: string) {
-  if (typeof localStorage === "undefined") return;
+  if (typeof localStorage === "undefined" || !riderId) return;
   try {
     const dest = scopedKey(riderId);
-    if (localStorage.getItem(dest)) return;
+    if (looksLikeCurrentBikePayload(localStorage.getItem(dest))) return;
     const legacy = localStorage.getItem(LEGACY_KEY);
-    if (!legacy) return;
-    localStorage.setItem(dest, legacy);
+    if (!looksLikeCurrentBikePayload(legacy)) return;
+    localStorage.setItem(dest, legacy!);
     localStorage.removeItem(LEGACY_KEY);
+    notifyCurrentBikeUpdated();
   } catch {
     /* ignore */
   }
@@ -48,6 +63,14 @@ function read(key: string): CurrentBikeEntry | null {
         localStorage.setItem(key, JSON.stringify(enriched));
       } catch {
         /* ignore */
+      }
+      /** Orphan catalogue id → custom: kick web lookup once persisted */
+      if (
+        typeof window !== "undefined" &&
+        parsed.type === "catalog" &&
+        enriched.type === "custom"
+      ) {
+        startWebBikeLookupForEntry(key, enriched);
       }
     }
     return enriched;
@@ -82,6 +105,17 @@ export function useCurrentBike() {
       retryFailedWebBikeLookupOnce(storageKey);
     });
   }, [hydrated, storeHydrated, storageKey]);
+
+  /**
+   * Rider `hydrated` flips after paint (useEffect in provider). Repeat read once Profile/shell renders so scoped
+   * storage + migration always catch up — belts-and-braces with useLayoutEffect.
+   */
+  useEffect(() => {
+    if (!hydrated) return;
+    if (!activeRiderId) return;
+    migrateLegacyToScoped(activeRiderId);
+    setEntry(read(scopedKey(activeRiderId)));
+  }, [hydrated, activeRiderId, storageKey]);
 
   useEffect(() => {
     if (!hydrated) return;

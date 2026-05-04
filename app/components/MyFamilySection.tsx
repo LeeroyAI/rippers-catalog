@@ -5,7 +5,6 @@ import { useEffect, useMemo, useState } from "react";
 
 import BikeProductImage from "@/app/components/BikeProductImage";
 import EditFamilyRiderModal from "@/app/components/EditFamilyRiderModal";
-import { catalog } from "@/src/data/catalog";
 import {
   type CurrentBikeEntry,
   currentBikeStorageKeyForRider,
@@ -15,6 +14,7 @@ import {
 import { CURRENT_BIKE_UPDATED_EVENT, notifyCurrentBikeUpdated } from "@/src/lib/current-bike-events";
 import { retryFailedWebBikeLookupOnce } from "@/src/lib/bike-web-lookup-client";
 import { enrichCurrentBikeWithCatalog } from "@/src/lib/enrich-current-bike-catalog";
+import { resolveCatalogBikeForCurrentRide } from "@/src/domain/current-ride-versus";
 import type { RiderRecord } from "@/src/domain/riders-storage";
 import { useRiderPhotoSnapshot } from "@/src/hooks/use-rider-photo-snapshot";
 import type { Bike } from "@/src/domain/types";
@@ -58,12 +58,7 @@ function FamilyRiderCard({
   const photoUrl = useRiderPhotoSnapshot(rider.id);
   const entry = useRiderCurrentBikeEntry(rider.id);
   const catBike = useMemo(() => {
-    if (!entry || entry.type !== "catalog") return null;
-    return (
-      catalog.find((b) => b.id === entry.bikeId) ??
-      catalog.find((b) => b.brand === entry.brand && b.model === entry.model) ??
-      null
-    );
+    return entry?.type === "catalog" ? resolveCatalogBikeForCurrentRide(entry) : null;
   }, [entry]);
 
   const name = rider.nickname.trim() || "Rider";
@@ -132,6 +127,8 @@ function FamilyRiderCard({
             <span className="font-semibold text-[var(--foreground)]">Current ride: </span>
             {entry.type === "catalog" && catBike
               ? `${catBike.brand} ${catBike.model}`
+              : entry.type === "catalog"
+                ? `${entry.brand} ${entry.model}`.trim()
               : entry.type === "custom"
                 ? `${entry.brand} ${entry.name}`.trim()
                 : "—"}

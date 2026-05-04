@@ -70,15 +70,23 @@ function sanitizeSpecs(raw: Record<string, unknown> | null): BikeSpecsLookup | n
   return Object.keys(out).length > 0 ? out : null;
 }
 
+function specsLookSubstantial(specs: BikeSpecsLookup | null): boolean {
+  if (!specs) return false;
+  const core = [specs.category, specs.travel, specs.wheel, specs.suspension, specs.description].filter(Boolean);
+  return core.length >= 2;
+}
+
 function mergeLookupOk(entry: CurrentBikeEntry, data: LookupApiOk, keyHash: string): CurrentBikeEntry {
   if (entry.type !== "custom") return entry;
   const specs = sanitizeSpecs(data.specs);
   const hasImage = Boolean(data.imageUrl && data.imageUrl.startsWith("https://"));
   const hasSpecs = Boolean(specs && Object.keys(specs).length > 0);
-  // API may attach Brave thumbnails (+ confidence bump); trust https image URLs from our route.
+  const confidence = typeof data.confidence === "number" && Number.isFinite(data.confidence) ? data.confidence : 0;
+  /** Haiku sometimes lowballs AU kids'/entry bikes; accept solid local specs slightly below legacy 0.32 bar */
   const usable =
     hasImage ||
-    (hasSpecs && typeof data.confidence === "number" && data.confidence >= 0.32);
+    (hasSpecs && confidence >= 0.32) ||
+    (hasSpecs && specsLookSubstantial(specs) && confidence >= 0.22);
 
   const lookup: CustomBikeWebLookup = usable
     ? {

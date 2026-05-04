@@ -115,7 +115,8 @@ async function extractWithClaude(snippets: BraveSnippet[], brand: string, model:
     "",
     "Rules:",
     "- Prefer specs from your training knowledge for this brand+model (+ year if plausible). Snippets are mainly for imageUrl and sourceUrl.",
-    "- If you cannot identify the bike confidently, set confidence below 0.35 and imageUrl/sourceUrl null and specs null.",
+    "- If you genuinely cannot infer the bike line at all (unknown brand/word salad), keep confidence ≤0.3 and omit specs/image.",
+    "- If you recognize a real AU-sold range (kids/junior, entry hardtails, supermarket-adjacent MTB families), fill specs from knowledge even when snippets are thin — typical confidence 0.38–0.72; omit imageUrl/sourceUrl only when URLs are not credible.",
     "- imageUrl must be https and look like a real image file or CDN path when present.",
   ].join("\n");
 
@@ -199,7 +200,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Bump when fallback / extraction shape changes so in-memory TTL doesn’t serve stale empty images across deploys.
-  const key = `${cacheKey(brand, model, year)}|v2-thumb-fallback`;
+  const key = `${cacheKey(brand, model, year)}|v4-au-triple-query`;
   const hit = memoryCache.get(key);
   if (hit && Date.now() - hit.at < CACHE_MS) {
     return NextResponse.json(hit.body, {
@@ -210,9 +211,10 @@ export async function POST(req: NextRequest) {
   try {
     const q1 = [brand, model, year, "mountain bike specifications Australia"].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
     const q2 = [brand, model, year, "mountain bike review site:vitalmtb.com OR site:bikesonline.com.au"].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
+    const q3 = [brand, model, year, "bike buy AU site:99bikes.com.au OR site:bikebug.com.au OR site:bicycleonline.com.au"].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
 
-    const [r1, r2] = await Promise.all([braveSearch(q1), braveSearch(q2)]);
-    const snippets = mergeSnippets(r1, r2, 24);
+    const [r1, r2, r3] = await Promise.all([braveSearch(q1), braveSearch(q2), braveSearch(q3)]);
+    const snippets = mergeSnippets(mergeSnippets(r1, r2, 24), r3, 28);
     if (snippets.length === 0) {
       const empty: LookupOk = { imageUrl: null, sourceUrl: null, specs: null, confidence: 0 };
       memoryCache.set(key, { at: Date.now(), body: empty });

@@ -169,7 +169,15 @@ export function enrichCurrentBikeWithCatalog(entry: CurrentBikeEntry | null): Cu
         (x) => norm(x.brand) === norm(entry.brand) && norm(x.model) === norm(entry.model)
       );
     }
-    return b ? toCatalogEntry(b) : entry;
+    if (b) return toCatalogEntry(b);
+    /** Not in this snapshot anymore — treat as custom so web image + specs lookup can still run */
+    return {
+      type: "custom",
+      name: entry.model,
+      brand: entry.brand,
+      year: String(entry.year),
+      photo: null,
+    };
   }
 
   const year = parseModelYear(entry.year);

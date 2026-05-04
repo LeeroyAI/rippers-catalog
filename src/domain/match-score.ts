@@ -1,6 +1,11 @@
 import type { Bike } from "@/src/domain/types";
 import type { RiderProfileV1 } from "@/src/domain/rider-profile";
 import { suggestedBikeCategory } from "@/src/domain/rider-profile";
+import {
+  bikeLooksJuniorSized,
+  riderLooksAdultForCatalog,
+  riderLooksYouthForCatalog,
+} from "@/src/domain/rider-catalog-fit";
 import { ridingStyleLabels } from "@/src/domain/riding-style";
 
 export type MatchFactor = {
@@ -85,6 +90,20 @@ export function matchBreakdownForBike(bike: Bike, profile: RiderProfileV1 | null
     });
   }
 
+  if (riderLooksAdultForCatalog(profile) && bikeLooksJuniorSized(bike)) {
+    factors.push({
+      label: "Sized for younger riders",
+      detail: `Your height (${profile.heightCm} cm) matches adult frames — favour 27.5″ / 29″ trail builds`,
+      sentiment: "negative",
+    });
+  } else if (riderLooksYouthForCatalog(profile) && bikeLooksJuniorSized(bike)) {
+    factors.push({
+      label: "Youth sizing",
+      detail: `Small-wheel bikes often fit junior heights around ${profile.heightCm} cm — confirm sizing with the shop`,
+      sentiment: "positive",
+    });
+  }
+
   return factors;
 }
 
@@ -121,10 +140,21 @@ export function matchPercentForBike(bike: Bike, profile: RiderProfileV1 | null):
     score += 4;
   }
 
+  if (profile.style === "jump" && /jump|park|dirt|pump|playful/i.test(bike.category + bike.description)) {
+    score += 3;
+  }
+
+  if (riderLooksAdultForCatalog(profile) && bikeLooksJuniorSized(bike)) {
+    score -= 28;
+  } else if (riderLooksYouthForCatalog(profile) && bikeLooksJuniorSized(bike)) {
+    score += 10;
+  }
+
   score += (bike.id + profile.heightCm + profile.weightKg) % 7;
   return clampPct(score);
 }
 
 function clampPct(n: number): number {
-  return Math.min(96, Math.max(71, Math.round(n)));
+  /** Wider floor so adult vs junior SKUs (same “Trail” category) don’t all read as ~71–90. */
+  return Math.min(96, Math.max(52, Math.round(n)));
 }

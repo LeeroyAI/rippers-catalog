@@ -34,6 +34,7 @@ import { useRiderProfile } from "@/src/state/rider-profile-context";
 import type { Bike } from "@/src/domain/types";
 import { currentBikeStorageKeyForRider } from "@/src/domain/current-bike-entry";
 import { webLookupSpecSummary } from "@/src/domain/bike-lookup";
+import { resolveCatalogBikeForCurrentRide } from "@/src/domain/current-ride-versus";
 import { forceWebBikeLookupRefresh } from "@/src/lib/bike-web-lookup-client";
 
 const PROFILE_PHOTO_CHANGED = "rippers:profile-photo-changed";
@@ -316,11 +317,8 @@ export default function ProfilePage() {
       ).slice(0, 8)
     : [];
 
-  const currentCatalogBike = currentBikeEntry?.type === "catalog"
-    ? (catalog.find((b) => b.id === currentBikeEntry.bikeId)
-        ?? catalog.find((b) => b.brand === currentBikeEntry.brand && b.model === currentBikeEntry.model))
-        ?? null
-    : null;
+  const currentCatalogBike =
+    currentBikeEntry?.type === "catalog" ? resolveCatalogBikeForCurrentRide(currentBikeEntry) : null;
 
   useEffect(() => {
     if (!activeRiderId) return;
@@ -624,6 +622,7 @@ export default function ProfilePage() {
             {!formOpen ? (
               <>
                 {[
+                  { label: "Nickname", value: profile.nickname.trim() || "—" },
                   { label: "Height", value: `${profile.heightCm} cm` },
                   { label: "Weight", value: `${profile.weightKg} kg` },
                   { label: "Est. reach", value: `~${approximateFrameReachCm(profile.heightCm)} mm` },
@@ -645,7 +644,7 @@ export default function ProfilePage() {
                     onClick={() => setFormOpen(true)}
                     className="w-full rounded-xl border border-[var(--r-orange)]/35 bg-white py-2.5 text-[13px] font-semibold text-[var(--r-orange)] shadow-sm transition hover:bg-orange-50/80"
                   >
-                    Update height, weight &amp; riding style
+                    Update nickname, sizing &amp; riding style
                   </button>
                 </div>
               </>
@@ -928,6 +927,17 @@ export default function ProfilePage() {
                     >
                       View full specs →
                     </button>
+                  </>
+                ) : currentBikeEntry.type === "catalog" ? (
+                  <>
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--r-muted)]">{currentBikeEntry.brand}</p>
+                    <p className="text-[15px] font-bold text-[var(--foreground)]">{currentBikeEntry.model}</p>
+                    <p className="mt-0.5 text-[12px] text-[var(--r-muted)]">Model year {currentBikeEntry.year}</p>
+                    <p className="mt-1.5 text-[11px] leading-snug text-[var(--r-muted)]">
+                      This bike isn&apos;t matched to the bundled catalogue row yet — tap{" "}
+                      <strong className="text-[var(--foreground)]">Remove</strong> then pick it again from search, or run{" "}
+                      <code className="rounded bg-neutral-100 px-1 py-0.5 text-[10px]">npm run sync-catalog</code> if your data snapshot is stale.
+                    </p>
                   </>
                 ) : currentBikeEntry.type === "custom" ? (
                   <>

@@ -25,6 +25,7 @@ import { RIDER_PHOTO_UPDATED_EVENT } from "@/src/lib/rider-photo-events";
 import { useRiderProfile } from "@/src/state/rider-profile-context";
 import { currentBikeStorageKeyForRider } from "@/src/domain/current-bike-entry";
 import { webLookupSpecSummary } from "@/src/domain/bike-lookup";
+import { resolveCatalogBikeForCurrentRide } from "@/src/domain/current-ride-versus";
 import { forceWebBikeLookupRefresh } from "@/src/lib/bike-web-lookup-client";
 
 const PROFILE_PHOTO_CHANGED = "rippers:profile-photo-changed";
@@ -90,7 +91,8 @@ function HomePageContent() {
   const { filters, filteredBikes, updateFilters, resetFilters } = useFilterStore();
   const { hydrated, profile, riders, activeRiderId } = useRiderProfile();
   const { toggle, has } = useFavourites();
-  const syncedFromProfile = useRef(false);
+  /** Tracks last rider we synced Home filters for — avoids one-time sync missing household switches */
+  const prevHomeRiderFiltersRef = useRef<string | null>(null);
   const [matchBike, setMatchBike] = useState<Bike | null>(null);
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [whatIsOpen, setWhatIsOpen] = useState(true);
@@ -135,11 +137,8 @@ function HomePageContent() {
     }
   }, [searchParams, clearOpenBikeParam]);
 
-  const currentCatalogBike = currentBikeEntry?.type === "catalog"
-    ? (catalog.find((b) => b.id === currentBikeEntry.bikeId)
-        ?? catalog.find((b) => b.brand === currentBikeEntry.brand && b.model === currentBikeEntry.model))
-        ?? null
-    : null;
+  const currentCatalogBike =
+    currentBikeEntry?.type === "catalog" ? resolveCatalogBikeForCurrentRide(currentBikeEntry) : null;
 
   const currentRideLabel = useMemo(() => {
     if (!currentBikeEntry) return null;
@@ -205,14 +204,32 @@ function HomePageContent() {
     return Array.from(u).sort((a, b) => a.localeCompare(b));
   }, []);
 
+  /**
+   * Rebuild Home filtering for the active household rider: category mirrors their profile/eBike prefs,
+   * and switching riders clears text search, budget cap, and shortlist scope so results aren’t stuck on a child’s session.
+   */
   useEffect(() => {
-    if (!hydrated || !profile || syncedFromProfile.current) return;
-    const cat = suggestedBikeCategory(profile);
-    if (cat) {
-      updateFilters({ category: cat });
-      syncedFromProfile.current = true;
+    if (!hydrated || !profile || !activeRiderId) return;
+
+    const prev = prevHomeRiderFiltersRef.current;
+    const riderChanged = prev !== activeRiderId;
+    prevHomeRiderFiltersRef.current = activeRiderId;
+
+    const cat = suggestedBikeCategory(profile) ?? null;
+
+    if (riderChanged) {
+      updateFilters({
+        category: cat,
+        query: "",
+        budgetMax: null,
+        sort: "bestMatch",
+      });
+      startTransition(() => setListScope("personalised"));
+      return;
     }
-  }, [hydrated, profile, updateFilters]);
+
+    updateFilters({ category: cat });
+  }, [hydrated, activeRiderId, profile.preferEbike, profile.style, updateFilters]);
 
   const searchActive = Boolean(filters.query?.trim());
   const showMatchShortlist =
@@ -504,7 +521,7 @@ function HomePageContent() {
                           </p>
                           <p className="max-w-[16rem] text-[11px] leading-snug text-white/45">
                             {lu?.status === "failed"
-                              ? "We couldn&apos;t find a confident image or spec sheet online — try Refresh below or tweak brand / model / year in Profile."
+                              ? "We couldn't find a confident image or spec sheet online — try Refresh below or tweak brand / model / year in Profile."
                               : "Save your bike in Profile to look up product photos and specs from the web."}
                           </p>
                         </div>
@@ -929,6 +946,25 @@ function HomePageContent() {
                     : `Top ${homeListBikes.length} by match for your profile and filters — open full list to see the rest.`
                   : "Filter by category and budget, or search — data is the bundled AU snapshot in this build."}
             </p>
+            {profile && currentRideLabel ? (
+              <p className="mt-2 text-[11px] leading-snug text-[var(--r-muted)]">
+                <span className="font-semibold text-[var(--foreground)]">How results compare to your current ride:</span>{" "}
+                tap a bike, then scroll to <span className="font-semibold text-[var(--foreground)]">Compared to your current ride</span> for spec lines next to{" "}
+                <span className="font-semibold text-[var(--foreground)]">{currentRideLabel}</span>
+                {currentBikeEntry?.type === "custom" && currentBikeEntry.lookup?.status === "loading"
+                  ? " (we’re loading web specs for your bike now)."
+                  : "."}
+              </p>
+            ) : profile ? (
+              <p className="mt-2 text-[11px] leading-snug text-[var(--r-muted)]">
+                <span className="font-semibold text-[var(--foreground)]">Vs your current bike:</span>{" "}
+                add what you ride today in{" "}
+                <Link href="/profile#profile-ride" className="font-semibold text-[var(--r-orange)] underline-offset-2 hover:underline">
+                  Profile → Ride
+                </Link>{" "}
+                — we’ll fetch product images and specs where needed, and show comparisons when you open any listing.
+              </p>
+            ) : null}
             <p className="mt-2 text-[11px] font-semibold leading-snug text-[var(--r-orange)]">{viewModeLine}</p>
           </div>
           <div className="flex shrink-0 flex-col items-end gap-1">
