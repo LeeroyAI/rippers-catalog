@@ -8,7 +8,11 @@ import {
 } from "@/src/domain/current-bike-entry";
 import { CURRENT_BIKE_UPDATED_EVENT, notifyCurrentBikeUpdated } from "@/src/lib/current-bike-events";
 import { enrichCurrentBikeWithCatalog } from "@/src/lib/enrich-current-bike-catalog";
-import { retryStaleWebBikeLookupIfNeeded, startWebBikeLookupForEntry } from "@/src/lib/bike-web-lookup-client";
+import {
+  retryFailedWebBikeLookupOnce,
+  retryStaleWebBikeLookupIfNeeded,
+  startWebBikeLookupForEntry,
+} from "@/src/lib/bike-web-lookup-client";
 import { useRiderProfile } from "@/src/state/rider-profile-context";
 
 export type { CurrentBikeEntry };
@@ -73,7 +77,10 @@ export function useCurrentBike() {
 
   useEffect(() => {
     if (!hydrated || !storeHydrated) return;
-    queueMicrotask(() => retryStaleWebBikeLookupIfNeeded(storageKey));
+    queueMicrotask(() => {
+      retryStaleWebBikeLookupIfNeeded(storageKey);
+      retryFailedWebBikeLookupOnce(storageKey);
+    });
   }, [hydrated, storeHydrated, storageKey]);
 
   useEffect(() => {

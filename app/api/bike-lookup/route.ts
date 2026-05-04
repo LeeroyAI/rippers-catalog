@@ -115,7 +115,7 @@ async function extractWithClaude(snippets: BraveSnippet[], brand: string, model:
     "",
     "Rules:",
     "- Prefer specs from your training knowledge for this brand+model (+ year if plausible). Snippets are mainly for imageUrl and sourceUrl.",
-    "- If you cannot identify the bike confidently, set confidence below 0.45 and imageUrl/sourceUrl null and specs null.",
+    "- If you cannot identify the bike confidently, set confidence below 0.35 and imageUrl/sourceUrl null and specs null.",
     "- imageUrl must be https and look like a real image file or CDN path when present.",
   ].join("\n");
 
@@ -157,6 +157,27 @@ async function extractWithClaude(snippets: BraveSnippet[], brand: string, model:
   return { imageUrl, sourceUrl, specs, confidence };
 }
 
+function firstHttpsThumbnail(snippets: BraveSnippet[]): string | null {
+  for (const s of snippets) {
+    const u = (s.imageUrl ?? "").trim();
+    if (u.startsWith("https://")) return u;
+  }
+  return null;
+}
+
+/**
+ * Brave often has page thumbnails Claude omits — fill imageUrl and bump confidence slightly
+ * so the client accepts a hero when we still have searchable context.
+ */
+function withBraveThumbnailFallback(snippets: BraveSnippet[], extracted: LookupOk): LookupOk {
+  const thumb = firstHttpsThumbnail(snippets);
+  if (!thumb) return extracted;
+  let { imageUrl, confidence } = extracted;
+  if (!imageUrl) imageUrl = thumb;
+  if (imageUrl === thumb && confidence < 0.46) confidence = Math.max(confidence, 0.46);
+  return { ...extracted, imageUrl, confidence };
+}
+
 function cacheKey(brand: string, model: string, year: string): string {
   return `${brand.trim().toLowerCase()}|${model.trim().toLowerCase()}|${year.trim().toLowerCase()}`;
 }
@@ -177,7 +198,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing brand and model" }, { status: 400 });
   }
 
-  const key = cacheKey(brand, model, year);
+  // Bump when fallback / extraction shape changes so in-memory TTL doesn’t serve stale empty images across deploys.
+  const key = `${cacheKey(brand, model, year)}|v2-thumb-fallback`;
   const hit = memoryCache.get(key);
   if (hit && Date.now() - hit.at < CACHE_MS) {
     return NextResponse.json(hit.body, {
@@ -197,7 +219,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(empty);
     }
 
-    const extracted = await extractWithClaude(snippets, brand, model, year);
+    const extracted = withBraveThumbnailFallback(snippets, await extractWithClaude(snippets, brand, model, year));
     memoryCache.set(key, { at: Date.now(), body: extracted });
 
     return NextResponse.json(extracted, {

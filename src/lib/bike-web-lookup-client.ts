@@ -75,7 +75,10 @@ function mergeLookupOk(entry: CurrentBikeEntry, data: LookupApiOk, keyHash: stri
   const specs = sanitizeSpecs(data.specs);
   const hasImage = Boolean(data.imageUrl && data.imageUrl.startsWith("https://"));
   const hasSpecs = Boolean(specs && Object.keys(specs).length > 0);
-  const usable = data.confidence >= 0.42 && (hasImage || hasSpecs);
+  // API may attach Brave thumbnails (+ confidence bump); trust https image URLs from our route.
+  const usable =
+    hasImage ||
+    (hasSpecs && typeof data.confidence === "number" && data.confidence >= 0.32);
 
   const lookup: CustomBikeWebLookup = usable
     ? {
@@ -211,4 +214,16 @@ export function retryStaleWebBikeLookupIfNeeded(storageKey: string): void {
     const keyHash = entry.lookup.keyHash ?? lookupKeyHash(entry.brand, entry.name, entry.year);
     void fetchAndMerge(storageKey, keyHash);
   }
+}
+
+const failedAutoRetryKeys = new Set<string>();
+
+/** One retry per browser session after backend/merge fixes (avoid hammering `/api/bike-lookup`). */
+export function retryFailedWebBikeLookupOnce(storageKey: string): void {
+  if (!storageKey || failedAutoRetryKeys.has(storageKey)) return;
+  const entry = readEntry(storageKey);
+  if (!entry || entry.type !== "custom") return;
+  if (entry.lookup?.status !== "failed") return;
+  failedAutoRetryKeys.add(storageKey);
+  startWebBikeLookupForEntry(storageKey, entry);
 }

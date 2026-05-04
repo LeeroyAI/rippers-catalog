@@ -39,6 +39,17 @@ const ALLOWED_HOST_SUFFIXES = [
   "cloudfront.net",
   "wikipedia.org",
   "wikimedia.org",
+  "brave.com",
+  "silverback-world.com",
+  "silverbackbicycles.co.za",
+  "k-ozcycling.com.au",
+  "bicycle.net.au",
+  "i0.wp.com",
+  "i1.wp.com",
+  "i2.wp.com",
+  "wp.com",
+  "googleusercontent.com",
+  "gstatic.com",
 ];
 
 function isAllowedImageHost(hostname: string): boolean {

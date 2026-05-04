@@ -8,10 +8,12 @@ import EditFamilyRiderModal from "@/app/components/EditFamilyRiderModal";
 import { catalog } from "@/src/data/catalog";
 import {
   type CurrentBikeEntry,
+  currentBikeStorageKeyForRider,
   readCurrentBikeForRider,
   writeCurrentBikeForRider,
 } from "@/src/domain/current-bike-entry";
 import { CURRENT_BIKE_UPDATED_EVENT, notifyCurrentBikeUpdated } from "@/src/lib/current-bike-events";
+import { retryFailedWebBikeLookupOnce } from "@/src/lib/bike-web-lookup-client";
 import { enrichCurrentBikeWithCatalog } from "@/src/lib/enrich-current-bike-catalog";
 import type { RiderRecord } from "@/src/domain/riders-storage";
 import { useRiderPhotoSnapshot } from "@/src/hooks/use-rider-photo-snapshot";
@@ -22,6 +24,7 @@ function useRiderCurrentBikeEntry(riderId: string): CurrentBikeEntry | null {
   const [entry, setEntry] = useState<CurrentBikeEntry | null>(null);
   useEffect(() => {
     function refresh() {
+      retryFailedWebBikeLookupOnce(currentBikeStorageKeyForRider(riderId));
       const raw = readCurrentBikeForRider(riderId);
       const enriched = enrichCurrentBikeWithCatalog(raw);
       if (enriched && JSON.stringify(enriched) !== JSON.stringify(raw)) {
