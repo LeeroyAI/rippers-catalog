@@ -1794,35 +1794,5 @@
     "battery": null,
     "range": null,
     "ageRange": "8–12 yrs · 130–150cm"
-  },
-  {
-    "id": 49,
-    "brand": "Silverback",
-    "model": "Spyke 24 D",
-    "year": 2024,
-    "category": "Trail",
-    "wheel": "24\"",
-    "travel": "Hardtail",
-    "suspension": "Hardtail",
-    "frame": "Mechanically-formed 6061 alloy, low standover",
-    "drivetrain": "Shimano Tourney 1×7 grip shift",
-    "fork": "Zoom steel coil suspension 50mm",
-    "shock": "N/A",
-    "weight": "13.66kg",
-    "brakes": "Tektro MD-M280 mechanical disc 160mm",
-    "description": "Kids’ 24\" trail hardtail with short-travel coil fork, 1×7 Shimano gearing, alloy wheels with 24×2.35\" tyres, and mechanical discs — built for juniors roughly 130–150cm rider height.",
-    "sizes": [
-      "One Size"
-    ],
-    "prices": {},
-    "wasPrice": null,
-    "inStock": [],
-    "sourceUrl": "https://silverbackbikes.de/products/spyke-24-gen4",
-    "isEbike": false,
-    "motorBrand": null,
-    "motor": null,
-    "battery": null,
-    "range": null,
-    "ageRange": "Roughly 130–150cm · ~8–12 yrs"
   }
 ]
