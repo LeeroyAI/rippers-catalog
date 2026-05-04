@@ -30,11 +30,14 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: node scripts/fetch_live_catalog.js
 
+      - name: Sync catalog into app
+        run: npm run sync-catalog
+
       - name: Commit updated catalog
         run: |
           git config user.name "Rippers Bot"
           git config user.email "bot@rippers.app"
-          git add Rippers/catalog.json
+          git add catalog.json src/data/catalog.json
           if git diff --cached --quiet; then
             echo "No catalog changes to commit."
           else
