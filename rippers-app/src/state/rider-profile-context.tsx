@@ -1,5 +1,6 @@
 "use client";
 
+import { flushSync } from "react-dom";
 import {
   createContext,
   type ReactNode,
@@ -168,33 +169,35 @@ export function RiderProfileProvider({ children }: { children: ReactNode }) {
         style: draft.style as RidingStyle,
         preferEbike: draft.preferEbike,
       };
-      setRidersState((prev) => {
-        const base = coalesceRidersStateFromStorage(prev);
-        let next: RidersStateV1;
-        let riderIdForBike: string;
-        if (!base || base.riders.length === 0) {
-          const id = makeRiderId();
-          riderIdForBike = id;
-          next = { version: 1, activeRiderId: id, riders: [{ ...full, id }] };
-        } else {
-          riderIdForBike = base.activeRiderId;
-          const id = base.activeRiderId;
-          next = {
-            ...base,
-            riders: base.riders.map((r) => (r.id === id ? { ...full, id } : r)),
-          };
-        }
-        persistState(next);
-        setOnboardedCookie();
-        if (initialCurrentBike !== undefined) {
-          persistEnrichedCurrentBikeForRider(riderIdForBike, initialCurrentBike);
-        }
-        if (profilePhotoDataUrl !== undefined) {
-          const trimmed = profilePhotoDataUrl?.trim();
-          writeRiderPhoto(riderIdForBike, trimmed ? profilePhotoDataUrl! : null);
-          notifyRiderPhotoUpdated(riderIdForBike);
-        }
-        return next;
+      flushSync(() => {
+        setRidersState((prev) => {
+          const base = coalesceRidersStateFromStorage(prev);
+          let next: RidersStateV1;
+          let riderIdForBike: string;
+          if (!base || base.riders.length === 0) {
+            const id = makeRiderId();
+            riderIdForBike = id;
+            next = { version: 1, activeRiderId: id, riders: [{ ...full, id }] };
+          } else {
+            riderIdForBike = base.activeRiderId;
+            const id = base.activeRiderId;
+            next = {
+              ...base,
+              riders: base.riders.map((r) => (r.id === id ? { ...full, id } : r)),
+            };
+          }
+          persistState(next);
+          setOnboardedCookie();
+          if (initialCurrentBike !== undefined) {
+            persistEnrichedCurrentBikeForRider(riderIdForBike, initialCurrentBike);
+          }
+          if (profilePhotoDataUrl !== undefined) {
+            const trimmed = profilePhotoDataUrl?.trim();
+            writeRiderPhoto(riderIdForBike, trimmed ? profilePhotoDataUrl! : null);
+            notifyRiderPhotoUpdated(riderIdForBike);
+          }
+          return next;
+        });
       });
     },
     []
@@ -211,18 +214,20 @@ export function RiderProfileProvider({ children }: { children: ReactNode }) {
         preferEbike: draft.preferEbike,
       };
       const id = makeRiderId();
-      setRidersState((prev) => {
-        const base = coalesceRidersStateFromStorage(prev);
-        const next: RidersStateV1 =
-          !base || base.riders.length === 0
-            ? { version: 1, activeRiderId: id, riders: [{ ...full, id }] }
-            : { version: 1, activeRiderId: id, riders: [...base.riders, { ...full, id }] };
-        persistState(next);
-        setOnboardedCookie();
-        if (initialCurrentBike !== undefined) {
-          persistEnrichedCurrentBikeForRider(id, initialCurrentBike);
-        }
-        return next;
+      flushSync(() => {
+        setRidersState((prev) => {
+          const base = coalesceRidersStateFromStorage(prev);
+          const next: RidersStateV1 =
+            !base || base.riders.length === 0
+              ? { version: 1, activeRiderId: id, riders: [{ ...full, id }] }
+              : { version: 1, activeRiderId: id, riders: [...base.riders, { ...full, id }] };
+          persistState(next);
+          setOnboardedCookie();
+          if (initialCurrentBike !== undefined) {
+            persistEnrichedCurrentBikeForRider(id, initialCurrentBike);
+          }
+          return next;
+        });
       });
       const trimmedPhoto = initialProfilePhoto?.trim();
       if (trimmedPhoto) {
@@ -243,19 +248,21 @@ export function RiderProfileProvider({ children }: { children: ReactNode }) {
         style: draft.style as RidingStyle,
         preferEbike: draft.preferEbike,
       };
-      setRidersState((prev) => {
-        const base = coalesceRidersStateFromStorage(prev);
-        if (!base || !base.riders.some((r) => r.id === riderId)) return prev;
-        const next = {
-          ...base,
-          riders: base.riders.map((r) => (r.id === riderId ? { ...full, id: riderId } : r)),
-        };
-        persistState(next);
-        setOnboardedCookie();
-        if (initialCurrentBike !== undefined) {
-          persistEnrichedCurrentBikeForRider(riderId, initialCurrentBike);
-        }
-        return next;
+      flushSync(() => {
+        setRidersState((prev) => {
+          const base = coalesceRidersStateFromStorage(prev);
+          if (!base || !base.riders.some((r) => r.id === riderId)) return prev;
+          const next = {
+            ...base,
+            riders: base.riders.map((r) => (r.id === riderId ? { ...full, id: riderId } : r)),
+          };
+          persistState(next);
+          setOnboardedCookie();
+          if (initialCurrentBike !== undefined) {
+            persistEnrichedCurrentBikeForRider(riderId, initialCurrentBike);
+          }
+          return next;
+        });
       });
     },
     []
