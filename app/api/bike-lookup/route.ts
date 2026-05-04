@@ -20,6 +20,7 @@ const CACHE_MS = 86_400_000;
 let warnedBraveKeyMissingDev = false;
 
 let warnedBraveKeyRejected = false;
+let warnedAnthropicCreditsLow = false;
 
 /**
  * Env copy/paste issues (BOM, quotes, newlines) cause Brave 422 “invalid token” even when the dashboard key is fine.
@@ -283,6 +284,18 @@ function boostConfidenceWhenSpecsDense(body: LookupOk): LookupOk {
   return c === body.confidence ? body : { ...body, confidence: c };
 }
 
+function braveOnlyFallback(snippets: BraveSnippet[]): LookupOk {
+  const thumb = firstHttpsThumbnail(snippets);
+  const sourceUrl =
+    snippets.find((s) => typeof s.url === "string" && s.url.startsWith("https://"))?.url ?? null;
+  return {
+    imageUrl: thumb,
+    sourceUrl,
+    specs: null,
+    confidence: thumb ? 0.46 : 0.16,
+  };
+}
+
 function cacheKey(brand: string, model: string, year: string): string {
   return `${brand.trim().toLowerCase()}|${model.trim().toLowerCase()}|${year.trim().toLowerCase()}`;
 }
@@ -347,7 +360,23 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    let extracted = withBraveThumbnailFallback(snippets, await extractWithClaude(snippets, brand, model, year));
+    let extracted: LookupOk;
+    try {
+      extracted = withBraveThumbnailFallback(snippets, await extractWithClaude(snippets, brand, model, year));
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      if (msg.includes("credit balance is too low")) {
+        if (!warnedAnthropicCreditsLow) {
+          warnedAnthropicCreditsLow = true;
+          console.warn(
+            "[bike-lookup] Anthropic credits are exhausted — returning Brave-only fallback (image/source when available, no specs)."
+          );
+        }
+        extracted = braveOnlyFallback(snippets);
+      } else {
+        throw error;
+      }
+    }
     extracted = boostConfidenceWhenSpecsDense(extracted);
     memoryCache.set(key, { at: Date.now(), body: extracted });
 
