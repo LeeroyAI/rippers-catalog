@@ -242,7 +242,7 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
       />
       <div
         ref={panelRef}
-        className={`fixed bottom-0 left-0 right-0 z-[2001] flex max-h-[92dvh] flex-col overflow-hidden rounded-t-[1.35rem] bg-white shadow-[0_-12px_48px_rgba(18,16,12,0.18)] motion-safe:transition-transform motion-safe:duration-[320ms] motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${
+        className={`fixed bottom-0 left-0 right-0 z-[2001] flex max-h-[92dvh] flex-col overflow-hidden rounded-t-[1.35rem] bg-surface-raised shadow-[0_-12px_48px_rgba(18,16,12,0.18)] motion-safe:transition-transform motion-safe:duration-[320ms] motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${
           sheetVisible ? "translate-y-0" : "translate-y-full"
         }`}
         role="dialog"
@@ -250,9 +250,9 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
         aria-label={`${bike.brand} ${bike.model} — full specs`}
       >
         {/* Sticky chrome: handle + optional compact title (scroll) */}
-        <div className="z-20 shrink-0 bg-white/95 pb-0 pt-[max(0.5rem,env(safe-area-inset-top,0px))] shadow-[0_1px_0_rgba(0,0,0,0.06)] backdrop-blur-md supports-[backdrop-filter]:bg-white/88">
+        <div className="z-20 shrink-0 bg-surface-raised/95 pb-0 pt-[max(0.5rem,env(safe-area-inset-top,0px))] shadow-[0_1px_0_rgba(0,0,0,0.06)] backdrop-blur-md supports-[backdrop-filter]:bg-surface-raised/88">
           <div className="flex justify-center pt-1 pb-2">
-            <div className="h-1 w-10 shrink-0 rounded-full bg-neutral-200" aria-hidden />
+            <div className="h-1 w-10 shrink-0 rounded-full bg-stroke" aria-hidden />
           </div>
           <div
             className={`grid transition-[grid-template-rows,opacity] duration-200 ease-out motion-reduce:transition-none ${
@@ -260,7 +260,7 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
             }`}
           >
             <div className="min-h-0 overflow-hidden">
-              <div className="flex items-center gap-3 border-t border-[var(--r-border)] px-4 pb-2.5 pt-1">
+              <div className="flex items-center gap-3 border-t border-stroke px-4 pb-2.5 pt-1">
                 <p className="min-w-0 flex-1 truncate text-[14px] font-semibold text-[var(--foreground)]">
                   {bike.model}
                 </p>
@@ -268,7 +268,7 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
                   type="button"
                   onClick={onClose}
                   aria-label="Close"
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-neutral-700 transition-colors hover:bg-neutral-200"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-raised text-text-2 transition-colors hover:bg-stroke"
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
                     <path d="M18 6 6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
@@ -288,7 +288,7 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
           }}
         >
         {/* Hero image */}
-        <div className="relative mx-4 mt-1 aspect-[16/9] overflow-hidden rounded-2xl bg-[#f5f3ef] ring-1 ring-black/[0.04]">
+        <div className="relative mx-4 mt-1 aspect-[16/9] overflow-hidden rounded-2xl bg-surface ring-1 ring-stroke">
           <BikeProductImage
             bikeId={bike.id}
             alt={`${bike.brand} ${bike.model}`}
@@ -298,22 +298,22 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="absolute left-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 shadow backdrop-blur"
+            className="absolute left-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-surface-raised/90 shadow backdrop-blur"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <path d="M18 6 6 18M6 6l12 12" stroke="#333" strokeWidth="2" strokeLinecap="round" />
+              <path d="M18 6 6 18M6 6l12 12" stroke="rgb(var(--c-text-3))" strokeWidth="2" strokeLinecap="round" />
             </svg>
           </button>
           <button
             type="button"
             onClick={() => toggle(bike.id)}
             aria-label={isFav ? "Remove from favourites" : "Save to favourites"}
-            className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 shadow backdrop-blur"
+            className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-surface-raised/90 shadow backdrop-blur"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill={isFav ? "#e5471a" : "none"} aria-hidden>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill={isFav ? "rgb(var(--c-brand))" : "none"} aria-hidden>
               <path
                 d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-                stroke={isFav ? "#e5471a" : "#555"}
+                stroke={isFav ? "rgb(var(--c-brand))" : "rgb(var(--c-text-3))"}
                 strokeWidth="1.6"
               />
             </svg>
@@ -340,7 +340,7 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
                   {[bike.category, bike.wheel, bike.travel].filter(Boolean).map((bit) => (
                     <span
                       key={bit}
-                      className="rounded-full border border-[var(--r-border)] bg-neutral-50 px-2.5 py-1 text-[11px] font-semibold text-[var(--r-muted)]"
+                      className="rounded-full border border-stroke bg-surface px-2.5 py-1 text-[11px] font-semibold text-[var(--r-muted)]"
                     >
                       {bit}
                     </span>
@@ -349,7 +349,7 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
               )}
             </div>
             {bestPrice != null && (
-              <div className="shrink-0 rounded-xl border border-[var(--r-border)] bg-gradient-to-b from-neutral-50 to-white px-3 py-2 text-right shadow-sm">
+              <div className="shrink-0 rounded-xl border border-stroke bg-gradient-to-b from-surface to-surface px-3 py-2 text-right shadow-sm">
                 {sortedRetailers.length > 1 && (
                   <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--r-muted)]">From</p>
                 )}
@@ -358,8 +358,8 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
                 </p>
                 {bike.wasPrice != null && bike.wasPrice > bestPrice && (
                   <div className="mt-1 flex flex-col items-end gap-0.5">
-                    <p className="text-[11px] text-neutral-400 line-through">{aud(bike.wasPrice)}</p>
-                    <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                    <p className="text-[11px] text-text-3 line-through">{aud(bike.wasPrice)}</p>
+                    <span className="rounded-full bg-success-subtle/15 px-2 py-0.5 text-[10px] font-bold text-success">
                       Save {aud(bike.wasPrice - bestPrice)}
                     </span>
                   </div>
@@ -379,7 +379,7 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
               <button
                 type="button"
                 onClick={() => setDescExpanded((e) => !e)}
-                className="mt-2 text-[12px] font-semibold text-[var(--r-orange)]"
+                className="mt-2 text-[12px] font-semibold text-brand-text"
               >
                 {descExpanded ? "Show less" : "Read full description"}
               </button>
@@ -388,9 +388,9 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
         </div>
 
         {/* Match breakdown — starts closed so specs & actions feel primary */}
-        <details className="group mx-4 mt-5 overflow-hidden rounded-2xl border border-[var(--r-border)] bg-neutral-50/40 open:border-[var(--r-orange)]/25 open:bg-white open:shadow-[0_8px_28px_rgba(18,16,12,0.06)]">
+        <details className="group mx-4 mt-5 overflow-hidden rounded-2xl border border-stroke bg-surface/40 open:border-brand/25 open:bg-surface-raised open:shadow-[0_8px_28px_rgba(18,16,12,0.06)]">
           <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden">
-            <span className="flex h-11 min-w-[2.75rem] shrink-0 items-center justify-center rounded-xl bg-[rgba(229,71,26,0.12)] px-1 text-[14px] font-bold tabular-nums leading-none text-[var(--r-orange)]">
+            <span className="flex h-11 min-w-[2.75rem] shrink-0 items-center justify-center rounded-xl bg-brand/10 px-1 text-[14px] font-bold tabular-nums leading-none text-brand-text">
               {matchPct}%
             </span>
             <div className="min-w-0 flex-1">
@@ -404,7 +404,7 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
               </p>
             </div>
             <svg
-              className="h-5 w-5 shrink-0 text-neutral-400 transition-transform duration-200 group-open:rotate-180"
+              className="h-5 w-5 shrink-0 text-text-3 transition-transform duration-200 group-open:rotate-180"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -414,31 +414,31 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
               <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </summary>
-          <div className="border-t border-[var(--r-border)] bg-white">
+          <div className="border-t border-stroke bg-surface-raised">
             {matchFactors.map((f, i) => (
               <div
                 key={f.label}
                 className={`flex items-start gap-3 px-4 py-2.5 ${
-                  i < matchFactors.length - 1 ? "border-b border-[var(--r-border)]" : ""
+                  i < matchFactors.length - 1 ? "border-b border-stroke" : ""
                 }`}
               >
                 <span className="mt-0.5 shrink-0">
                   {f.sentiment === "positive" && (
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
-                      <circle cx="12" cy="12" r="10" fill="rgba(22,163,74,0.12)" />
-                      <path d="m7.5 12 3 3 6-6" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      <circle cx="12" cy="12" r="10" fill="rgb(var(--c-success) / 0.12)" />
+                      <path d="m7.5 12 3 3 6-6" stroke="rgb(var(--c-success))" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   )}
                   {f.sentiment === "neutral" && (
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
-                      <circle cx="12" cy="12" r="10" fill="rgba(120,113,108,0.1)" />
-                      <path d="M8 12h8" stroke="#78716c" strokeWidth="2" strokeLinecap="round" />
+                      <circle cx="12" cy="12" r="10" fill="rgb(var(--c-text-3) / 0.1)" />
+                      <path d="M8 12h8" stroke="rgb(var(--c-text-3))" strokeWidth="2" strokeLinecap="round" />
                     </svg>
                   )}
                   {f.sentiment === "negative" && (
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
-                      <circle cx="12" cy="12" r="10" fill="rgba(229,71,26,0.1)" />
-                      <path d="m9 9 6 6M15 9l-6 6" stroke="#e5471a" strokeWidth="2" strokeLinecap="round" />
+                      <circle cx="12" cy="12" r="10" fill="rgb(var(--c-brand) / 0.1)" />
+                      <path d="m9 9 6 6M15 9l-6 6" stroke="rgb(var(--c-brand))" strokeWidth="2" strokeLinecap="round" />
                     </svg>
                   )}
                 </span>
@@ -453,9 +453,9 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
 
         {/* Vs current ride */}
         {currentBikeEntry && !isViewingOwnCurrentBike && currentRideTitle && (
-          <div className="mx-4 mt-5 overflow-hidden rounded-2xl border border-[var(--r-border)] bg-gradient-to-b from-[rgba(229,71,26,0.06)] to-white">
-            <div className="border-b border-[var(--r-border)] bg-[rgba(229,71,26,0.05)] px-4 py-3">
-              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--r-orange)]">
+          <div className="mx-4 mt-5 overflow-hidden rounded-2xl border border-stroke bg-gradient-to-b from-brand/5 to-surface">
+            <div className="border-b border-stroke bg-brand/5 px-4 py-3">
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-text">
                 Compared to your current ride
               </p>
               <p className="mt-1.5 text-[13px] font-semibold leading-snug text-[var(--foreground)]">{currentRideTitle}</p>
@@ -465,7 +465,7 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
               {currentBikeEntry.type === "custom" && currentBikeEntry.lookup?.status === "loading" ? (
                 <p className="mt-2 flex items-center gap-2 text-[11px] font-medium text-[var(--r-muted)]">
                   <span
-                    className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-[var(--r-border)] border-t-[var(--r-orange)]"
+                    className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-stroke border-t-brand"
                     aria-hidden
                   />
                   Fetching photo &amp; specs for your bike…
@@ -473,12 +473,12 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
               ) : null}
               {currentBikeEntry.type === "custom" && currentBikeEntry.lookup?.status === "failed" ? (
                 <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
-                  <p className="text-[11px] leading-snug text-amber-800">
+                  <p className="text-[11px] leading-snug text-warning">
                     Couldn&apos;t confidently match your bike online — comparison may be incomplete.
                   </p>
                   <button
                     type="button"
-                    className="text-[11px] font-semibold text-[var(--r-orange)] underline-offset-2 hover:underline"
+                    className="text-[11px] font-semibold text-brand-text underline-offset-2 hover:underline"
                     onClick={() => forceWebBikeLookupRefresh(currentBikeStorageKey)}
                   >
                     Retry lookup
@@ -492,13 +492,13 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
                   ? "Hang tight — as soon as we have specs for your current bike, key differences will appear here."
                   : "No overlapping spec lines yet — check both bikes below or update your current ride details in Profile."}
                 {" "}
-                <Link href="/profile#profile-ride" className="font-semibold text-[var(--r-orange)] underline-offset-2 hover:underline">
+                <Link href="/profile#profile-ride" className="font-semibold text-brand-text underline-offset-2 hover:underline">
                   Profile → Ride
                 </Link>
               </p>
             ) : (
-              <div className="divide-y divide-[var(--r-border)] border-t border-[var(--r-border)]">
-                <div className="grid grid-cols-[minmax(0,34%)_minmax(0,33%)_minmax(0,33%)] gap-2 bg-neutral-50/50 px-3 py-2 sm:px-4">
+              <div className="divide-y divide-stroke border-t border-stroke">
+                <div className="grid grid-cols-[minmax(0,34%)_minmax(0,33%)_minmax(0,33%)] gap-2 bg-surface/50 px-3 py-2 sm:px-4">
                   <span className="text-[9px] font-bold uppercase tracking-wider text-[var(--r-muted)]">Spec</span>
                   <span className="text-[9px] font-bold uppercase tracking-wider text-[var(--r-muted)]">Your ride</span>
                   <span className="text-[9px] font-bold uppercase tracking-wider text-[var(--r-muted)]">This bike</span>
@@ -532,7 +532,7 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
         )}
 
         {isViewingOwnCurrentBike && (
-          <p className="mx-4 mt-5 rounded-2xl border border-[var(--r-border)] bg-neutral-50/60 px-4 py-3 text-[12px] leading-snug text-[var(--r-muted)]">
+          <p className="mx-4 mt-5 rounded-2xl border border-stroke bg-surface/60 px-4 py-3 text-[12px] leading-snug text-[var(--r-muted)]">
             This listing is saved as{" "}
             <span className="font-semibold text-[var(--foreground)]">your current ride</span>. Browse other bikes to see side-by-side spec comparisons.
           </p>
@@ -552,13 +552,13 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
                     key={s}
                     className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[12px] font-semibold transition-colors ${
                       isSuggested
-                        ? "border-[var(--r-orange)] bg-[rgba(229,71,26,0.07)] text-[var(--r-orange)]"
-                        : "border-[var(--r-border)] text-[var(--foreground)]"
+                        ? "border-brand bg-brand/5 text-brand-text"
+                        : "border-stroke text-[var(--foreground)]"
                     }`}
                   >
                     {s}
                     {isSuggested && (
-                      <span className="text-[10px] font-semibold text-[var(--r-orange)]">✓ You</span>
+                      <span className="text-[10px] font-semibold text-brand-text">✓ You</span>
                     )}
                   </span>
                 );
@@ -575,8 +575,8 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
         {/* Spec table — grouped */}
         <div className="mx-4 mt-5 space-y-3">
           {activeGroups.map((group) => (
-            <div key={group.heading} className="overflow-hidden rounded-2xl border border-[var(--r-border)]">
-              <div className="bg-neutral-50 px-4 py-2">
+            <div key={group.heading} className="overflow-hidden rounded-2xl border border-stroke">
+              <div className="bg-surface px-4 py-2">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--r-muted)]">
                   {group.heading}
                 </p>
@@ -585,7 +585,7 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
                 <div
                   key={row.label}
                   className={`flex items-start justify-between gap-4 px-4 py-2.5 ${
-                    i < group.rows.length - 1 ? "border-b border-[var(--r-border)]" : ""
+                    i < group.rows.length - 1 ? "border-b border-stroke" : ""
                   }`}
                 >
                   <span className="shrink-0 text-[12px] font-medium text-[var(--r-muted)]">{row.label}</span>
@@ -612,14 +612,14 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
                   <div
                     key={retailerId}
                     className={`flex items-center justify-between rounded-xl border px-4 py-3 ${
-                      inStock ? "border-emerald-100 bg-emerald-50/40" : "border-[var(--r-border)] bg-neutral-50/50"
+                      inStock ? "border-success/30 bg-success-subtle/15" : "border-stroke bg-surface/50"
                     }`}
                   >
                     <div>
                       <p className="text-[13px] font-semibold text-[var(--foreground)]">{label}</p>
                       <p
                         className={`mt-0.5 text-[11px] font-medium ${
-                          inStock ? "text-emerald-600" : "text-neutral-400"
+                          inStock ? "text-success" : "text-text-3"
                         }`}
                       >
                         {inStock ? "In stock" : "Out of stock"}
@@ -627,7 +627,7 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
                     </div>
                     <p
                       className={`text-[16px] font-bold ${
-                        inStock ? "text-[var(--r-price-green)]" : "text-neutral-400"
+                        inStock ? "text-[var(--r-price-green)]" : "text-text-3"
                       }`}
                     >
                       {aud(price)}
@@ -643,7 +643,7 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
         </div>
 
         {/* Sticky actions — always reachable */}
-        <div className="shrink-0 border-t border-[var(--r-border)] bg-white/95 px-4 pt-3 shadow-[0_-8px_32px_rgba(18,16,12,0.08)] backdrop-blur-md supports-[backdrop-filter]:bg-white/90 pb-[max(0.75rem,calc(env(safe-area-inset-bottom)+0.75rem))]">
+        <div className="shrink-0 border-t border-stroke bg-surface-raised/95 px-4 pt-3 shadow-[0_-8px_32px_rgba(18,16,12,0.08)] backdrop-blur-md supports-[backdrop-filter]:bg-surface-raised/90 pb-[max(0.75rem,calc(env(safe-area-inset-bottom)+0.75rem))]">
           {bike.sourceUrl ? (
             <>
               <a
@@ -662,7 +662,7 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
                 <button
                   type="button"
                   onClick={() => setAskOpen(true)}
-                  className="flex items-center justify-center gap-1.5 rounded-xl border border-[var(--r-orange)]/30 bg-[rgba(229,71,26,0.07)] py-3 text-[13px] font-semibold text-[var(--r-orange)] transition-colors hover:bg-[rgba(229,71,26,0.11)]"
+                  className="flex items-center justify-center gap-1.5 rounded-xl border border-brand/30 bg-brand/5 py-3 text-[13px] font-semibold text-brand-text transition-colors hover:bg-brand/10"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z" fill="currentColor"/>
@@ -674,14 +674,14 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
                   onClick={() => toggle(bike.id)}
                   className={`flex items-center justify-center gap-1.5 rounded-xl border py-3 text-[13px] font-semibold transition-colors ${
                     isFav
-                      ? "border-[var(--r-orange)]/35 bg-[var(--r-orange-soft)] text-[var(--r-orange)]"
-                      : "border-[var(--r-border)] bg-white text-[var(--foreground)]"
+                      ? "border-brand/35 bg-[var(--r-orange-soft)] text-brand-text"
+                      : "border-stroke bg-surface-raised text-[var(--foreground)]"
                   }`}
                 >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill={isFav ? "#e5471a" : "none"} aria-hidden>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill={isFav ? "rgb(var(--c-brand))" : "none"} aria-hidden>
                     <path
                       d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-                      stroke={isFav ? "#e5471a" : "#666"}
+                      stroke={isFav ? "rgb(var(--c-brand))" : "rgb(var(--c-text-3))"}
                       strokeWidth="1.6"
                     />
                   </svg>
@@ -704,14 +704,14 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
                 onClick={() => toggle(bike.id)}
                 className={`mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl border py-3 text-[13px] font-semibold transition-colors ${
                   isFav
-                    ? "border-[var(--r-orange)]/35 bg-[var(--r-orange-soft)] text-[var(--r-orange)]"
-                    : "border-[var(--r-border)] bg-neutral-50 text-[var(--foreground)]"
+                    ? "border-brand/35 bg-[var(--r-orange-soft)] text-brand-text"
+                    : "border-stroke bg-surface text-[var(--foreground)]"
                 }`}
               >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill={isFav ? "#e5471a" : "none"} aria-hidden>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill={isFav ? "rgb(var(--c-brand))" : "none"} aria-hidden>
                   <path
                     d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-                    stroke={isFav ? "#e5471a" : "#666"}
+                    stroke={isFav ? "rgb(var(--c-brand))" : "rgb(var(--c-text-3))"}
                     strokeWidth="1.6"
                   />
                 </svg>

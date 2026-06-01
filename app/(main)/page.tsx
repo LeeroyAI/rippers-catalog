@@ -680,7 +680,7 @@ function HomePageContent() {
       </section>
 
       {/* ─── New visitor: value story (above the fold scroll) ─── */}
-      <section className="mx-4 mt-5 rounded-2xl border border-[var(--r-border)] bg-white shadow-sm" aria-labelledby="home-value-heading">
+      <section className="mx-4 mt-5 rounded-2xl border border-[var(--r-border)] bg-surface shadow-sm" aria-labelledby="home-value-heading">
         <div className="border-b border-[var(--r-border)] px-4 py-3.5">
           <h2 id="home-value-heading" className="text-[14px] font-bold tracking-tight text-[var(--foreground)]">
             What Rippers helps you do
@@ -691,7 +691,7 @@ function HomePageContent() {
         </div>
         <ol className="divide-y divide-[var(--r-border)] text-[12px] leading-snug">
           <li className="flex gap-3 px-4 py-3">
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[rgba(229,71,26,0.1)] text-[11px] font-bold text-[var(--r-orange)]" aria-hidden>
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-[11px] font-bold text-brand-text" aria-hidden>
               1
             </span>
             <div>
@@ -702,14 +702,14 @@ function HomePageContent() {
             </div>
           </li>
           <li className="flex gap-3 px-4 py-3">
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[rgba(229,71,26,0.1)] text-[11px] font-bold text-[var(--r-orange)]" aria-hidden>
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-[11px] font-bold text-brand-text" aria-hidden>
               2
             </span>
             <div>
               <p className="font-semibold text-[var(--foreground)]">Family &amp; multi-rider profiles</p>
               <p className="mt-0.5 text-[11px] text-[var(--r-muted)]">
                 Add household riders on this device — each gets their own Watch list, current ride, and match scores. Switch the active rider from{" "}
-                <Link href="/profile#profile-riders" className="font-semibold text-[var(--r-orange)] underline decoration-[var(--r-orange)]/30 underline-offset-2">
+                <Link href="/profile#profile-riders" className="font-semibold text-brand-text underline decoration-[var(--r-orange)]/30 underline-offset-2">
                   Profile → Family
                 </Link>
                 {" "}before you shop or compare.
@@ -717,7 +717,7 @@ function HomePageContent() {
             </div>
           </li>
           <li className="flex gap-3 px-4 py-3">
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[rgba(229,71,26,0.1)] text-[11px] font-bold text-[var(--r-orange)]" aria-hidden>
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-[11px] font-bold text-brand-text" aria-hidden>
               3
             </span>
             <div>
@@ -729,7 +729,7 @@ function HomePageContent() {
             </div>
           </li>
           <li className="flex gap-3 px-4 py-3">
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[rgba(229,71,26,0.1)] text-[11px] font-bold text-[var(--r-orange)]" aria-hidden>
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-[11px] font-bold text-brand-text" aria-hidden>
               4
             </span>
             <div>
@@ -747,16 +747,16 @@ function HomePageContent() {
         <Link
           href="/trip"
           title="Ride map — free preview; saved routes and deeper trip intel planned as Premium"
-          className="relative flex flex-col items-start gap-2 rounded-2xl border border-[var(--r-border)] bg-white p-3.5 pr-14 no-underline shadow-sm"
+          className="relative flex flex-col items-start gap-2 rounded-2xl border border-[var(--r-border)] bg-surface p-3.5 pr-14 no-underline shadow-sm"
         >
-          <span className="absolute right-2 top-2 rounded-full bg-gradient-to-r from-amber-500 to-[#d97706] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white shadow-sm">
+          <span className="absolute right-2 top-2 rounded-full bg-warning px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-bg shadow-sm">
             Premium
           </span>
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[rgba(229,71,26,0.1)]">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand/10 text-brand-text">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <path d="M3 17h14a3 3 0 1 1 0 6 3 3 0 0 1 0-6Z" stroke="#e5471a" strokeWidth="1.6" opacity="0.4" />
-              <path d="m7 17 11-13V5H8" stroke="#e5471a" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-              <circle cx="18.5" cy="6.5" r="1.65" fill="#e5471a" />
+              <path d="M3 17h14a3 3 0 1 1 0 6 3 3 0 0 1 0-6Z" stroke="currentColor" strokeWidth="1.6" opacity="0.4" />
+              <path d="m7 17 11-13V5H8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              <circle cx="18.5" cy="6.5" r="1.65" fill="currentColor" />
             </svg>
           </span>
           <div>
@@ -767,12 +767,12 @@ function HomePageContent() {
 
         <Link
           href="/compare"
-          className="flex flex-col items-start gap-2 rounded-2xl border border-[var(--r-border)] bg-white p-3.5 no-underline shadow-sm"
+          className="flex flex-col items-start gap-2 rounded-2xl border border-[var(--r-border)] bg-surface p-3.5 no-underline shadow-sm"
         >
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[rgba(229,71,26,0.08)]">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand/10 text-brand-text">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <rect x="2" y="3" width="9" height="18" rx="2" stroke="#e5471a" strokeWidth="1.6" opacity="0.85" />
-              <rect x="13" y="3" width="9" height="18" rx="2" stroke="#e5471a" strokeWidth="1.6" opacity="0.55" />
+              <rect x="2" y="3" width="9" height="18" rx="2" stroke="currentColor" strokeWidth="1.6" opacity="0.85" />
+              <rect x="13" y="3" width="9" height="18" rx="2" stroke="currentColor" strokeWidth="1.6" opacity="0.55" />
             </svg>
           </span>
           <div>
@@ -783,12 +783,12 @@ function HomePageContent() {
 
         <Link
           href="/profile"
-          className="flex flex-col items-start gap-2 rounded-2xl border border-[var(--r-border)] bg-white p-3.5 no-underline shadow-sm"
+          className="flex flex-col items-start gap-2 rounded-2xl border border-[var(--r-border)] bg-surface p-3.5 no-underline shadow-sm"
         >
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[rgba(229,71,26,0.08)]">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand/10 text-brand-text">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <circle cx="12" cy="8" r="4" stroke="#e5471a" strokeWidth="1.6" opacity="0.9" />
-              <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="#e5471a" strokeWidth="1.6" strokeLinecap="round" opacity="0.75" />
+              <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.6" opacity="0.9" />
+              <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" opacity="0.75" />
             </svg>
           </span>
           <div>
@@ -799,13 +799,13 @@ function HomePageContent() {
 
         <Link
           href="/sizing"
-          className="flex flex-col items-start gap-2 rounded-2xl border border-[var(--r-border)] bg-white p-3.5 no-underline shadow-sm"
+          className="flex flex-col items-start gap-2 rounded-2xl border border-[var(--r-border)] bg-surface p-3.5 no-underline shadow-sm"
         >
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[rgba(229,71,26,0.08)]">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand/10 text-brand-text">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <path d="M7 21h10" stroke="#e5471a" strokeWidth="1.6" strokeLinecap="round" opacity="0.55" />
-              <path d="M12 21V11m0 0 3 2m-3-2-3 2" stroke="#e5471a" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M9 7V5a3 3 0 0 1 6 0v2" stroke="#e5471a" strokeWidth="1.65" strokeLinecap="round" />
+              <path d="M7 21h10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" opacity="0.55" />
+              <path d="M12 21V11m0 0 3 2m-3-2-3 2" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M9 7V5a3 3 0 0 1 6 0v2" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" />
             </svg>
           </span>
           <div>
@@ -817,7 +817,7 @@ function HomePageContent() {
 
       {/* ─── What is Rippers (collapsible after first dismiss) ─── */}
       <details
-        className="group mx-4 mt-5 rounded-2xl border border-[var(--r-border)] bg-white px-5 py-3 shadow-sm open:pb-4"
+        className="group mx-4 mt-5 rounded-2xl border border-[var(--r-border)] bg-surface px-5 py-3 shadow-sm open:pb-4"
         open={whatIsOpen}
         onToggle={(e) => {
           const el = e.currentTarget;
@@ -831,8 +831,8 @@ function HomePageContent() {
         }}
       >
         <summary className="flex cursor-pointer list-none items-center justify-between gap-2 marker:content-none [&::-webkit-details-marker]:hidden">
-          <p className="text-[10px] font-bold uppercase tracking-[0.17em] text-[var(--r-orange)]">What is Rippers?</p>
-          <span className="text-[11px] font-semibold text-[var(--r-muted)] group-open:text-[var(--r-orange)]">
+          <p className="text-[10px] font-bold uppercase tracking-[0.17em] text-brand-text">What is Rippers?</p>
+          <span className="text-[11px] font-semibold text-[var(--r-muted)] group-open:text-brand-text">
             {whatIsOpen ? "Hide" : "Show"}
           </span>
         </summary>
@@ -881,7 +881,7 @@ function HomePageContent() {
           <p className="text-[13px] font-bold uppercase tracking-[0.14em] text-[var(--foreground)]">
             {profile ? "Your top picks" : "Top bikes right now"}
           </p>
-          <Link href="/#results" className="text-[12px] font-semibold text-[var(--r-orange)] no-underline">
+          <Link href="/#results" className="text-[12px] font-semibold text-brand-text no-underline">
             {searchActive
               ? `See ${filteredBikes.length} results`
               : profile && shortlistIsTruncated
@@ -899,7 +899,7 @@ function HomePageContent() {
 
       {/* ─── Search + filters ─── */}
       <section id="filter-search-area" className="mx-4 mt-7">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--r-orange)]">Filter & search</p>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-brand-text">Filter & search</p>
         {hydrated && profile && riders.length > 0 ? (
           <div className="r-glass-well mt-2 px-3 py-3 sm:px-4 sm:py-3.5">
             <RiderContextPicker
@@ -917,7 +917,7 @@ function HomePageContent() {
             placeholder="Brand, model, or type…"
             value={filters.query}
             onChange={(e) => updateFilters({ query: e.target.value })}
-            className="r-field-ios w-full px-4 py-3.5 text-[15px] text-[var(--foreground)] outline-none placeholder:text-neutral-400"
+            className="r-field-ios w-full px-4 py-3.5 text-[15px] text-[var(--foreground)] outline-none placeholder:text-text-3"
           />
         </div>
         <details className="r-glass-well group mt-2 px-4 py-0.5">
@@ -926,7 +926,7 @@ function HomePageContent() {
             <span className="min-w-0 flex-1 truncate text-right text-[11px] font-medium text-[var(--r-muted)] group-open:hidden">
               {filtersSummaryLine(filters)}
             </span>
-            <span className="shrink-0 text-neutral-400 transition-transform group-open:rotate-90 group-open:text-[var(--r-orange)]">›</span>
+            <span className="shrink-0 text-text-3 transition-transform group-open:rotate-90 group-open:text-brand-text">›</span>
           </summary>
           <div className="flex flex-col gap-3 pb-4">
             <select
@@ -987,13 +987,13 @@ function HomePageContent() {
               <p className="mt-2 text-[11px] leading-snug text-[var(--r-muted)]">
                 <span className="font-semibold text-[var(--foreground)]">Vs your current bike:</span>{" "}
                 add what you ride today in{" "}
-                <Link href="/profile#profile-ride" className="font-semibold text-[var(--r-orange)] underline-offset-2 hover:underline">
+                <Link href="/profile#profile-ride" className="font-semibold text-brand-text underline-offset-2 hover:underline">
                   Profile → Ride
                 </Link>{" "}
                 — we’ll fetch product images and specs where needed, and show comparisons when you open any listing.
               </p>
             ) : null}
-            <p className="mt-2 text-[11px] font-semibold leading-snug text-[var(--r-orange)]">{viewModeLine}</p>
+            <p className="mt-2 text-[11px] font-semibold leading-snug text-brand-text">{viewModeLine}</p>
           </div>
           <div className="flex shrink-0 flex-col items-end gap-1">
             <span className="text-[12px] text-[var(--r-muted)]">
@@ -1004,7 +1004,7 @@ function HomePageContent() {
               <button
                 type="button"
                 onClick={() => setListScope("full")}
-                className="text-[12px] font-semibold text-[var(--r-orange)] underline decoration-[var(--r-orange)]/30 underline-offset-2"
+                className="text-[12px] font-semibold text-brand-text underline decoration-[var(--r-orange)]/30 underline-offset-2"
               >
                 Show all {filteredBikes.length} →
               </button>
@@ -1013,7 +1013,7 @@ function HomePageContent() {
               <button
                 type="button"
                 onClick={() => setListScope("personalised")}
-                className="text-[12px] font-semibold text-[var(--r-orange)] underline decoration-[var(--r-orange)]/30 underline-offset-2"
+                className="text-[12px] font-semibold text-brand-text underline decoration-[var(--r-orange)]/30 underline-offset-2"
               >
                 Top {HOME_MATCH_SHORTLIST} matches only
               </button>
@@ -1021,7 +1021,7 @@ function HomePageContent() {
           </div>
         </div>
         {filteredBikes.length === 0 ? (
-          <div className="mt-6 rounded-2xl border border-dashed border-[var(--r-border)] bg-white/80 px-6 py-10 text-center shadow-sm">
+          <div className="mt-6 rounded-2xl border border-dashed border-[var(--r-border)] bg-surface/80 px-6 py-10 text-center shadow-sm">
             <p className="text-[15px] font-semibold text-[var(--foreground)]">No bikes match those filters</p>
             <p className="mt-2 text-[13px] leading-relaxed text-[var(--r-muted)]">
               Try clearing search text, widening the budget, or picking a different category.
@@ -1045,7 +1045,7 @@ function HomePageContent() {
             return (
               <article
                 key={bike.id}
-                className="group relative flex flex-col overflow-hidden rounded-2xl border border-[var(--r-border)] bg-white shadow-sm transition-shadow hover:shadow-md"
+                className="group relative flex flex-col overflow-hidden rounded-2xl border border-[var(--r-border)] bg-surface shadow-sm transition-shadow hover:shadow-md"
               >
                 <Link
                   href={`/?openBike=${bike.id}`}
@@ -1054,7 +1054,7 @@ function HomePageContent() {
                   aria-label={`View ${bike.brand} ${bike.model} specs`}
                 />
                 {/* Image — pointer-events-none so the underlying Link receives taps; buttons opt back in */}
-                <div className="relative z-[2] aspect-[16/10] overflow-hidden bg-[#f5f3ef] pointer-events-none">
+                <div className="relative z-[2] aspect-[16/10] overflow-hidden bg-surface pointer-events-none">
                   <BikeProductImage
                     bikeId={bike.id}
                     alt={`${bike.brand} ${bike.model}`}
@@ -1065,7 +1065,7 @@ function HomePageContent() {
                     type="button"
                     onClick={(e) => { e.stopPropagation(); setMatchBike(bike); }}
                     aria-label={`${matchPct}% match — tap for breakdown`}
-                    className="pointer-events-auto absolute right-2.5 top-2.5 z-[3] rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-bold tracking-tight text-[var(--r-match-text)] shadow ring-1 ring-black/5 backdrop-blur-[2px] transition-transform active:scale-95"
+                    className="pointer-events-auto absolute right-2.5 top-2.5 z-[3] rounded-full bg-surface-raised/95 px-2.5 py-1 text-[11px] font-bold tracking-tight text-[var(--r-match-text)] shadow ring-1 ring-stroke backdrop-blur-[2px] transition-transform active:scale-95"
                   >
                     {matchPct}%
                   </button>
@@ -1074,12 +1074,12 @@ function HomePageContent() {
                     type="button"
                     onClick={(e) => { e.stopPropagation(); toggle(bike.id); }}
                     aria-label={isFav ? "Remove from favourites" : "Save to favourites"}
-                    className="pointer-events-auto absolute left-2.5 top-2.5 z-[3] flex h-7 w-7 items-center justify-center rounded-full bg-white/90 shadow backdrop-blur-sm transition-transform active:scale-90"
+                    className="pointer-events-auto absolute left-2.5 top-2.5 z-[3] flex h-7 w-7 items-center justify-center rounded-full bg-surface-raised/90 shadow backdrop-blur-sm transition-transform active:scale-90"
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill={isFav ? "#e5471a" : "none"} aria-hidden>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill={isFav ? "rgb(var(--c-brand))" : "none"} aria-hidden>
                       <path
                         d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-                        stroke={isFav ? "#e5471a" : "#666"}
+                        stroke={isFav ? "rgb(var(--c-brand-text))" : "rgb(var(--c-text-3))"}
                         strokeWidth="1.8"
                       />
                     </svg>
@@ -1101,7 +1101,7 @@ function HomePageContent() {
 
                   {/* Why this bike */}
                   {whyItems.length > 0 && profile && (
-                    <div className="mt-3 rounded-xl bg-neutral-50 px-3 py-2.5">
+                    <div className="mt-3 rounded-xl bg-surface-raised px-3 py-2.5">
                       <div className="mb-1.5 flex items-center justify-between">
                         <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--r-muted)]">Why this bike</p>
                         <button
@@ -1110,7 +1110,7 @@ function HomePageContent() {
                             e.stopPropagation();
                             router.replace(`/?openBike=${bike.id}`, { scroll: false });
                           }}
-                          className="pointer-events-auto text-[10px] font-semibold text-[var(--r-orange)]"
+                          className="pointer-events-auto text-[10px] font-semibold text-brand-text"
                         >
                           Details →
                         </button>
@@ -1118,13 +1118,13 @@ function HomePageContent() {
                       <ul className="space-y-1">
                         {whyItems.map((f) => (
                           <li key={f.label} className="flex items-start gap-1.5 text-[11px] leading-snug text-[var(--r-muted)]">
-                            <span className="mt-px shrink-0 text-[var(--r-orange)]">·</span>
+                            <span className="mt-px shrink-0 text-brand-text">·</span>
                             {f.detail}
                           </li>
                         ))}
                         {bestPrice && (
                           <li className="flex items-start gap-1.5 text-[11px] leading-snug text-[var(--r-muted)]">
-                            <span className="mt-px shrink-0 text-[var(--r-orange)]">·</span>
+                            <span className="mt-px shrink-0 text-brand-text">·</span>
                             Best price: {new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD", maximumFractionDigits: 0 }).format(bestPrice)} AUD
                           </li>
                         )}

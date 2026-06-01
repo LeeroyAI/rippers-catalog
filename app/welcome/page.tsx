@@ -108,7 +108,7 @@ export default function WelcomePage() {
               />
             </div>
             <div className="min-w-0 flex-1 text-center sm:text-left">
-              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--r-orange)]">What is Rippers?</p>
+              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand-text">What is Rippers?</p>
               <h1 className="mt-2 text-[1.5rem] font-semibold leading-tight tracking-tight text-[var(--foreground)] sm:text-[1.75rem] lg:text-[2rem] xl:text-[2.25rem] 2xl:text-[2.4rem]">
                 The Australian MTB workspace for research, trips, and everyone who rides with you.
               </h1>
@@ -138,7 +138,7 @@ export default function WelcomePage() {
                   <Link
                     href={welcomeSetupHref(queryKey, "family")}
                     prefetch={false}
-                    className="relative z-10 inline-flex min-h-[48px] w-full min-w-0 flex-1 items-center justify-center rounded-[10px] border-2 border-[var(--r-orange)] bg-[var(--r-bg-well)] px-4 py-3.5 text-center text-[15px] font-semibold leading-snug text-[var(--r-orange)] no-underline shadow-sm transition hover:bg-[var(--r-orange-muted)] active:scale-[0.99]"
+                    className="relative z-10 inline-flex min-h-[48px] w-full min-w-0 flex-1 items-center justify-center rounded-[10px] border-2 border-[var(--r-orange)] bg-[var(--r-bg-well)] px-4 py-3.5 text-center text-[15px] font-semibold leading-snug text-brand-text no-underline shadow-sm transition hover:bg-[var(--r-orange-muted)] active:scale-[0.99]"
                   >
                     Create my riding family
                   </Link>
@@ -207,7 +207,7 @@ export default function WelcomePage() {
           </h2>
           <ol className="mt-4 space-y-4 text-[13px] leading-relaxed text-[var(--r-muted)]">
             <li className="flex gap-3">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--r-orange-muted)] text-[12px] font-bold text-[var(--r-orange)]">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--r-orange-muted)] text-[12px] font-bold text-brand-text">
                 1
               </span>
               <span>
@@ -216,7 +216,7 @@ export default function WelcomePage() {
               </span>
             </li>
             <li className="flex gap-3">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--r-orange-muted)] text-[12px] font-bold text-[var(--r-orange)]">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--r-orange-muted)] text-[12px] font-bold text-brand-text">
                 2
               </span>
               <span>
@@ -226,7 +226,7 @@ export default function WelcomePage() {
               </span>
             </li>
             <li className="flex gap-3">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--r-orange-muted)] text-[12px] font-bold text-[var(--r-orange)]">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--r-orange-muted)] text-[12px] font-bold text-brand-text">
                 3
               </span>
               <span>

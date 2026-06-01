@@ -96,9 +96,9 @@ export default function CreateFamilyModal({ open, onClose }: Props) {
               ref={savedConfirmationRef}
               role="status"
               aria-live="polite"
-              className="mt-4 rounded-xl border-2 border-emerald-400/80 bg-emerald-50 px-4 py-3 shadow-sm shadow-emerald-900/10"
+              className="mt-4 rounded-xl border-2 border-success/30 bg-success-subtle/15 px-4 py-3 shadow-sm shadow-emerald-900/10"
             >
-              <p className="text-[13px] font-semibold leading-snug text-emerald-950">{notice}</p>
+              <p className="text-[13px] font-semibold leading-snug text-success">{notice}</p>
             </div>
           ) : null}
         </div>
@@ -110,7 +110,7 @@ export default function CreateFamilyModal({ open, onClose }: Props) {
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full p-2 text-[var(--r-muted)] transition hover:bg-neutral-100 hover:text-[var(--foreground)]"
+            className="rounded-full p-2 text-[var(--r-muted)] transition hover:bg-surface-raised hover:text-[var(--foreground)]"
             aria-label="Close dialog"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -123,7 +123,7 @@ export default function CreateFamilyModal({ open, onClose }: Props) {
           <button
             type="button"
             onClick={onClose}
-            className="w-full rounded-2xl border border-[var(--r-border)] bg-white py-3 text-[14px] font-semibold text-[var(--foreground)] transition hover:bg-neutral-50"
+            className="w-full rounded-2xl border border-[var(--r-border)] bg-surface-raised py-3 text-[14px] font-semibold text-[var(--foreground)] transition hover:bg-surface"
           >
             Done
           </button>

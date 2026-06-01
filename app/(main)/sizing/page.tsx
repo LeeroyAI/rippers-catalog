@@ -85,7 +85,7 @@ export default function SizingPage() {
   return (
     <main className="mx-auto w-full max-w-2xl px-4 pb-20 pt-6 md:px-6">
       <div className="mb-2 flex items-center gap-2">
-        <Link href="/" className="text-[12px] font-semibold text-[var(--r-orange)] no-underline">← Home</Link>
+        <Link href="/" className="text-[12px] font-semibold text-brand-text no-underline">← Home</Link>
         <span className="text-[12px] text-[var(--r-muted)]">/</span>
         <span className="text-[12px] text-[var(--r-muted)]">Bike Sizing Guide</span>
       </div>
@@ -96,18 +96,18 @@ export default function SizingPage() {
       </p>
 
       {profile && profile.heightCm > 0 ? (
-        <p className="mt-4 rounded-2xl border border-[var(--r-border)] bg-white px-4 py-3 text-[13px] leading-relaxed text-[var(--r-muted)] shadow-sm">
+        <p className="mt-4 rounded-2xl border border-stroke bg-surface px-4 py-3 text-[13px] leading-relaxed text-[var(--r-muted)] shadow-sm">
           Your saved profile height is{" "}
           <strong className="text-[var(--foreground)]">{profile.heightCm} cm</strong>. Match scores and sizing hints use
           the same number —{" "}
-          <Link href="/profile" className="font-semibold text-[var(--r-orange)] underline decoration-[var(--r-orange)]/30 underline-offset-2">
+          <Link href="/profile" className="font-semibold text-brand-text underline decoration-[var(--r-orange)]/30 underline-offset-2">
             update it on Profile
           </Link>{" "}
           if it changes, or type below to experiment without saving.
         </p>
       ) : (
-        <p className="mt-4 rounded-2xl border border-dashed border-[var(--r-border)] bg-[rgba(229,71,26,0.04)] px-4 py-3 text-[13px] leading-relaxed text-[var(--r-muted)]">
-          <Link href="/profile" className="font-semibold text-[var(--r-orange)] underline decoration-[var(--r-orange)]/30 underline-offset-2">
+        <p className="mt-4 rounded-2xl border border-dashed border-stroke bg-brand/5 px-4 py-3 text-[13px] leading-relaxed text-[var(--r-muted)]">
+          <Link href="/profile" className="font-semibold text-brand-text underline decoration-[var(--r-orange)]/30 underline-offset-2">
             Save your height in Profile
           </Link>{" "}
           so match scores and this guide stay aligned across the app.
@@ -115,11 +115,11 @@ export default function SizingPage() {
       )}
 
       {/* ── Calculator ── */}
-      <section className="mt-6 rounded-2xl border border-[var(--r-border)] bg-white p-5 shadow-sm">
-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--r-orange)]">Size calculator</p>
+      <section className="mt-6 rounded-2xl border border-stroke bg-surface p-5 shadow-sm">
+        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand-text">Size calculator</p>
 
         {/* Mode toggle */}
-        <div className="mt-3 flex gap-1 rounded-xl bg-neutral-100 p-1">
+        <div className="mt-3 flex gap-1 rounded-xl bg-surface-raised p-1">
           {(["adult", "kids"] as const).map((m) => (
             <button
               key={m}
@@ -127,7 +127,7 @@ export default function SizingPage() {
               onClick={() => setMode(m)}
               className={`flex-1 rounded-lg py-2 text-[13px] font-semibold transition-all ${
                 mode === m
-                  ? "bg-white text-[var(--foreground)] shadow-sm"
+                  ? "bg-surface text-[var(--foreground)] shadow-sm"
                   : "text-[var(--r-muted)]"
               }`}
             >
@@ -181,11 +181,11 @@ export default function SizingPage() {
 
         {/* Adult result */}
         {mode === "adult" && adultResult && (
-          <div className="mt-4 rounded-xl bg-[rgba(229,71,26,0.06)] px-4 py-4">
+          <div className="mt-4 rounded-xl bg-brand/5 px-4 py-4">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--r-muted)]">Suggested frame size</p>
-                <p className="mt-0.5 text-[32px] font-bold tracking-tight text-[var(--r-orange)]">{adultResult.size}</p>
+                <p className="mt-0.5 text-[32px] font-bold tracking-tight text-brand">{adultResult.size}</p>
                 <p className="text-[13px] text-[var(--r-muted)]">{adultResult.label}</p>
               </div>
               <div className="text-right">
@@ -200,7 +200,7 @@ export default function SizingPage() {
             </p>
             <Link
               href={`/?budgetMax=&category=`}
-              className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[var(--r-orange)] px-4 py-2 text-[12px] font-semibold text-white no-underline shadow-sm"
+              className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-brand px-4 py-2 text-[12px] font-semibold text-brand-fg no-underline shadow-sm"
             >
               Browse matching bikes →
             </Link>
@@ -209,9 +209,9 @@ export default function SizingPage() {
 
         {/* Kids result */}
         {mode === "kids" && kidsResult && (
-          <div className="mt-4 rounded-xl bg-[rgba(37,99,235,0.06)] px-4 py-4">
+          <div className="mt-4 rounded-xl bg-info/10 px-4 py-4">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--r-muted)]">Recommended wheel size</p>
-            <p className="mt-0.5 text-[32px] font-bold tracking-tight text-[#2563eb]">{kidsResult.wheelSize}</p>
+            <p className="mt-0.5 text-[32px] font-bold tracking-tight text-info">{kidsResult.wheelSize}</p>
             <p className="mt-0.5 text-[13px] text-[var(--r-muted)]">{kidsResult.note}</p>
             <p className="mt-2 text-[12px] leading-relaxed text-[var(--r-muted)]">
               For ages {kidsResult.ageMin}–{kidsResult.ageMax}, height {kidsResult.heightMin}–{kidsResult.heightMax} cm.
@@ -232,8 +232,8 @@ export default function SizingPage() {
       <section className="mt-6">
         <h2 className="text-[17px] font-semibold text-[var(--foreground)]">MTB frame size chart</h2>
         <p className="mt-1 text-[13px] text-[var(--r-muted)]">Based on rider height — always cross-check the brand's geometry PDF.</p>
-        <div className="mt-3 overflow-hidden rounded-2xl border border-[var(--r-border)]">
-          <div className="grid grid-cols-4 bg-neutral-50 px-4 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--r-muted)]">
+        <div className="mt-3 overflow-hidden rounded-2xl border border-stroke">
+          <div className="grid grid-cols-4 bg-surface px-4 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--r-muted)]">
             <span>Size</span>
             <span>Rider height</span>
             <span>Inseam</span>
@@ -245,10 +245,10 @@ export default function SizingPage() {
               <div
                 key={s.size}
                 className={`grid grid-cols-4 px-4 py-3 text-[13px] ${
-                  i < MTB_SIZES.length - 1 ? "border-b border-[var(--r-border)]" : ""
-                } ${active ? "bg-[rgba(229,71,26,0.05)]" : ""}`}
+                  i < MTB_SIZES.length - 1 ? "border-b border-stroke" : ""
+                } ${active ? "bg-brand/5" : ""}`}
               >
-                <span className={`font-bold ${active ? "text-[var(--r-orange)]" : "text-[var(--foreground)]"}`}>
+                <span className={`font-bold ${active ? "text-brand-text" : "text-[var(--foreground)]"}`}>
                   {s.size} {active && "←"}
                 </span>
                 <span className="text-[var(--r-muted)]">{s.heightMin}–{s.heightMax} cm</span>
@@ -266,8 +266,8 @@ export default function SizingPage() {
         <p className="mt-1 text-[13px] text-[var(--r-muted)]">
           Wheel size is the primary spec for kids bikes. Height beats age — a tall 7-year-old may need a 24" wheel.
         </p>
-        <div className="mt-3 overflow-hidden rounded-2xl border border-[var(--r-border)]">
-          <div className="grid grid-cols-4 bg-neutral-50 px-4 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--r-muted)]">
+        <div className="mt-3 overflow-hidden rounded-2xl border border-stroke">
+          <div className="grid grid-cols-4 bg-surface px-4 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--r-muted)]">
             <span>Wheel</span>
             <span>Age range</span>
             <span>Height</span>
@@ -280,10 +280,10 @@ export default function SizingPage() {
               <div
                 key={r.wheelSize + r.ageMin}
                 className={`grid grid-cols-4 gap-x-1 px-4 py-3 text-[12px] ${
-                  i < KIDS_SIZES.length - 1 ? "border-b border-[var(--r-border)]" : ""
-                } ${activeK ? "bg-[rgba(37,99,235,0.05)]" : ""}`}
+                  i < KIDS_SIZES.length - 1 ? "border-b border-stroke" : ""
+                } ${activeK ? "bg-info/10" : ""}`}
               >
-                <span className={`font-bold ${activeK ? "text-[#2563eb]" : "text-[var(--foreground)]"}`}>
+                <span className={`font-bold ${activeK ? "text-info" : "text-[var(--foreground)]"}`}>
                   {r.wheelSize}
                 </span>
                 <span className="text-[var(--r-muted)]">{r.ageMin === 99 ? "14+" : `${r.ageMin}–${r.ageMax}`} yrs</span>
@@ -307,7 +307,7 @@ export default function SizingPage() {
         </p>
         <div className="mt-4 space-y-2">
           {REACH_GUIDE.map((r) => (
-            <div key={r.reach} className="flex items-center justify-between gap-3 rounded-xl border border-[var(--r-border)] bg-white px-4 py-3">
+            <div key={r.reach} className="flex items-center justify-between gap-3 rounded-xl border border-stroke bg-surface px-4 py-3">
               <div>
                 <p className="text-[13px] font-semibold text-[var(--foreground)]">{r.reach}</p>
                 <p className="text-[11px] text-[var(--r-muted)]">{r.label}</p>
@@ -330,7 +330,7 @@ export default function SizingPage() {
             { icon: "🧒", title: "Size up for kids, not down", body: "Kids grow fast. Sizing up half a step is fine if they can stand over it safely — avoid sizing down as it limits confidence and control." },
             { icon: "⚙️", title: "Adjust the contact points", body: "Saddle height, handlebar height, and stem length can fine-tune fit within a frame size. Get a professional fit if you ride 3+ days a week." },
           ].map((tip) => (
-            <div key={tip.title} className="rounded-2xl border border-[var(--r-border)] bg-white p-4 shadow-sm">
+            <div key={tip.title} className="rounded-2xl border border-stroke bg-surface p-4 shadow-sm">
               <span className="text-2xl">{tip.icon}</span>
               <h3 className="mt-2 text-[13px] font-semibold text-[var(--foreground)]">{tip.title}</h3>
               <p className="mt-1 text-[12px] leading-relaxed text-[var(--r-muted)]">{tip.body}</p>
@@ -340,9 +340,9 @@ export default function SizingPage() {
       </section>
 
       {/* ── Weight disclaimer ── */}
-      <section className="mt-6 rounded-2xl border border-amber-200 bg-amber-50/60 px-5 py-4">
-        <p className="text-[12px] font-semibold text-amber-900">A note on weight</p>
-        <p className="mt-1 text-[12px] leading-relaxed text-amber-800">
+      <section className="mt-6 rounded-2xl border border-warning/30 bg-warning-subtle/15 px-5 py-4">
+        <p className="text-[12px] font-semibold text-warning">A note on weight</p>
+        <p className="mt-1 text-[12px] leading-relaxed text-warning">
           Weight affects component choice (brakes, tyres, frame material) more than frame size. Heavier riders
           should look for stiffer carbon layups or aluminium frames with beefier tubing, wider rims (30+ mm internal),
           and 4-piston brakes. Most brands publish max rider weight ratings — check the spec sheet.
@@ -358,7 +358,7 @@ export default function SizingPage() {
         </Link>
         <Link
           href="/profile"
-          className="flex-1 rounded-2xl border border-[var(--r-border)] bg-white py-3.5 text-center text-[14px] font-semibold text-[var(--foreground)] no-underline shadow-sm"
+          className="flex-1 rounded-2xl border border-stroke bg-surface py-3.5 text-center text-[14px] font-semibold text-[var(--foreground)] no-underline shadow-sm"
         >
           Update my profile
         </Link>

@@ -41,8 +41,8 @@ export default function RiderHouseholdPhotoField({
     <div
       className={
         isCard
-          ? "rounded-xl border border-[var(--r-border)] bg-neutral-50/80 px-3 py-3"
-          : "rounded-2xl border border-[var(--r-border)] bg-white px-4 py-4 shadow-sm"
+          ? "rounded-xl border border-stroke bg-surface/80 px-3 py-3"
+          : "rounded-2xl border border-stroke bg-surface px-4 py-4 shadow-sm"
       }
     >
       <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--r-muted)]">Profile photo (optional)</p>
@@ -58,7 +58,7 @@ export default function RiderHouseholdPhotoField({
           aria-label="Choose profile photo"
         >
           <div
-            className={`overflow-hidden rounded-2xl bg-gradient-to-br from-orange-400 via-[var(--r-orange)] to-orange-700 shadow-md ring-2 ring-[var(--r-border)] ${
+            className={`overflow-hidden rounded-2xl bg-gradient-to-br from-brand via-[var(--r-orange)] to-brand-hover shadow-md ring-2 ring-stroke ${
               isCard ? "h-16 w-16" : "h-20 w-20"
             }`}
           >
@@ -66,12 +66,12 @@ export default function RiderHouseholdPhotoField({
               // eslint-disable-next-line @next/next/no-img-element
               <img src={value} alt="" className="h-full w-full object-cover" />
             ) : (
-              <div className="flex h-full w-full items-center justify-center text-xl font-bold text-white">
+              <div className="flex h-full w-full items-center justify-center text-xl font-bold text-brand-fg">
                 {initial}
               </div>
             )}
           </div>
-          <span className="mt-1 block text-center text-[11px] font-semibold text-[var(--r-orange)]">Upload</span>
+          <span className="mt-1 block text-center text-[11px] font-semibold text-brand-text">Upload</span>
         </button>
         <input
           ref={inputRef}
@@ -89,14 +89,14 @@ export default function RiderHouseholdPhotoField({
                 setError(null);
                 onChange(null);
               }}
-              className="text-[12px] font-semibold text-red-600 underline decoration-red-600/30 underline-offset-2"
+              className="text-[12px] font-semibold text-danger underline decoration-danger/30 underline-offset-2"
             >
               Remove photo
             </button>
           ) : (
             <p className="text-[12px] text-[var(--r-muted)]">Square photos work best. Stored only on this device.</p>
           )}
-          {error ? <p className="mt-2 text-[12px] font-medium text-red-600">{error}</p> : null}
+          {error ? <p className="mt-2 text-[12px] font-medium text-danger">{error}</p> : null}
         </div>
       </div>
     </div>

@@ -22,6 +22,7 @@ import {
   writeRiderPhoto,
 } from "@/src/domain/rider-photo";
 import RippersBackupImporter from "@/app/components/RippersBackupImporter";
+import ThemeToggle from "@/app/components/ThemeToggle";
 import { collectRippersBackupPayload, downloadRippersBackupJson } from "@/src/lib/rippers-device-backup";
 import { householdAddRiderHref } from "@/src/lib/welcome-add-mode";
 import { notifyRiderPhotoUpdated, RIDER_PHOTO_UPDATED_EVENT } from "@/src/lib/rider-photo-events";
@@ -167,7 +168,7 @@ function GearIcon({ id }: { id: string }) {
     ),
   };
   return (
-    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[rgba(229,71,26,0.1)] text-[var(--r-orange)]">
+    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand/10 text-brand-text">
       {icons[id] ?? icons.tool}
     </span>
   );
@@ -527,7 +528,7 @@ export default function ProfilePage() {
               key={id}
               type="button"
               onClick={() => scrollToProfileSection(id)}
-              className="rounded-lg px-2.5 py-1.5 text-[11px] font-semibold text-[var(--r-muted)] transition hover:bg-white hover:text-[var(--foreground)]"
+              className="rounded-lg px-2.5 py-1.5 text-[11px] font-semibold text-[var(--r-muted)] transition hover:bg-surface hover:text-[var(--foreground)]"
             >
               {label}
             </button>
@@ -544,21 +545,21 @@ export default function ProfilePage() {
               className="group relative shrink-0"
               aria-label="Change profile photo"
             >
-              <div className="h-20 w-20 overflow-hidden rounded-2xl shadow-lg ring-4 ring-white">
+              <div className="h-20 w-20 overflow-hidden rounded-2xl shadow-lg ring-4 ring-stroke">
                 {photo ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={photo} alt="Profile" className="h-full w-full object-cover" />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-orange-400 via-[var(--r-orange)] to-orange-700">
-                    <span className="text-3xl font-bold text-white">
+                  <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-brand via-[var(--r-orange)] to-brand-hover">
+                    <span className="text-3xl font-bold text-brand-fg">
                       {displayName[0]?.toUpperCase() ?? "R"}
                     </span>
                   </div>
                 )}
               </div>
-              <div className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-white shadow-md ring-2 ring-white">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden>
-                  <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" stroke="#e5471a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <div className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-surface shadow-md ring-2 ring-stroke">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden className="text-brand-text">
+                  <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>
             </button>
@@ -577,26 +578,26 @@ export default function ProfilePage() {
                 <h1 className="text-xl font-semibold tracking-tight text-[var(--foreground)]">
                   {displayName}
                 </h1>
-                <span className="rounded-full bg-[var(--r-orange-soft)] px-2.5 py-0.5 text-[11px] font-bold text-[var(--r-orange)]">
+                <span className="rounded-full bg-brand/10 px-2.5 py-0.5 text-[11px] font-bold text-brand-text">
                   {ridingStyleLabels(profile.style)}
                 </span>
                 {profile.preferEbike && (
-                  <span className="rounded-full border border-[var(--r-orange)]/20 bg-orange-50 px-2.5 py-0.5 text-[11px] font-semibold text-[var(--r-orange)]">
+                  <span className="rounded-full border border-brand/20 bg-brand/10 px-2.5 py-0.5 text-[11px] font-semibold text-brand-text">
                     eBike
                   </span>
                 )}
               </div>
               <p className="mt-1 text-[12px] text-[var(--r-muted)]">Tap photo to change</p>
-              {photoError && <p className="mt-1 text-[12px] font-medium text-red-600">{photoError}</p>}
+              {photoError && <p className="mt-1 text-[12px] font-medium text-danger">{photoError}</p>}
             </div>
           </div>
 
           {/* Rider summary + inline edit (active rider) */}
           <div
             id="profile-edit"
-            className="mt-5 scroll-mt-24 overflow-hidden rounded-2xl border border-[var(--r-border)] bg-white/90 shadow-sm"
+            className="mt-5 scroll-mt-24 overflow-hidden rounded-2xl border border-[var(--r-border)] bg-surface/90 shadow-sm"
           >
-            <div className="flex items-center justify-between gap-2 border-b border-[var(--r-border)] bg-neutral-50/90 px-4 py-2.5 sm:px-5">
+            <div className="flex items-center justify-between gap-2 border-b border-[var(--r-border)] bg-surface/90 px-4 py-2.5 sm:px-5">
               <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[var(--r-muted)]">
                 {formOpen ? "Update rider profile" : "Rider summary"}
               </p>
@@ -604,7 +605,7 @@ export default function ProfilePage() {
                 <button
                   type="button"
                   onClick={() => setFormOpen(true)}
-                  className="shrink-0 rounded-lg px-2.5 py-1 text-[12px] font-semibold text-[var(--r-orange)] transition hover:bg-orange-50"
+                  className="shrink-0 rounded-lg px-2.5 py-1 text-[12px] font-semibold text-brand-text transition hover:bg-brand/10"
                 >
                   Edit
                 </button>
@@ -612,7 +613,7 @@ export default function ProfilePage() {
                 <button
                   type="button"
                   onClick={cancelProfileEdit}
-                  className="shrink-0 rounded-lg px-2.5 py-1 text-[12px] font-semibold text-[var(--r-muted)] transition hover:bg-neutral-100 hover:text-[var(--foreground)]"
+                  className="shrink-0 rounded-lg px-2.5 py-1 text-[12px] font-semibold text-[var(--r-muted)] transition hover:bg-surface-raised hover:text-[var(--foreground)]"
                 >
                   Cancel
                 </button>
@@ -638,11 +639,11 @@ export default function ProfilePage() {
                     <p className="text-[13px] font-bold text-[var(--foreground)]">{value}</p>
                   </div>
                 ))}
-                <div className="border-t border-[var(--r-border)] bg-neutral-50/40 px-4 py-3 sm:px-5">
+                <div className="border-t border-[var(--r-border)] bg-surface/40 px-4 py-3 sm:px-5">
                   <button
                     type="button"
                     onClick={() => setFormOpen(true)}
-                    className="w-full rounded-xl border border-[var(--r-orange)]/35 bg-white py-2.5 text-[13px] font-semibold text-[var(--r-orange)] shadow-sm transition hover:bg-orange-50/80"
+                    className="w-full rounded-xl border border-brand/35 bg-surface py-2.5 text-[13px] font-semibold text-brand-text shadow-sm transition hover:bg-brand/10"
                   >
                     Update nickname, sizing &amp; riding style
                   </button>
@@ -651,7 +652,7 @@ export default function ProfilePage() {
             ) : (
               <form onSubmit={handleSave} className="space-y-4 px-4 py-4 sm:space-y-5 sm:px-5 sm:py-5">
                 {riders.length > 1 ? (
-                  <p className="rounded-lg border border-[var(--r-border)] bg-neutral-50/80 px-3 py-2 text-[11px] leading-snug text-[var(--r-muted)]">
+                  <p className="rounded-lg border border-[var(--r-border)] bg-surface/80 px-3 py-2 text-[11px] leading-snug text-[var(--r-muted)]">
                     Updates apply to the <strong className="text-[var(--foreground)]">active</strong> rider only. Switch
                     them in <strong className="text-[var(--foreground)]">My Family</strong> (section below)
                     first if you meant to edit someone else.
@@ -719,7 +720,7 @@ export default function ProfilePage() {
                 </div>
 
                 {reach != null && (
-                  <p className="rounded-xl bg-[rgba(229,71,26,0.06)] px-4 py-3 text-[12px] leading-relaxed text-[var(--r-muted)]">
+                  <p className="rounded-xl bg-brand/5 px-4 py-3 text-[12px] leading-relaxed text-[var(--r-muted)]">
                     Estimated reach: <strong className="text-[var(--foreground)]">~{reach}mm</strong>
                     {draftCat && (
                       <>
@@ -743,13 +744,13 @@ export default function ProfilePage() {
                           onClick={() => setStyle(opt.value)}
                           className={`flex min-w-0 flex-col items-start rounded-xl border px-3 py-3 text-left transition-all ${
                             active
-                              ? "border-[var(--r-orange)] bg-[var(--r-orange-soft)] shadow-sm"
-                              : "border-[var(--r-border)] bg-white hover:border-[var(--r-orange)]/40"
+                              ? "border-[var(--r-orange)] bg-brand/10 shadow-sm"
+                              : "border-[var(--r-border)] bg-surface hover:border-[var(--r-orange)]/40"
                           }`}
                         >
-                          <span className={`h-2 w-2 shrink-0 rounded-full ${active ? "bg-[var(--r-orange)]" : "bg-neutral-300"}`} />
+                          <span className={`h-2 w-2 shrink-0 rounded-full ${active ? "bg-[var(--r-orange)]" : "bg-stroke"}`} />
                           <span
-                            className={`mt-2 text-[12px] font-semibold leading-tight sm:text-[13px] ${active ? "text-[var(--r-orange)]" : "text-[var(--foreground)]"}`}
+                            className={`mt-2 text-[12px] font-semibold leading-tight sm:text-[13px] ${active ? "text-brand-text" : "text-[var(--foreground)]"}`}
                           >
                             {opt.label}
                           </span>
@@ -762,7 +763,7 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                <div className="flex min-w-0 items-center justify-between gap-3 rounded-xl border border-[var(--r-border)] bg-neutral-50/80 px-4 py-4">
+                <div className="flex min-w-0 items-center justify-between gap-3 rounded-xl border border-[var(--r-border)] bg-surface/80 px-4 py-4">
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-[var(--foreground)]">Interested in e-bikes</p>
                     <p className="mt-0.5 text-[11px] leading-snug text-[var(--r-muted)]">Prioritises eMTB · boosts rental shops on the trip map</p>
@@ -773,23 +774,23 @@ export default function ProfilePage() {
                     aria-checked={preferEbikeAriaChecked}
                     aria-label="Interested in e-bikes"
                     onClick={() => setPreferEbike((v) => !v)}
-                    className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${preferEbike ? "bg-[var(--r-orange)]" : "bg-neutral-200"}`}
+                    className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${preferEbike ? "bg-[var(--r-orange)]" : "bg-stroke"}`}
                   >
                     <span
-                      className={`absolute left-0.5 top-0.5 h-6 w-6 rounded-full bg-white shadow-sm transition-transform ${preferEbike ? "translate-x-5" : "translate-x-0"}`}
+                      className={`absolute left-0.5 top-0.5 h-6 w-6 rounded-full bg-surface shadow-sm transition-transform ${preferEbike ? "translate-x-5" : "translate-x-0"}`}
                     />
                   </button>
                 </div>
 
                 {error ? (
-                  <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">{error}</p>
+                  <p className="rounded-xl border border-warning/30 bg-warning-subtle/15 px-4 py-3 text-sm text-warning">{error}</p>
                 ) : null}
 
                 <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end">
                   <button
                     type="button"
                     onClick={cancelProfileEdit}
-                    className="rounded-xl border border-[var(--r-border)] bg-white px-4 py-3 text-sm font-semibold text-[var(--foreground)] transition hover:bg-neutral-50 sm:min-w-[7rem]"
+                    className="rounded-xl border border-[var(--r-border)] bg-surface px-4 py-3 text-sm font-semibold text-[var(--foreground)] transition hover:bg-surface-raised sm:min-w-[7rem]"
                   >
                     Discard
                   </button>
@@ -802,10 +803,19 @@ export default function ProfilePage() {
           </div>
 
           {saved && (
-            <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-[12px] text-emerald-900">
+            <div className="mt-3 rounded-xl border border-success/30 bg-success-subtle/15 px-4 py-2.5 text-[12px] text-success">
               ✓ Profile saved — catalogue and ride map updated.
             </div>
           )}
+        </div>
+
+        {/* ── Appearance (mobile theme toggle) ── */}
+        <div className="mt-5 flex items-center justify-between gap-3 rounded-2xl border border-stroke bg-surface px-4 py-3.5">
+          <div className="min-w-0">
+            <p className="text-[14px] font-medium text-text">Appearance</p>
+            <p className="mt-0.5 text-[12px] text-text-2">Switch between light and dark mode</p>
+          </div>
+          <ThemeToggle />
         </div>
 
         <MyFamilySection
@@ -821,7 +831,7 @@ export default function ProfilePage() {
         {/* ── Tools ── */}
         <div id="profile-tools" className="mt-5 scroll-mt-24">
           <h2 className="mb-2 px-1 text-[15px] font-semibold text-[var(--foreground)]">Tools</h2>
-          <div className="overflow-hidden rounded-2xl border border-[var(--r-border)] bg-white">
+          <div className="overflow-hidden rounded-2xl border border-[var(--r-border)] bg-surface">
             {[
               { label: "Sizing Guide", href: "/sizing", icon: (
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden><rect x="2" y="8" width="20" height="8" rx="2" stroke="currentColor" strokeWidth="1.7"/><path d="M6 8V6M10 8V5M14 8V6M18 8V5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
@@ -839,9 +849,9 @@ export default function ProfilePage() {
               <Link
                 key={label}
                 href={href}
-                className={`flex items-center gap-3.5 px-4 py-3.5 no-underline transition-colors hover:bg-neutral-50 ${i < arr.length - 1 ? "border-b border-[var(--r-border)]" : ""}`}
+                className={`flex items-center gap-3.5 px-4 py-3.5 no-underline transition-colors hover:bg-surface-raised ${i < arr.length - 1 ? "border-b border-[var(--r-border)]" : ""}`}
               >
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-neutral-100 text-[var(--r-muted)]">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-surface-raised text-[var(--r-muted)]">
                   {icon}
                 </span>
                 <p className="flex-1 text-[14px] font-medium text-[var(--foreground)]">{label}</p>
@@ -852,7 +862,7 @@ export default function ProfilePage() {
           <button
             type="button"
             onClick={exportRippersBackup}
-            className="mt-3 w-full rounded-2xl border border-dashed border-[var(--r-border)] bg-white px-4 py-3 text-left text-[13px] font-semibold text-[var(--foreground)] transition hover:border-[var(--r-orange)]/40 hover:bg-[rgba(229,71,26,0.04)]"
+            className="mt-3 w-full rounded-2xl border border-dashed border-[var(--r-border)] bg-surface px-4 py-3 text-left text-[13px] font-semibold text-[var(--foreground)] transition hover:border-[var(--r-orange)]/40 hover:bg-brand/5"
           >
             Export my data (JSON backup)
             <span className="mt-0.5 block text-[11px] font-normal text-[var(--r-muted)]">
@@ -863,7 +873,7 @@ export default function ProfilePage() {
           <div className="mt-3">
             <RippersBackupImporter redirectHref="/" confirmReplace variant="profile" />
           </div>
-          {backupNotice && <p className="mt-2 text-[12px] font-medium text-red-600">{backupNotice}</p>}
+          {backupNotice && <p className="mt-2 text-[12px] font-medium text-danger">{backupNotice}</p>}
         </div>
 
         {/* ── Current Ride ── */}
@@ -884,7 +894,7 @@ export default function ProfilePage() {
           {/* Current bike display */}
           {currentBikeEntry ? (
             <div className="r-glass-well flex items-center gap-4 px-4 py-4">
-              <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-[#f5f3ef]">
+              <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-surface">
                 {currentBikeEntry.type === "catalog" && currentCatalogBike ? (
                   <BikeProductImage
                     bikeId={currentCatalogBike.id}
@@ -923,7 +933,7 @@ export default function ProfilePage() {
                     <button
                       type="button"
                       onClick={() => setSelectedBike(currentCatalogBike)}
-                      className="mt-1.5 text-[11px] font-semibold text-[var(--r-orange)]"
+                      className="mt-1.5 text-[11px] font-semibold text-brand-text"
                     >
                       View full specs →
                     </button>
@@ -936,7 +946,7 @@ export default function ProfilePage() {
                     <p className="mt-1.5 text-[11px] leading-snug text-[var(--r-muted)]">
                       This bike isn&apos;t matched to the bundled catalogue row yet — tap{" "}
                       <strong className="text-[var(--foreground)]">Remove</strong> then pick it again from search, or run{" "}
-                      <code className="rounded bg-neutral-100 px-1 py-0.5 text-[10px]">npm run sync-catalog</code> if your data snapshot is stale.
+                      <code className="rounded bg-surface-raised px-1 py-0.5 text-[10px]">npm run sync-catalog</code> if your data snapshot is stale.
                     </p>
                   </>
                 ) : currentBikeEntry.type === "custom" ? (
@@ -964,7 +974,7 @@ export default function ProfilePage() {
                         href={currentBikeEntry.lookup.sourceUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="mt-1 inline-block text-[11px] font-semibold text-[var(--r-orange)]"
+                        className="mt-1 inline-block text-[11px] font-semibold text-brand-text"
                       >
                         Source ↗
                       </a>
@@ -973,7 +983,7 @@ export default function ProfilePage() {
                       <button
                         type="button"
                         onClick={() => forceWebBikeLookupRefresh(currentBikeStorageKey)}
-                        className="text-[11px] font-semibold text-[var(--r-muted)] underline-offset-2 hover:text-[var(--r-orange)] hover:underline"
+                        className="text-[11px] font-semibold text-[var(--r-muted)] underline-offset-2 hover:text-brand-text hover:underline"
                       >
                         Refresh image &amp; specs
                       </button>
@@ -986,14 +996,14 @@ export default function ProfilePage() {
             /* Bike picker */
             <div className="r-glass-well space-y-3 px-4 py-4">
               {/* Mode toggle */}
-              <div className="flex gap-1 rounded-xl bg-neutral-100 p-1">
+              <div className="flex gap-1 rounded-xl bg-surface-raised p-1">
                 {(["catalog", "custom"] as const).map((m) => (
                   <button
                     key={m}
                     type="button"
                     onClick={() => setBikeMode(m)}
                     className={`flex-1 rounded-lg py-1.5 text-[12px] font-semibold transition-all ${
-                      bikeMode === m ? "bg-white text-[var(--foreground)] shadow-sm" : "text-[var(--r-muted)]"
+                      bikeMode === m ? "bg-surface text-[var(--foreground)] shadow-sm" : "text-[var(--r-muted)]"
                     }`}
                   >
                     {m === "catalog" ? "Search catalogue" : "Add custom bike"}
@@ -1013,19 +1023,19 @@ export default function ProfilePage() {
                     autoComplete="off"
                   />
                   {bikeSearchOpen && catalogSearchHits.length > 0 && (
-                    <ul className="absolute left-0 right-0 top-full z-40 mt-1 max-h-52 overflow-auto rounded-xl border border-[var(--r-border)] bg-white shadow-xl">
+                    <ul className="absolute left-0 right-0 top-full z-40 mt-1 max-h-52 overflow-auto rounded-xl border border-[var(--r-border)] bg-surface-raised shadow-xl">
                       {catalogSearchHits.map((b) => (
                         <li key={b.id}>
                           <button
                             type="button"
-                            className="flex w-full items-center gap-3 px-3 py-2 text-left hover:bg-orange-50"
+                            className="flex w-full items-center gap-3 px-3 py-2 text-left hover:bg-brand/10"
                             onClick={() => {
                               saveCurrentBike({ type: "catalog", bikeId: b.id, brand: b.brand, model: b.model, year: b.year });
                               setBikeSearch("");
                               setBikeSearchOpen(false);
                             }}
                           >
-                            <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-[#f5f3ef]">
+                            <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-surface">
                               <BikeProductImage bikeId={b.id} alt={b.model} className="h-full w-full object-contain p-0.5" />
                             </div>
                             <div>
@@ -1070,7 +1080,7 @@ export default function ProfilePage() {
                     <button
                       type="button"
                       onClick={() => customBikePhotoRef.current?.click()}
-                      className="flex items-center gap-1.5 rounded-xl border border-[var(--r-border)] bg-white px-3 py-2 text-[12px] font-semibold text-[var(--foreground)]"
+                      className="flex items-center gap-1.5 rounded-xl border border-[var(--r-border)] bg-surface px-3 py-2 text-[12px] font-semibold text-[var(--foreground)]"
                     >
                       {customBikePhoto ? "✓ Photo added" : "+ Add photo"}
                     </button>
@@ -1078,7 +1088,7 @@ export default function ProfilePage() {
                       <button
                         type="button"
                         onClick={saveCustomBike}
-                        className="flex-1 rounded-xl bg-[var(--r-orange)] py-2 text-[13px] font-semibold text-white"
+                        className="flex-1 rounded-xl bg-[var(--r-orange)] py-2 text-[13px] font-semibold text-brand-fg"
                       >
                         Save my bike
                       </button>
@@ -1104,12 +1114,12 @@ export default function ProfilePage() {
             <h2 className="text-[15px] font-semibold text-[var(--foreground)]">
               My favourites
               {favBikes.length > 0 && (
-                <span className="ml-2 rounded-full bg-[var(--r-orange-soft)] px-2 py-0.5 text-[11px] font-bold text-[var(--r-orange)]">
+                <span className="ml-2 rounded-full bg-brand/10 px-2 py-0.5 text-[11px] font-bold text-brand-text">
                   {favBikes.length}
                 </span>
               )}
             </h2>
-            <Link href="/#results" className="text-[12px] font-semibold text-[var(--r-orange)] no-underline">
+            <Link href="/#results" className="text-[12px] font-semibold text-brand-text no-underline">
               Browse bikes →
             </Link>
           </div>
@@ -1134,16 +1144,16 @@ export default function ProfilePage() {
                 return (
                   <article
                     key={bike.id}
-                    className="group relative flex w-36 shrink-0 snap-start flex-col overflow-hidden rounded-2xl border border-[var(--r-border)] bg-white shadow-sm ring-1 ring-black/[0.02] transition active:scale-95"
+                    className="group relative flex w-36 shrink-0 snap-start flex-col overflow-hidden rounded-2xl border border-[var(--r-border)] bg-surface shadow-sm ring-1 ring-stroke transition active:scale-95"
                   >
                     <button
                       type="button"
                       onClick={() => setSelectedBike(bike)}
                       aria-label={`View ${bike.brand} ${bike.model} specs`}
-                      className="absolute inset-0 z-[1] rounded-2xl border-0 bg-transparent p-0 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--r-orange)] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+                      className="absolute inset-0 z-[1] rounded-2xl border-0 bg-transparent p-0 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--r-orange)] focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
                     />
                     <div className="relative z-[2] flex flex-col pointer-events-none">
-                      <div className="relative aspect-[4/3] w-full overflow-hidden bg-[#f5f3ef]">
+                      <div className="relative aspect-[4/3] w-full overflow-hidden bg-surface">
                         <BikeProductImage
                           bikeId={bike.id}
                           alt={bike.model}
@@ -1156,11 +1166,11 @@ export default function ProfilePage() {
                             e.stopPropagation();
                             toggleFav(bike.id);
                           }}
-                          className="pointer-events-auto absolute right-1.5 top-1.5 z-[3] flex h-6 w-6 items-center justify-center rounded-full bg-white/90 shadow"
+                          className="pointer-events-auto absolute right-1.5 top-1.5 z-[3] flex h-6 w-6 items-center justify-center rounded-full bg-surface-raised text-brand-text shadow"
                           aria-label="Remove from favourites"
                         >
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="#e5471a" aria-hidden>
-                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" stroke="#e5471a" strokeWidth="1.6" />
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" stroke="currentColor" strokeWidth="1.6" />
                           </svg>
                         </button>
                       </div>
@@ -1191,7 +1201,7 @@ export default function ProfilePage() {
           </h2>
 
           {/* Gear tabs */}
-          <div className="mb-3 flex gap-1 rounded-2xl border border-[var(--r-border)] bg-white/60 p-1">
+          <div className="mb-3 flex gap-1 rounded-2xl border border-[var(--r-border)] bg-surface/60 p-1">
             {(["protection", "clothing", "tools"] as const).map((tab) => (
               <button
                 key={tab}
@@ -1199,7 +1209,7 @@ export default function ProfilePage() {
                 onClick={() => setGearTab(tab)}
                 className={`flex-1 rounded-xl py-2 text-[12px] font-semibold capitalize transition-all ${
                   gearTab === tab
-                    ? "bg-[var(--r-orange)] text-white shadow-sm"
+                    ? "bg-[var(--r-orange)] text-brand-fg shadow-sm"
                     : "text-[var(--r-muted)] hover:text-[var(--foreground)]"
                 }`}
               >
@@ -1222,7 +1232,7 @@ export default function ProfilePage() {
                   <p className="text-[13px] font-semibold text-[var(--foreground)]">{item.name}</p>
                   <p className="mt-0.5 text-[11px] leading-snug text-[var(--r-muted)]">{item.desc}</p>
                 </div>
-                <span className="mt-0.5 shrink-0 text-[12px] font-semibold text-[var(--r-orange)]">Shop →</span>
+                <span className="mt-0.5 shrink-0 text-[12px] font-semibold text-brand-text">Shop →</span>
               </a>
             ))}
           </div>
@@ -1230,8 +1240,8 @@ export default function ProfilePage() {
 
         {/* ── Account ── */}
         <p className="mx-4 mt-6 text-center text-[11px] leading-relaxed text-[var(--r-muted)]">
-          Rippers uses one light theme so bike photography and cards stay consistent with the catalogue. A dedicated dark
-          mode may arrive later.
+          Rippers supports both light and dark themes. Use the appearance toggle above to switch; your choice is remembered
+          on this device.
         </p>
 
         <div className="mt-4 rounded-2xl border border-[var(--r-border)] px-5 py-4">
@@ -1245,7 +1255,7 @@ export default function ProfilePage() {
               clearProfileAndOnboarding();
               router.replace("/welcome");
             }}
-            className="mt-3 rounded-lg border border-neutral-200 px-4 py-2 text-[12px] font-semibold text-neutral-600 transition-colors hover:bg-neutral-50"
+            className="mt-3 rounded-lg border border-stroke px-4 py-2 text-[12px] font-semibold text-text-2 transition-colors hover:bg-surface-raised"
           >
             Reset rider account
           </button>

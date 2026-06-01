@@ -129,20 +129,19 @@ export function useCurrentBike() {
 
   const save = useCallback(
     (e: CurrentBikeEntry | null) => {
-      const next = enrichCurrentBikeWithCatalog(e);
       try {
-        if (next === null) {
+        if (e === null) {
           localStorage.removeItem(storageKey);
         } else {
-          localStorage.setItem(storageKey, JSON.stringify(next));
+          localStorage.setItem(storageKey, JSON.stringify(e));
         }
       } catch {
         /* ignore */
       }
-      setEntry(next);
+      setEntry(e);
       notifyCurrentBikeUpdated();
-      if (typeof window !== "undefined" && next?.type === "custom") {
-        startWebBikeLookupForEntry(storageKey, next);
+      if (typeof window !== "undefined" && e?.type === "custom") {
+        startWebBikeLookupForEntry(storageKey, e);
       }
     },
     [storageKey]

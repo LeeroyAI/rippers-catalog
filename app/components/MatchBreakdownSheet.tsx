@@ -16,8 +16,8 @@ const SENTIMENT_STYLES = {
   positive: {
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-        <circle cx="12" cy="12" r="10" fill="rgba(22,163,74,0.12)" />
-        <path d="m7.5 12 3 3 6-6" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx="12" cy="12" r="10" fill="rgb(var(--c-success) / 0.12)" />
+        <path d="m7.5 12 3 3 6-6" stroke="rgb(var(--c-success))" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     ),
     labelClass: "text-[var(--foreground)]",
@@ -27,8 +27,8 @@ const SENTIMENT_STYLES = {
   neutral: {
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-        <circle cx="12" cy="12" r="10" fill="rgba(120,113,108,0.1)" />
-        <path d="M8 12h8" stroke="#78716c" strokeWidth="2" strokeLinecap="round" />
+        <circle cx="12" cy="12" r="10" fill="rgb(var(--c-text-3) / 0.1)" />
+        <path d="M8 12h8" stroke="rgb(var(--c-text-3))" strokeWidth="2" strokeLinecap="round" />
       </svg>
     ),
     labelClass: "text-[var(--r-muted)]",
@@ -38,8 +38,8 @@ const SENTIMENT_STYLES = {
   negative: {
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-        <circle cx="12" cy="12" r="10" fill="rgba(229,71,26,0.1)" />
-        <path d="m9 9 6 6M15 9l-6 6" stroke="#e5471a" strokeWidth="2" strokeLinecap="round" />
+        <circle cx="12" cy="12" r="10" fill="rgb(var(--c-brand) / 0.1)" />
+        <path d="m9 9 6 6M15 9l-6 6" stroke="rgb(var(--c-brand-text))" strokeWidth="2" strokeLinecap="round" />
       </svg>
     ),
     labelClass: "text-[var(--foreground)]",
@@ -76,20 +76,20 @@ export default function MatchBreakdownSheet({ bike, profile, onClose }: Props) {
       <div className="fixed inset-0 z-[3000] bg-black/40 backdrop-blur-sm" onClick={onClose} aria-hidden />
       <div
         ref={panelRef}
-        className="fixed bottom-0 left-0 right-0 z-[3001] rounded-t-3xl bg-white shadow-2xl"
+        className="fixed bottom-0 left-0 right-0 z-[3001] rounded-t-3xl bg-surface-raised shadow-2xl"
         role="dialog"
         aria-modal
         aria-label="Match score breakdown"
       >
         {/* Handle */}
         <div className="flex justify-center pt-3 pb-2">
-          <div className="h-1 w-10 rounded-full bg-neutral-200" />
+          <div className="h-1 w-10 rounded-full bg-stroke" />
         </div>
 
         {/* Score header */}
         <div className="flex items-center gap-4 px-5 pb-4 pt-1">
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[rgba(229,71,26,0.08)]">
-            <span className="text-[22px] font-bold text-[var(--r-orange)]">{pct}%</span>
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-brand/10">
+            <span className="text-[22px] font-bold text-brand">{pct}%</span>
           </div>
           <div>
             <p className="text-[16px] font-bold text-[var(--foreground)]">Match score</p>
@@ -120,7 +120,7 @@ export default function MatchBreakdownSheet({ bike, profile, onClose }: Props) {
 
         {!profile && (
           <p className="px-5 pb-2 text-center text-[12px] text-[var(--r-muted)]">
-            <a href="/profile" className="font-semibold text-[var(--r-orange)] underline-offset-2 hover:underline">
+            <a href="/profile" className="font-semibold text-brand-text underline-offset-2 hover:underline">
               Set up your profile
             </a>{" "}
             to get personalised scores

@@ -91,7 +91,7 @@ export default function AskAISheet({ bike, profile, onClose }: Props) {
       <div className="fixed inset-0 z-[3000] bg-black/50 backdrop-blur-sm" onClick={onClose} aria-hidden />
       <div
         ref={panelRef}
-        className="fixed bottom-0 left-0 right-0 z-[3001] flex max-h-[88dvh] flex-col rounded-t-3xl bg-white shadow-2xl"
+        className="fixed bottom-0 left-0 right-0 z-[3001] flex max-h-[88dvh] flex-col rounded-t-3xl bg-surface-raised shadow-2xl"
         role="dialog"
         aria-modal
         aria-label="Ask AI about this bike"
@@ -99,11 +99,11 @@ export default function AskAISheet({ bike, profile, onClose }: Props) {
         {/* Handle + header */}
         <div className="flex-shrink-0 px-5 pt-3 pb-4">
           <div className="mb-3 flex justify-center">
-            <div className="h-1 w-10 rounded-full bg-neutral-200" />
+            <div className="h-1 w-10 rounded-full bg-stroke" />
           </div>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[rgba(229,71,26,0.1)]">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand/10">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z" fill="var(--r-orange)"/>
                 </svg>
@@ -116,7 +116,7 @@ export default function AskAISheet({ bike, profile, onClose }: Props) {
             <button
               type="button"
               onClick={onClose}
-              className="flex h-7 w-7 items-center justify-center rounded-full bg-neutral-100 text-neutral-500"
+              className="flex h-7 w-7 items-center justify-center rounded-full bg-surface text-text-2"
               aria-label="Close"
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -137,7 +137,7 @@ export default function AskAISheet({ bike, profile, onClose }: Props) {
                     key={q}
                     type="button"
                     onClick={() => ask(q)}
-                    className="rounded-full border border-[var(--r-border)] bg-neutral-50 px-3 py-1.5 text-[12px] font-medium text-[var(--foreground)] transition-colors hover:border-[var(--r-orange)]/40 hover:bg-orange-50 active:scale-95"
+                    className="rounded-full border border-stroke bg-surface px-3 py-1.5 text-[12px] font-medium text-[var(--foreground)] transition-colors hover:border-[var(--r-orange)]/40 hover:bg-brand/10 active:scale-95"
                   >
                     {q}
                   </button>
@@ -155,8 +155,8 @@ export default function AskAISheet({ bike, profile, onClose }: Props) {
                 <div
                   className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-[13px] leading-relaxed ${
                     msg.role === "user"
-                      ? "rounded-br-md bg-[var(--r-orange)] text-white"
-                      : "rounded-bl-md border border-[var(--r-border)] bg-neutral-50 text-[var(--foreground)]"
+                      ? "rounded-br-md bg-[var(--r-orange)] text-brand-fg"
+                      : "rounded-bl-md border border-stroke bg-surface text-[var(--foreground)]"
                   }`}
                 >
                   {msg.text}
@@ -166,11 +166,11 @@ export default function AskAISheet({ bike, profile, onClose }: Props) {
 
             {loading && (
               <div className="flex justify-start">
-                <div className="flex items-center gap-1.5 rounded-2xl rounded-bl-md border border-[var(--r-border)] bg-neutral-50 px-4 py-3">
+                <div className="flex items-center gap-1.5 rounded-2xl rounded-bl-md border border-stroke bg-surface px-4 py-3">
                   {[0, 1, 2].map((i) => (
                     <span
                       key={i}
-                      className="h-1.5 w-1.5 rounded-full bg-neutral-400"
+                      className="h-1.5 w-1.5 rounded-full bg-text-3"
                       style={{ animation: `bounce 1.2s ${i * 0.2}s infinite` }}
                     />
                   ))}
@@ -182,7 +182,7 @@ export default function AskAISheet({ bike, profile, onClose }: Props) {
         </div>
 
         {/* Input */}
-        <div className="flex-shrink-0 border-t border-[var(--r-border)] px-4 py-3 pb-[max(0.75rem,calc(env(safe-area-inset-bottom)+0.5rem))]">
+        <div className="flex-shrink-0 border-t border-stroke px-4 py-3 pb-[max(0.75rem,calc(env(safe-area-inset-bottom)+0.5rem))]">
           <form onSubmit={handleSubmit} className="flex items-center gap-2">
             <input
               ref={inputRef}
@@ -198,7 +198,7 @@ export default function AskAISheet({ bike, profile, onClose }: Props) {
             <button
               type="submit"
               disabled={!input.trim() || loading}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--r-orange)] text-white shadow transition-opacity disabled:opacity-40"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--r-orange)] text-brand-fg shadow transition-opacity disabled:opacity-40"
               aria-label="Send"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>

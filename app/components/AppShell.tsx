@@ -7,9 +7,11 @@ import { usePathname } from "next/navigation";
 import { LEGACY_PROFILE_PHOTO_KEY, readRiderPhoto, riderPhotoStorageKey } from "@/src/domain/rider-photo";
 import { RIDER_PHOTO_UPDATED_EVENT } from "@/src/lib/rider-photo-events";
 import { useRiderProfile } from "@/src/state/rider-profile-context";
+import ThemeToggle from "./ThemeToggle";
 
-function stroke(active: boolean) {
-  return active ? "#e5471a" : "#8a8783";
+// Icons inherit the tab link's themed text color via `currentColor`.
+function stroke(_active: boolean) {
+  return "currentColor";
 }
 
 function IconHome({ active }: { active: boolean }) {
@@ -37,7 +39,7 @@ function IconMapPin({ active }: { active: boolean }) {
         strokeWidth="1.65"
         strokeLinejoin="round"
       />
-      <circle cx="12" cy="10" r="2.4" fill={s} stroke="none" opacity={active ? 0.85 : 0.75} />
+      <circle cx="12" cy="10" r="2.4" fill="currentColor" stroke="none" opacity={active ? 0.85 : 0.75} />
     </svg>
   );
 }
@@ -51,7 +53,8 @@ function IconHeart({ active }: { active: boolean }) {
         stroke={s}
         strokeWidth="1.65"
         strokeLinejoin="round"
-        fill={active ? "rgba(229,71,26,0.12)" : "none"}
+        fill={active ? "currentColor" : "none"}
+        fillOpacity={active ? 0.14 : 0}
       />
     </svg>
   );
@@ -175,7 +178,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               riders.length > 1 ? (
                 <Link
                   href="/profile#profile-riders"
-                  className="inline-block min-w-0 max-w-[9rem] truncate rounded-full border border-[var(--r-border)] bg-white/90 px-2.5 py-1 text-[11px] font-semibold text-[var(--foreground)] no-underline shadow-sm transition hover:border-[var(--r-orange)]/35 hover:bg-orange-50/50 sm:max-w-[10rem]"
+                  className="inline-block min-w-0 max-w-[9rem] truncate rounded-full border border-stroke bg-surface/90 px-2.5 py-1 text-[11px] font-semibold text-text no-underline shadow-sm transition hover:border-brand/35 hover:bg-brand/10 sm:max-w-[10rem]"
                   title="Switch household rider"
                 >
                   <span className="font-normal text-[var(--r-muted)]">As </span>
@@ -227,26 +230,29 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             </Link>
           </nav>
 
-          {/* Profile avatar */}
-          <Link
-            href="/profile"
-            className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-neutral-100 ring-2 ring-[var(--r-border)] transition-transform hover:scale-105"
-            aria-label="Your profile"
-          >
-            {profilePhoto ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={profilePhoto} alt="Profile" className="h-full w-full object-cover" />
-            ) : profile?.nickname ? (
-              <span className="text-[13px] font-bold text-[var(--r-orange)]">
-                {profile.nickname.charAt(0).toUpperCase()}
-              </span>
-            ) : (
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden>
-                <circle cx="12" cy="8.5" r="3.5" stroke="var(--r-muted)" strokeWidth="1.6" />
-                <path d="M7 21v-.8a5 5 0 0 1 10 0V21" stroke="var(--r-muted)" strokeWidth="1.6" strokeLinecap="round" />
-              </svg>
-            )}
-          </Link>
+          <div className="flex shrink-0 items-center gap-2">
+            <ThemeToggle />
+            {/* Profile avatar */}
+            <Link
+              href="/profile"
+              className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface-raised ring-2 ring-stroke transition-transform hover:scale-105"
+              aria-label="Your profile"
+            >
+              {profilePhoto ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={profilePhoto} alt="Profile" className="h-full w-full object-cover" />
+              ) : profile?.nickname ? (
+                <span className="text-[13px] font-bold text-brand-text">
+                  {profile.nickname.charAt(0).toUpperCase()}
+                </span>
+              ) : (
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden>
+                  <circle cx="12" cy="8.5" r="3.5" stroke="currentColor" className="text-text-3" strokeWidth="1.6" />
+                  <path d="M7 21v-.8a5 5 0 0 1 10 0V21" stroke="currentColor" className="text-text-3" strokeWidth="1.6" strokeLinecap="round" />
+                </svg>
+              )}
+            </Link>
+          </div>
 
         </div>
       </header>
@@ -264,7 +270,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                   prefetch={tab.href === "/"}
                   data-active={active}
                   className={`r-tab-item flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-full py-2 text-[11px] font-semibold leading-tight tracking-tight no-underline transition-colors sm:text-[12px] ${
-                    active ? "text-[var(--r-orange)]" : "text-[var(--r-muted)]"
+                    active ? "text-brand-text" : "text-text-3"
                   }`}
                 >
                   <Icon active={active} />

@@ -195,16 +195,16 @@ export default function TripMapInner({
               <div className="flex flex-wrap items-center gap-1.5">
                 <strong>{shop.name}</strong>
                 {shop.rental && (
-                  <span className="rounded bg-[#f3e8ff] px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#5b21b6]">
+                  <span className="rounded bg-accent-subtle/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-accent">
                     Hire available
                   </span>
                 )}
               </div>
-              <div className="mt-1.5 text-[11px] text-neutral-600">
+              <div className="mt-1.5 text-[11px] text-text-2">
                 {serviceLine(shop.sales, shop.repair, shop.rental)}
               </div>
-              <div className="mt-1 text-[10px] text-neutral-500">{shop.openingHours ?? "Hours not listed"}</div>
-              <div className="mt-1.5 text-[11px] text-neutral-700">
+              <div className="mt-1 text-[10px] text-text-2">{shop.openingHours ?? "Hours not listed"}</div>
+              <div className="mt-1.5 text-[11px] text-text-2">
                 Contact:{" "}
                 {shop.phone ? (
                   <a href={`tel:${shop.phone}`} className="font-semibold underline underline-offset-2">
@@ -225,7 +225,7 @@ export default function TripMapInner({
                   }
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[#E5470A] underline underline-offset-2"
+                  className="text-brand-text underline underline-offset-2"
                 >
                   {shop.website ? "Visit website ↗" : "Website not listed — open listing ↗"}
                 </a>
@@ -233,7 +233,7 @@ export default function TripMapInner({
                   href={googleMapsDirectionsUrl(shop.lat, shop.lon, shop.name, userLocation ?? undefined)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[#2563EB] underline underline-offset-2"
+                  className="text-info underline underline-offset-2"
                 >
                   Directions from my location (Google)
                 </a>
@@ -241,7 +241,7 @@ export default function TripMapInner({
                   href={appleMapsUrl(shop.lat, shop.lon, shop.name)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[#2563EB] underline underline-offset-2"
+                  className="text-info underline underline-offset-2"
                 >
                   Apple Maps
                 </a>
@@ -249,7 +249,7 @@ export default function TripMapInner({
                   href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(shop.name + " bike shop reviews")}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[#2563EB] underline underline-offset-2"
+                  className="text-info underline underline-offset-2"
                 >
                   Google Reviews ↗
                 </a>
@@ -268,7 +268,7 @@ export default function TripMapInner({
           <Popup>
             <div className="text-sm leading-snug">
               <strong>{trail.name}</strong>
-              <p className="mt-2 text-[11px] text-neutral-700">
+              <p className="mt-2 text-[11px] text-text-2">
                 Named or MTB-tagged path from OpenStreetMap (not a curated centre map — use Trailforks for official trail
                 names and closures).
               </p>
@@ -279,11 +279,11 @@ export default function TripMapInner({
                 })}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-2 inline-block font-semibold text-[#E5470A] underline underline-offset-2"
+                className="mt-2 inline-block font-semibold text-brand-text underline underline-offset-2"
               >
                 Jump to Trailforks map
               </a>
-              <span className="mt-2 block text-[10px] text-neutral-700">
+              <span className="mt-2 block text-[10px] text-text-2">
                 Opens Trailforks’ trail map centred here (with the name in search when supported) so official MTB
                 layers appear in context.
               </span>

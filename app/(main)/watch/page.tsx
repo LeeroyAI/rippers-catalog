@@ -60,14 +60,14 @@ export default function WatchlistPage() {
             <p className="mt-0.5 text-[13px] text-[var(--r-muted)]">
               {savedBikes.length} bike{savedBikes.length !== 1 ? "s" : ""} saved
               {inStockCount > 0 && (
-                <> · <span className="font-semibold text-[#16a34a]">{inStockCount} in stock</span></>
+                <> · <span className="font-semibold text-success">{inStockCount} in stock</span></>
               )}
             </p>
           )}
         </div>
 
         {savedBikes.length > 1 && (
-          <div className="flex items-center gap-1 rounded-xl border border-[var(--r-border)] bg-white p-1 shadow-sm">
+          <div className="flex items-center gap-1 rounded-xl border border-stroke bg-surface p-1 shadow-sm">
             {(["saved", "match", "price"] as const).map((opt) => (
               <button
                 key={opt}
@@ -87,7 +87,7 @@ export default function WatchlistPage() {
       </div>
 
       {hydrated && profile && riders.length > 0 ? (
-        <div className="mx-4 mt-3 rounded-2xl border border-[var(--r-border)] bg-white px-3 py-3 shadow-sm sm:px-4 md:mx-0">
+        <div className="mx-4 mt-3 rounded-2xl border border-stroke bg-surface px-3 py-3 shadow-sm sm:px-4 md:mx-0">
           <RiderContextPicker
             id="watch-household-rider"
             description="This list is per rider — switch before saving or comparing hearts."
@@ -101,7 +101,7 @@ export default function WatchlistPage() {
         <div className="mt-3 px-4 md:px-0">
           <Link
             href={`/compare?bikes=${savedBikes.slice(0, 3).map((b) => b.id).join(",")}`}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--r-orange)]/35 bg-[rgba(229,71,26,0.06)] px-3.5 py-2 text-[12px] font-semibold text-[var(--r-orange)] no-underline transition hover:bg-[rgba(229,71,26,0.1)]"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--r-orange)]/35 bg-brand/5 px-3.5 py-2 text-[12px] font-semibold text-brand-text no-underline transition hover:bg-brand/10"
           >
             Compare {Math.min(3, savedBikes.length)} in spec table →
           </Link>
@@ -110,14 +110,14 @@ export default function WatchlistPage() {
 
       {/* Empty state */}
       {savedBikes.length === 0 && (
-        <div className="mx-4 mt-10 flex flex-col items-center rounded-2xl border border-dashed border-[var(--r-border)] bg-white px-8 py-14 text-center md:mx-0">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[rgba(229,71,26,0.08)]">
+        <div className="mx-4 mt-10 flex flex-col items-center rounded-2xl border border-dashed border-stroke bg-surface px-8 py-14 text-center md:mx-0">
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-brand/10">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden>
               <path
                 d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
                 stroke="var(--r-orange)"
                 strokeWidth="1.8"
-                fill="rgba(229,71,26,0.1)"
+                fill="rgb(var(--c-brand) / 0.1)"
               />
             </svg>
           </div>
@@ -127,7 +127,7 @@ export default function WatchlistPage() {
           </p>
           <Link
             href="/#results"
-            className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-[var(--r-orange)] px-5 py-3 text-[14px] font-semibold text-white shadow-[0_6px_20px_rgba(229,71,26,0.35)] no-underline"
+            className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-[var(--r-orange)] px-5 py-3 text-[14px] font-semibold text-brand-fg shadow-[0_6px_20px_rgba(229,71,26,0.35)] no-underline"
           >
             Browse bikes →
           </Link>
@@ -147,7 +147,7 @@ export default function WatchlistPage() {
             return (
               <article
                 key={bike.id}
-                className="group relative flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-[var(--r-border)] bg-white shadow-sm transition-shadow hover:shadow-md"
+                className="group relative flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-stroke bg-surface shadow-sm transition-shadow hover:shadow-md"
                 onClick={() => setSelectedBike(bike)}
                 role="button"
                 tabIndex={0}
@@ -155,7 +155,7 @@ export default function WatchlistPage() {
                 aria-label={`View ${bike.brand} ${bike.model}`}
               >
                 {/* Image */}
-                <div className="relative aspect-[16/10] overflow-hidden bg-[#f5f3ef]">
+                <div className="relative aspect-[16/10] overflow-hidden bg-surface">
                   <BikeProductImage
                     bikeId={bike.id}
                     alt={`${bike.brand} ${bike.model}`}
@@ -167,7 +167,7 @@ export default function WatchlistPage() {
                     type="button"
                     onClick={(e) => { e.stopPropagation(); setMatchBike(bike); }}
                     aria-label={`${matchPct}% match — tap for breakdown`}
-                    className="absolute right-2.5 top-2.5 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-bold tracking-tight text-[var(--r-match-text)] shadow ring-1 ring-black/5 transition-transform active:scale-95"
+                    className="absolute right-2.5 top-2.5 rounded-full bg-surface-raised/95 px-2.5 py-1 text-[11px] font-bold tracking-tight text-[var(--r-match-text)] shadow ring-1 ring-stroke transition-transform active:scale-95"
                   >
                     {matchPct}%
                   </button>
@@ -177,12 +177,12 @@ export default function WatchlistPage() {
                     type="button"
                     onClick={(e) => { e.stopPropagation(); toggle(bike.id); }}
                     aria-label="Remove from saved"
-                    className="absolute left-2.5 top-2.5 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 shadow backdrop-blur-sm transition active:scale-90"
+                    className="absolute left-2.5 top-2.5 flex h-7 w-7 items-center justify-center rounded-full bg-surface-raised/90 shadow backdrop-blur-sm transition active:scale-90"
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill={isFav ? "#e5471a" : "none"} aria-hidden>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill={isFav ? "rgb(var(--c-brand))" : "none"} aria-hidden>
                       <path
                         d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-                        stroke={isFav ? "#e5471a" : "#666"}
+                        stroke={isFav ? "rgb(var(--c-brand-text))" : "rgb(var(--c-text-3))"}
                         strokeWidth="1.8"
                       />
                     </svg>
@@ -195,7 +195,7 @@ export default function WatchlistPage() {
                     </span>
                   )}
                   {bike.isEbike && (
-                    <span className="absolute bottom-2.5 right-2.5 rounded-full bg-[var(--r-orange)] px-2.5 py-0.5 text-[10px] font-bold text-white">
+                    <span className="absolute bottom-2.5 right-2.5 rounded-full bg-[var(--r-orange)] px-2.5 py-0.5 text-[10px] font-bold text-brand-fg">
                       eBike
                     </span>
                   )}
@@ -208,13 +208,13 @@ export default function WatchlistPage() {
 
                   <div className="mt-1.5 flex flex-wrap gap-1.5">
                     {bike.category && (
-                      <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-[10px] font-semibold text-[var(--r-muted)]">{bike.category}</span>
+                      <span className="rounded-full bg-surface-raised px-2 py-0.5 text-[10px] font-semibold text-[var(--r-muted)]">{bike.category}</span>
                     )}
                     {bike.travel && (
-                      <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-[10px] font-semibold text-[var(--r-muted)]">{bike.travel}</span>
+                      <span className="rounded-full bg-surface-raised px-2 py-0.5 text-[10px] font-semibold text-[var(--r-muted)]">{bike.travel}</span>
                     )}
                     {bike.wheel && (
-                      <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-[10px] font-semibold text-[var(--r-muted)]">{bike.wheel}</span>
+                      <span className="rounded-full bg-surface-raised px-2 py-0.5 text-[10px] font-semibold text-[var(--r-muted)]">{bike.wheel}</span>
                     )}
                   </div>
 
@@ -234,7 +234,7 @@ export default function WatchlistPage() {
                     <button
                       type="button"
                       onClick={(e) => { e.stopPropagation(); setSelectedBike(bike); }}
-                      className="rounded-xl bg-[rgba(229,71,26,0.08)] px-3 py-2 text-[12px] font-semibold text-[var(--r-orange)] transition hover:bg-[rgba(229,71,26,0.14)]"
+                      className="rounded-xl bg-brand/10 px-3 py-2 text-[12px] font-semibold text-brand-text transition hover:bg-brand/15"
                     >
                       View specs →
                     </button>

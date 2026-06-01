@@ -29,11 +29,11 @@ export default function BikeProductImage({ bikeId, alt, className }: Props) {
         aria-label={alt}
         style={{
           background:
-            "radial-gradient(120% 90% at 20% 10%, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.6) 42%, rgba(236,233,227,0.94) 100%)",
+            "radial-gradient(120% 90% at 20% 10%, rgb(var(--c-surface) / 0.9) 0%, rgb(var(--c-surface) / 0.6) 42%, rgb(var(--c-bg) / 0.94) 100%)",
         }}
       >
         <div className="flex h-full w-full items-center justify-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/85 px-3 py-1 text-[11px] font-semibold text-black/60 shadow-sm">
+          <div className="inline-flex items-center gap-2 rounded-full border border-stroke bg-surface-raised px-3 py-1 text-[11px] font-semibold text-text-2 shadow-sm">
             <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--r-orange)]" aria-hidden />
             Image unavailable
           </div>

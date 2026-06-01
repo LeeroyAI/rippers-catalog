@@ -179,12 +179,12 @@ export default function EditFamilyRiderModal({ rider, open, onClose, onViewCatal
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={photo} alt="" className="h-full w-full object-cover" />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-orange-400 via-[var(--r-orange)] to-orange-700 text-2xl font-bold text-white">
+                  <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-brand via-[var(--r-orange)] to-brand-hover text-2xl font-bold text-brand-fg">
                     {initial}
                   </div>
                 )}
               </div>
-              <span className="mt-1 block text-center text-[11px] font-semibold text-[var(--r-orange)]">Photo</span>
+              <span className="mt-1 block text-center text-[11px] font-semibold text-brand-text">Photo</span>
             </button>
             <input
               ref={photoInputRef}
@@ -200,20 +200,20 @@ export default function EditFamilyRiderModal({ rider, open, onClose, onViewCatal
                 <button
                   type="button"
                   onClick={clearPhoto}
-                  className="mt-2 text-[12px] font-semibold text-red-600 underline decoration-red-600/30 underline-offset-2"
+                  className="mt-2 text-[12px] font-semibold text-danger underline decoration-danger/30 underline-offset-2"
                 >
                   Remove photo
                 </button>
               ) : null}
-              {photoError ? <p className="mt-2 text-[12px] font-medium text-red-600">{photoError}</p> : null}
+              {photoError ? <p className="mt-2 text-[12px] font-medium text-danger">{photoError}</p> : null}
             </div>
           </div>
 
           {entry ? (
-            <div className="mt-4 rounded-xl border border-[var(--r-border)] bg-neutral-50/80 px-3 py-3">
+            <div className="mt-4 rounded-xl border border-[var(--r-border)] bg-surface px-3 py-3">
               <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--r-muted)]">Current ride</p>
               <div className="mt-2 flex items-center gap-3">
-                <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-[#f5f3ef]">
+                <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-surface">
                   {entry.type === "catalog" && catBike ? (
                     <BikeProductImage bikeId={catBike.id} alt="" className="h-full w-full object-contain p-0.5" />
                   ) : entry.type === "custom" && entry.photo ? (
@@ -236,7 +236,7 @@ export default function EditFamilyRiderModal({ rider, open, onClose, onViewCatal
                       <button
                         type="button"
                         onClick={() => onViewCatalogBike(catBike)}
-                        className="text-[11px] font-semibold text-[var(--r-orange)] underline-offset-2 hover:underline"
+                        className="text-[11px] font-semibold text-brand-text underline-offset-2 hover:underline"
                       >
                         View full specs
                       </button>
@@ -244,7 +244,7 @@ export default function EditFamilyRiderModal({ rider, open, onClose, onViewCatal
                     <button
                       type="button"
                       onClick={clearTheirBike}
-                      className="text-[11px] font-semibold text-red-600 underline decoration-red-600/30 underline-offset-2"
+                      className="text-[11px] font-semibold text-danger underline decoration-danger/30 underline-offset-2"
                     >
                       Remove bike
                     </button>
@@ -277,9 +277,9 @@ export default function EditFamilyRiderModal({ rider, open, onClose, onViewCatal
               ref={savedConfirmationRef}
               role="status"
               aria-live="polite"
-              className="mt-4 rounded-xl border-2 border-emerald-400/80 bg-emerald-50 px-4 py-3 shadow-sm shadow-emerald-900/10"
+              className="mt-4 rounded-xl border-2 border-success/30 bg-success-subtle/15 px-4 py-3 shadow-sm shadow-emerald-900/10"
             >
-              <p className="text-[13px] font-semibold leading-snug text-emerald-950">{savedHint}</p>
+              <p className="text-[13px] font-semibold leading-snug text-success">{savedHint}</p>
             </div>
           ) : null}
         </div>
@@ -291,7 +291,7 @@ export default function EditFamilyRiderModal({ rider, open, onClose, onViewCatal
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full p-2 text-[var(--r-muted)] transition hover:bg-neutral-100 hover:text-[var(--foreground)]"
+            className="rounded-full p-2 text-[var(--r-muted)] transition hover:bg-surface-raised hover:text-[var(--foreground)]"
             aria-label="Close"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -304,7 +304,7 @@ export default function EditFamilyRiderModal({ rider, open, onClose, onViewCatal
           <button
             type="button"
             onClick={onClose}
-            className="w-full rounded-2xl border border-[var(--r-border)] bg-white py-3 text-[14px] font-semibold text-[var(--foreground)] transition hover:bg-neutral-50"
+            className="w-full rounded-2xl border border-[var(--r-border)] bg-surface py-3 text-[14px] font-semibold text-[var(--foreground)] transition hover:bg-surface"
           >
             Close
           </button>

@@ -1,43 +1,175 @@
 @import "tailwindcss";
 
+/*
+ * Rippers color system — three tiers, dark-first.
+ *   Tier 1  primitive palette         (warm neutral scale + brand), defined inline below
+ *   Tier 2  semantic tokens           (--c-* channels in :root / html.light)
+ *   Tier 3  utility classes           (bg-bg, text-text, text-brand, ...) via @theme inline
+ *
+ * Channels are stored as raw "R G B" so opacity modifiers work: bg-brand/20, text-text-3/60.
+ * Dark is the default (:root). Light is the opt-in override (html.light).
+ * Component code never references a hex value — only Tier 3 utilities or the recipe vars below.
+ */
+
 :root {
-  /* iOS-aligned canvas */
-  --r-bg-canvas: #f2f0eb;
-  --r-bg-well: #ffffff;
-  --background: var(--r-bg-canvas);
-  --foreground: #1f1f1f;
-  /* Primary orange (~splash marketing, closer to screenshot) */
-  --r-orange: #e5471a;
-  --r-orange-deep: #c53d14;
-  --r-orange-muted: rgba(229, 71, 26, 0.12);
-  --r-orange-soft: rgba(229, 71, 26, 0.12);
-  --r-price-green: #1a9453;
-  --r-match-tint: #ffe4e0;
-  --r-match-text: #b42318;
-  --r-border: #e8e4dc;
-  --r-muted: #696663;
+  /* ---- Tier 2: semantic tokens (DARK, default) ---- */
+
+  /* Surfaces — three levels max */
+  --c-bg: 15 13 11;            /* page background, warm near-black */
+  --c-surface: 26 23 19;       /* default card / panel */
+  --c-surface-raised: 38 33 28;/* elevated: sheet, modal, dropdown */
+  --c-border: 51 45 38;        /* default border / divider */
+
+  /* Text — contrast checked at definition against --c-bg */
+  --c-text: 242 237 232;       /* ~14:1  headings, primary content */
+  --c-text-2: 176 168 158;     /* ~7:1   secondary, metadata */
+  --c-text-3: 140 132 122;     /* ~4.6:1 muted, hints (floor) */
+  --c-text-disabled: 74 68 60; /* disabled controls only */
+
+  /* Brand */
+  --c-brand: 229 71 26;        /* #e5471a — fills, gradients, large display */
+  --c-brand-hover: 255 105 51; /* lighter on dark for hover */
+  --c-brand-fg: 255 255 255;   /* text/icon on a brand-filled surface */
+  --c-brand-text: 255 122 77;  /* accessible brand for small text/icons (>=4.5:1 on bg) */
+
+  /* Status (text-safe on current bg) + subtle (same hue, used at low opacity) */
+  --c-success: 74 222 128;     /* #4ade80 — also used for price */
+  --c-success-subtle: 74 222 128;
+  --c-warning: 251 191 36;     /* #fbbf24 — premium / caution */
+  --c-warning-subtle: 251 191 36;
+  --c-danger: 248 113 113;     /* #f87171 — error, match-text */
+  --c-danger-subtle: 248 113 113;
+  --c-info: 96 165 250;        /* #60a5fa — ask AI / neutral emphasis */
+  --c-info-subtle: 96 165 250;
+  --c-accent: 167 139 250;     /* #a78bfa — expert / secondary accent */
+  --c-accent-subtle: 167 139 250;
+
+  /* ---- Recipe vars: themed building blocks for the .r-* glass/gradient classes ---- */
+  --c-card-grad-top: #211d18;
+  --c-card-grad-bottom: #16130f;
+  --c-thumb-grad-top: #26211c;
+  --c-thumb-grad-bottom: #14110e;
+  --c-hero-grad-top: #241f1a;
+  --c-hero-grad-mid: #1a1713;
+  --c-hero-grad-bottom: #110f0c;
+  --c-field-bg: 33 29 24;
+  --c-field-border: 64 57 48;
+  --c-glass-bg: 26 23 19;      /* tabbar / header translucent base */
+  --c-header-bg: 18 16 13;
+
+  --c-glint-soft: rgba(255, 255, 255, 0.05);
+  --c-glint-med: rgba(255, 255, 255, 0.04);
+  --c-shadow-sm: rgba(0, 0, 0, 0.4);
+  --c-shadow-md: rgba(0, 0, 0, 0.5);
+  --c-shadow-lg: rgba(0, 0, 0, 0.62);
+
+  /* Back-compat aliases (body, theme-color, any legacy refs) — resolve --c-* lazily,
+     so they follow html.light automatically. Components still using these old names
+     stay themed without edits; new code should prefer the Tier 3 utilities. */
+  --background: rgb(var(--c-bg));
+  --foreground: rgb(var(--c-text));
+  --r-bg-canvas: rgb(var(--c-bg));
+  --r-bg-well: rgb(var(--c-surface));
+  --r-orange: rgb(var(--c-brand));
+  --r-orange-deep: rgb(var(--c-brand-hover));
+  --r-orange-muted: rgb(var(--c-brand) / 0.12);
+  --r-orange-soft: rgb(var(--c-brand) / 0.12);
+  --r-orange-text: rgb(var(--c-brand-text));
+  --r-price-green: rgb(var(--c-success));
+  --r-match-tint: rgb(var(--c-danger-subtle) / 0.18);
+  --r-match-text: rgb(var(--c-danger));
+  --r-border: rgb(var(--c-border));
+  --r-muted: rgb(var(--c-text-3));
+
+  /* Mobile shell safe-area padding */
   --r-shell-pad-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
   --r-shell-pad-top: 0px;
 }
 
+html.light {
+  /* ---- Tier 2: semantic tokens (LIGHT, opt-in) — warm iOS canvas ---- */
+  --c-bg: 242 240 235;         /* #f2f0eb canvas */
+  --c-surface: 250 248 244;    /* #faf8f4 card */
+  --c-surface-raised: 255 255 255; /* #ffffff sheet / modal */
+  --c-border: 232 228 220;     /* #e8e4dc */
+
+  --c-text: 31 31 31;          /* #1f1f1f ~16:1 */
+  --c-text-2: 82 78 74;        /* #524e4a ~7:1 on canvas */
+  --c-text-3: 105 102 99;      /* #696663 ~4.7:1 (floor) */
+  --c-text-disabled: 180 176 170;
+
+  --c-brand: 229 71 26;        /* #e5471a */
+  --c-brand-hover: 197 61 20;  /* #c53d14 deeper on light for hover */
+  --c-brand-fg: 255 255 255;
+  --c-brand-text: 176 49 14;   /* #b0310e — accessible orange for small text on light */
+
+  --c-success: 14 122 67;      /* #0e7a43 — 4.75:1 on light canvas (AA small text) */
+  --c-success-subtle: 26 148 83;
+  --c-warning: 168 77 8;       /* #a84d08 — 4.94:1 on light canvas (AA small text) */
+  --c-warning-subtle: 217 119 6;
+  --c-danger: 180 35 24;       /* #b42318 — match-text */
+  --c-danger-subtle: 229 71 26;
+  --c-info: 37 99 235;         /* #2563eb */
+  --c-info-subtle: 37 99 235;
+  --c-accent: 124 58 237;      /* #7c3aed */
+  --c-accent-subtle: 124 58 237;
+
+  --c-card-grad-top: #ffffff;
+  --c-card-grad-bottom: #fdfbf8;
+  --c-thumb-grad-top: #f8f5ef;
+  --c-thumb-grad-bottom: #ece7de;
+  --c-hero-grad-top: #fffdf8;
+  --c-hero-grad-mid: #f8f3ea;
+  --c-hero-grad-bottom: #f2ede5;
+  --c-field-bg: 253 252 250;
+  --c-field-border: 218 214 207;
+  --c-glass-bg: 255 255 255;
+  --c-header-bg: 242 240 235;
+
+  --c-glint-soft: rgba(255, 255, 255, 0.85);
+  --c-glint-med: rgba(255, 255, 255, 0.72);
+  --c-shadow-sm: rgba(18, 16, 12, 0.06);
+  --c-shadow-md: rgba(18, 16, 12, 0.09);
+  --c-shadow-lg: rgba(18, 16, 12, 0.14);
+}
+
+/* ---- Tier 3: map semantic tokens to Tailwind v4 utilities (switchable at runtime) ---- */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-bg: rgb(var(--c-bg));
+  --color-surface: rgb(var(--c-surface));
+  --color-surface-raised: rgb(var(--c-surface-raised));
+  --color-stroke: rgb(var(--c-border));
+
+  --color-text: rgb(var(--c-text));
+  --color-text-2: rgb(var(--c-text-2));
+  --color-text-3: rgb(var(--c-text-3));
+  --color-disabled: rgb(var(--c-text-disabled));
+
+  --color-brand: rgb(var(--c-brand));
+  --color-brand-hover: rgb(var(--c-brand-hover));
+  --color-brand-fg: rgb(var(--c-brand-fg));
+  --color-brand-text: rgb(var(--c-brand-text));
+
+  --color-success: rgb(var(--c-success));
+  --color-success-subtle: rgb(var(--c-success-subtle));
+  --color-warning: rgb(var(--c-warning));
+  --color-warning-subtle: rgb(var(--c-warning-subtle));
+  --color-danger: rgb(var(--c-danger));
+  --color-danger-subtle: rgb(var(--c-danger-subtle));
+  --color-info: rgb(var(--c-info));
+  --color-info-subtle: rgb(var(--c-info-subtle));
+  --color-accent: rgb(var(--c-accent));
+  --color-accent-subtle: rgb(var(--c-accent-subtle));
+
+  /* Back-compat for existing bg-background / text-foreground usages */
+  --color-background: rgb(var(--c-bg));
+  --color-foreground: rgb(var(--c-text));
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    /* Intentionally keep the light canvas so imagery and cards stay consistent */
-    color-scheme: light;
-    --background: var(--r-bg-canvas);
-    --foreground: #1f1f1f;
-  }
-}
-
 body {
-  color-scheme: light;
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
@@ -47,7 +179,7 @@ body {
 }
 
 :focus-visible {
-  outline: 2px solid var(--r-orange);
+  outline: 2px solid rgb(var(--c-brand));
   outline-offset: 2px;
 }
 
@@ -57,7 +189,7 @@ input:focus-visible,
 select:focus-visible,
 textarea:focus-visible,
 summary:focus-visible {
-  outline: 2px solid var(--r-orange);
+  outline: 2px solid rgb(var(--c-brand));
   outline-offset: 2px;
 }
 
@@ -104,7 +236,7 @@ summary:focus-visible {
   align-items: center;
   gap: 0.55rem;
   padding: 0.1rem 0.25rem;
-  /* Don’t let the wide search chip + nav squeeze the mark below its square aspect */
+  /* Don't let the wide search chip + nav squeeze the mark below its square aspect */
   flex-shrink: 0;
 }
 
@@ -115,14 +247,14 @@ summary:focus-visible {
   justify-content: space-between;
   gap: 0.75rem;
   border-radius: 9999px;
-  border: 1px solid rgba(232, 228, 220, 0.95);
-  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgb(var(--c-border) / 0.95);
+  background: rgb(var(--c-glass-bg) / 0.92);
   padding: 0.55rem 0.75rem 0.55rem 0.95rem;
   font-size: 0.8rem;
   line-height: 1;
   box-shadow:
-    0 6px 18px rgba(18, 16, 12, 0.08),
-    0 1px 0 rgba(255, 255, 255, 0.85) inset;
+    0 6px 18px var(--c-shadow-md),
+    0 1px 0 var(--c-glint-med) inset;
   transition:
     transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
     box-shadow 200ms ease,
@@ -131,10 +263,10 @@ summary:focus-visible {
 
 .r-desktop-search-chip:hover {
   transform: translateY(-1px);
-  border-color: rgba(229, 71, 26, 0.3);
+  border-color: rgb(var(--c-brand) / 0.3);
   box-shadow:
-    0 10px 22px rgba(18, 16, 12, 0.11),
-    0 1px 0 rgba(255, 255, 255, 0.9) inset;
+    0 10px 22px var(--c-shadow-lg),
+    0 1px 0 var(--c-glint-soft) inset;
 }
 
 .r-desktop-search-chip:active {
@@ -145,11 +277,11 @@ summary:focus-visible {
   display: inline-flex;
   align-items: center;
   border-radius: 9999px;
-  background: rgba(229, 71, 26, 0.12);
+  background: rgb(var(--c-brand) / 0.12);
   padding: 0.33rem 0.62rem;
   font-size: 0.72rem;
   font-weight: 700;
-  color: var(--r-orange);
+  color: rgb(var(--c-brand-text));
 }
 
 .r-desktop-links {
@@ -165,7 +297,7 @@ summary:focus-visible {
   padding: 0.62rem 0.85rem;
   font-size: 0.8rem;
   font-weight: 600;
-  color: var(--r-muted);
+  color: rgb(var(--c-text-2));
   text-decoration: none;
   transition:
     background-color 160ms ease,
@@ -174,8 +306,8 @@ summary:focus-visible {
 }
 
 .r-desktop-link:hover {
-  background: rgba(229, 71, 26, 0.08);
-  color: var(--foreground);
+  background: rgb(var(--c-brand) / 0.08);
+  color: rgb(var(--c-text));
 }
 
 .r-desktop-link:active {
@@ -183,27 +315,27 @@ summary:focus-visible {
 }
 
 .r-desktop-link-active {
-  background: rgba(229, 71, 26, 0.13);
-  color: var(--r-orange);
+  background: rgb(var(--c-brand) / 0.13);
+  color: rgb(var(--c-brand-text));
 }
 
 .r-desktop-action {
   display: inline-flex;
   align-items: center;
   border-radius: 0.75rem;
-  background: linear-gradient(180deg, #ff6933 0%, var(--r-orange) 58%, var(--r-orange-deep) 100%);
+  background: linear-gradient(180deg, rgb(var(--c-brand-hover)) 0%, rgb(var(--c-brand)) 58%, rgb(var(--c-brand)) 100%);
   padding: 0.62rem 0.9rem;
   font-size: 0.8rem;
   font-weight: 700;
-  color: #fff;
+  color: rgb(var(--c-brand-fg));
   box-shadow:
-    0 8px 18px rgba(229, 71, 26, 0.26),
+    0 8px 18px rgb(var(--c-brand) / 0.26),
     0 1px 1px rgba(255, 255, 255, 0.18) inset;
 }
 
 .r-desktop-header-scrolled {
-  background: rgba(255, 255, 255, 0.97);
-  box-shadow: 0 1px 0 rgba(18, 16, 12, 0.08);
+  background: rgb(var(--c-glass-bg) / 0.97);
+  box-shadow: 0 1px 0 var(--c-shadow-sm);
 }
 
 /* Floating navigation rail */
@@ -216,11 +348,11 @@ summary:focus-visible {
   max-width: min(80rem, calc(100vw - 24px));
   transform: translateX(-50%);
   border-radius: 9999px;
-  border: 1px solid var(--r-border);
-  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgb(var(--c-border));
+  background: rgb(var(--c-glass-bg) / 0.96);
   box-shadow:
-    0 18px 40px rgba(18, 16, 12, 0.12),
-    0 1px 0 rgba(255, 255, 255, 0.9) inset;
+    0 18px 40px var(--c-shadow-lg),
+    0 1px 0 var(--c-glint-soft) inset;
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
@@ -232,7 +364,7 @@ summary:focus-visible {
   inset: -1px;
   border-radius: inherit;
   pointer-events: none;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.72) 0%, rgba(255, 255, 255, 0) 72%);
+  background: linear-gradient(180deg, var(--c-glint-soft) 0%, transparent 72%);
 }
 
 .r-ios-tabbar-shell:has(.r-tab-item[data-active="true"]) {
@@ -265,7 +397,7 @@ summary:focus-visible {
   height: 22px;
   transform: translateX(-50%);
   border-radius: 9999px;
-  background: radial-gradient(circle at center, rgba(229, 71, 26, 0.34), rgba(229, 71, 26, 0.03) 74%);
+  background: radial-gradient(circle at center, rgb(var(--c-brand) / 0.34), rgb(var(--c-brand) / 0.03) 74%);
   filter: blur(0.5px);
   pointer-events: none;
 }
@@ -279,7 +411,7 @@ summary:focus-visible {
   height: 3px;
   transform: translateX(-50%);
   border-radius: 9999px;
-  background: linear-gradient(90deg, rgba(229, 71, 26, 0.2), rgba(229, 71, 26, 0.85), rgba(229, 71, 26, 0.2));
+  background: linear-gradient(90deg, rgb(var(--c-brand) / 0.2), rgb(var(--c-brand) / 0.85), rgb(var(--c-brand) / 0.2));
 }
 
 @media (min-width: 900px) {
@@ -296,16 +428,16 @@ summary:focus-visible {
     z-index: 60;
     display: block;
     height: 3.5rem;
-    background: rgba(242, 240, 235, 0.9);
-    border-bottom: 1px solid rgba(232, 228, 220, 0.9);
+    background: rgb(var(--c-header-bg) / 0.9);
+    border-bottom: 1px solid rgb(var(--c-border) / 0.9);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     transition: background 200ms ease, box-shadow 200ms ease;
   }
 
   .r-desktop-header-scrolled {
-    background: rgba(255, 255, 255, 0.95);
-    box-shadow: 0 1px 0 rgba(18, 16, 12, 0.07), 0 4px 16px rgba(18, 16, 12, 0.05);
+    background: rgb(var(--c-glass-bg) / 0.95);
+    box-shadow: 0 1px 0 var(--c-shadow-sm), 0 4px 16px var(--c-shadow-sm);
   }
 
   .r-mobile-tabbar {
@@ -326,29 +458,29 @@ summary:focus-visible {
 
 .r-ios-card {
   border-radius: 1.125rem;
-  border: 1px solid rgba(232, 228, 220, 0.95);
-  background: var(--r-bg-well);
-  box-shadow: 0 10px 32px rgba(18, 16, 12, 0.06);
+  border: 1px solid rgb(var(--c-border) / 0.95);
+  background: rgb(var(--c-surface));
+  box-shadow: 0 10px 32px var(--c-shadow-md);
 }
 
 .r-ios-well {
   border-radius: 1rem;
-  border: 1px solid var(--r-border);
-  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgb(var(--c-border));
+  background: rgb(var(--c-surface) / 0.85);
 }
 
 .r-field-ios {
   border-radius: 0.875rem;
-  border: 1px solid #dad6cf;
-  background: #fdfcfa;
+  border: 1px solid rgb(var(--c-field-border));
+  background: rgb(var(--c-field-bg));
 }
 
 .r-btn-ios-primary {
-  background: linear-gradient(180deg, #ff6933 0%, var(--r-orange) 52%, var(--r-orange-deep) 100%);
-  color: white;
+  background: linear-gradient(180deg, rgb(var(--c-brand-hover)) 0%, rgb(var(--c-brand)) 52%, rgb(var(--c-brand)) 100%);
+  color: rgb(var(--c-brand-fg));
   font-weight: 600;
   box-shadow:
-    0 10px 22px rgba(229, 71, 26, 0.28),
+    0 10px 22px rgb(var(--c-brand) / 0.28),
     0 1px 1px rgba(255, 255, 255, 0.18) inset;
 }
 
@@ -370,7 +502,7 @@ summary:focus-visible {
 
 .r-carousel-card:hover {
   transform: translateY(-3px) scale(1.01);
-  box-shadow: 0 18px 42px rgba(18, 16, 12, 0.14);
+  box-shadow: 0 18px 42px var(--c-shadow-lg);
 }
 
 .r-carousel-card:active {
@@ -405,28 +537,28 @@ summary:focus-visible {
 
 .r-carousel-thumb {
   background:
-    radial-gradient(100% 65% at 50% 0%, rgba(255, 255, 255, 0.74) 0%, transparent 68%),
-    linear-gradient(165deg, #f8f5ef 0%, #ece7de 100%);
+    radial-gradient(100% 65% at 50% 0%, var(--c-glint-soft) 0%, transparent 68%),
+    linear-gradient(165deg, var(--c-thumb-grad-top) 0%, var(--c-thumb-grad-bottom) 100%);
 }
 
 .r-home-bg {
   background:
-    radial-gradient(120% 52% at 8% -10%, rgba(229, 71, 26, 0.12) 0%, transparent 60%),
-    radial-gradient(90% 42% at 95% 4%, rgba(255, 255, 255, 0.75) 0%, transparent 70%),
-    var(--r-bg-canvas);
+    radial-gradient(120% 52% at 8% -10%, rgb(var(--c-brand) / 0.12) 0%, transparent 60%),
+    radial-gradient(90% 42% at 95% 4%, var(--c-glint-soft) 0%, transparent 70%),
+    rgb(var(--c-bg));
 }
 
 .r-home-hero {
   position: relative;
   overflow: hidden;
   border-radius: 1.35rem;
-  border: 1px solid rgba(232, 228, 220, 0.9);
+  border: 1px solid rgb(var(--c-border) / 0.9);
   background:
-    radial-gradient(140% 90% at 0% 0%, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.24) 45%, transparent 78%),
-    linear-gradient(160deg, #fffdf8 0%, #f8f3ea 55%, #f2ede5 100%);
+    radial-gradient(140% 90% at 0% 0%, var(--c-glint-soft) 0%, transparent 78%),
+    linear-gradient(160deg, var(--c-hero-grad-top) 0%, var(--c-hero-grad-mid) 55%, var(--c-hero-grad-bottom) 100%);
   box-shadow:
-    0 18px 50px rgba(18, 16, 12, 0.09),
-    0 1px 0 rgba(255, 255, 255, 0.88) inset;
+    0 18px 50px var(--c-shadow-md),
+    0 1px 0 var(--c-glint-soft) inset;
 }
 
 .r-home-hero::after {
@@ -437,36 +569,36 @@ summary:focus-visible {
   width: 220px;
   height: 220px;
   border-radius: 9999px;
-  background: radial-gradient(circle at center, rgba(229, 71, 26, 0.22), rgba(229, 71, 26, 0.03) 60%, transparent 75%);
+  background: radial-gradient(circle at center, rgb(var(--c-brand) / 0.22), rgb(var(--c-brand) / 0.03) 60%, transparent 75%);
   pointer-events: none;
 }
 
 .r-glass-well {
   border-radius: 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgb(var(--c-border) / 0.8);
+  background: rgb(var(--c-surface) / 0.7);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  box-shadow: 0 8px 26px rgba(18, 16, 12, 0.07);
+  box-shadow: 0 8px 26px var(--c-shadow-sm);
 }
 
 .r-stat-card {
   border-radius: 1rem;
-  border: 1px solid rgba(232, 228, 220, 0.95);
-  background: linear-gradient(175deg, #fff 0%, #fbf9f5 100%);
-  box-shadow: 0 10px 25px rgba(18, 16, 12, 0.08);
+  border: 1px solid rgb(var(--c-border) / 0.95);
+  background: linear-gradient(175deg, var(--c-card-grad-top) 0%, var(--c-card-grad-bottom) 100%);
+  box-shadow: 0 10px 25px var(--c-shadow-md);
 }
 
 .r-results-card {
   border-radius: 1.15rem;
-  border: 1px solid rgba(232, 228, 220, 0.95);
-  background: linear-gradient(180deg, #fff 0%, #fdfbf8 100%);
+  border: 1px solid rgb(var(--c-border) / 0.95);
+  background: linear-gradient(180deg, var(--c-card-grad-top) 0%, var(--c-card-grad-bottom) 100%);
   box-shadow:
-    0 14px 38px rgba(18, 16, 12, 0.09),
-    0 1px 0 rgba(255, 255, 255, 0.85) inset;
+    0 14px 38px var(--c-shadow-md),
+    0 1px 0 var(--c-glint-soft) inset;
 }
 
-/* Splash / marketing */
+/* Splash / marketing — brand-forward in both modes */
 .r-splash-orange {
   background:
     radial-gradient(120% 80% at 50% -20%, rgba(255, 255, 255, 0.2) 0%, transparent 45%),
@@ -539,7 +671,7 @@ summary:focus-visible {
   height: 26px;
   border-radius: 9999px;
   border: 2px solid #fff;
-  background: var(--r-orange);
+  background: rgb(var(--c-brand));
   color: #fff;
   box-shadow: 0 2px 6px rgba(18, 16, 12, 0.22);
   font-size: 12px;
@@ -551,32 +683,32 @@ summary:focus-visible {
   width: 30px;
   height: 30px;
   font-size: 13px;
-  box-shadow: 0 0 0 2px rgba(229, 71, 26, 0.35), 0 2px 8px rgba(18, 16, 12, 0.25);
+  box-shadow: 0 0 0 2px rgb(var(--c-brand) / 0.35), 0 2px 8px rgba(18, 16, 12, 0.25);
 }
 
 /* Shared primitives (trip map, rider form) */
 .r-card {
   border-radius: 1.125rem;
-  border: 1px solid var(--r-border);
-  background: var(--r-bg-well);
-  box-shadow: 0 8px 24px rgba(18, 16, 12, 0.05);
+  border: 1px solid rgb(var(--c-border));
+  background: rgb(var(--c-surface));
+  box-shadow: 0 8px 24px var(--c-shadow-sm);
 }
 
 .r-field {
   border-radius: 0.875rem;
-  border: 1px solid var(--r-border);
-  background: #fdfcfa;
+  border: 1px solid rgb(var(--c-border));
+  background: rgb(var(--c-field-bg));
 }
 
 .r-btn-orange {
   border-radius: 0.875rem;
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--r-orange) 92%, #fff) 0%,
-    var(--r-orange) 55%,
-    var(--r-orange-deep) 100%
+    color-mix(in srgb, rgb(var(--c-brand)) 92%, #fff) 0%,
+    rgb(var(--c-brand)) 55%,
+    rgb(var(--c-brand-hover)) 100%
   );
-  color: #fff;
+  color: rgb(var(--c-brand-fg));
   font-weight: 600;
 }
 
@@ -584,7 +716,7 @@ summary:focus-visible {
   filter: brightness(1.04);
 }
 
-/* Trip map “Loading trails & shops” — motion so the bar never looks frozen at ~50% */
+/* Trip map "Loading trails & shops" — motion so the bar never looks frozen at ~50% */
 @keyframes r-trip-load-shine {
   0% {
     transform: translateX(-100%);

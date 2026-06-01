@@ -1,16 +1,13 @@
 "use client";
 
-import { startTransition, useEffect, useMemo, useState } from "react";
+import { startTransition, useEffect, useState } from "react";
 
-import { catalog } from "@/src/data/catalog";
 import type { CurrentBikeEntry } from "@/src/domain/current-bike-entry";
-import { enrichCurrentBikeWithCatalog } from "@/src/lib/enrich-current-bike-catalog";
 import {
   approximateFrameReachCm,
   suggestedBikeCategory,
   type RiderProfileV1,
 } from "@/src/domain/rider-profile";
-import type { Bike } from "@/src/domain/types";
 import { RIDING_STYLE_OPTIONS, type RidingStyle } from "@/src/domain/riding-style";
 
 import RiderHouseholdPhotoField from "@/app/components/RiderHouseholdPhotoField";
@@ -42,16 +39,6 @@ type Props = {
   freezeOptionalBikeUnlessTouched?: boolean;
 };
 
-function bikeToEntry(b: Bike): CurrentBikeEntry {
-  return {
-    type: "catalog",
-    bikeId: b.id,
-    brand: b.brand,
-    model: b.model,
-    year: b.year,
-  };
-}
-
 export default function RiderProfileForm({
   initialDraft,
   submitLabel,
@@ -74,8 +61,6 @@ export default function RiderProfileForm({
   const [preferEbike, setPreferEbike] = useState(initialDraft.preferEbike);
   const [error, setError] = useState<string | null>(null);
 
-  const [bikeQuery, setBikeQuery] = useState("");
-  const [pickedCatalogBikeId, setPickedCatalogBikeId] = useState<number | null>(null);
   const [bikeBrand, setBikeBrand] = useState("");
   const [bikeModel, setBikeModel] = useState("");
   const [bikeYear, setBikeYear] = useState("");
@@ -90,8 +75,6 @@ export default function RiderProfileForm({
       setWeightKg(initialDraft.weightKg ? String(initialDraft.weightKg) : "");
       setStyle(initialDraft.style);
       setPreferEbike(initialDraft.preferEbike);
-      setBikeQuery("");
-      setPickedCatalogBikeId(null);
       setBikeBrand("");
       setBikeModel("");
       setBikeYear("");
@@ -106,32 +89,19 @@ export default function RiderProfileForm({
     initialDraft.preferEbike,
   ]);
 
-  const catalogHits = useMemo(() => {
-    const q = bikeQuery.trim().toLowerCase();
-    if (q.length < 2) return [];
-    return catalog
-      .filter((b) => `${b.brand} ${b.model}`.toLowerCase().includes(q))
-      .slice(0, 6);
-  }, [bikeQuery]);
-
   function buildOptionalCurrentBike(): CurrentBikeEntry | null {
     if (!includeOptionalCurrentBike) return null;
-    if (pickedCatalogBikeId != null) {
-      const b = catalog.find((x) => x.id === pickedCatalogBikeId);
-      return b ? bikeToEntry(b) : null;
-    }
     const brand = bikeBrand.trim();
     const model = bikeModel.trim();
     const year = bikeYear.trim();
     if (!brand && !model) return null;
-    const draft: CurrentBikeEntry = {
+    return {
       type: "custom",
       name: model || brand,
       brand: brand || model,
       year,
       photo: null,
     };
-    return enrichCurrentBikeWithCatalog(draft);
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -275,7 +245,7 @@ export default function RiderProfileForm({
         </p>
       </div>
 
-      <label className="flex min-w-0 cursor-pointer gap-3 rounded-xl border border-[var(--r-border)] bg-neutral-50/80 px-3 py-3 text-sm dark:bg-neutral-100">
+      <label className="flex min-w-0 cursor-pointer gap-3 rounded-xl border border-[var(--r-border)] bg-surface px-3 py-3 text-sm">
         <input
           type="checkbox"
           className="mt-0.5 h-5 w-5 accent-[var(--r-orange)]"
@@ -291,66 +261,13 @@ export default function RiderProfileForm({
       </label>
 
       {includeOptionalCurrentBike ? (
-        <details className="min-w-0 rounded-xl border border-[var(--r-border)] bg-white/90 px-3 py-2 shadow-sm open:shadow-md">
+        <details className="min-w-0 rounded-xl border border-[var(--r-border)] bg-surface px-3 py-2 shadow-sm open:shadow-md">
           <summary className="cursor-pointer list-none py-2 text-[13px] font-semibold text-[var(--foreground)] marker:content-none [&::-webkit-details-marker]:hidden">
             Current bike <span className="font-normal text-[var(--r-muted)]">(optional)</span>
           </summary>
           <div className="space-y-3 border-t border-[var(--r-border)] pb-3 pt-3">
             <p className="text-[11px] leading-relaxed text-[var(--r-muted)]">
-              Add what they ride today so home matches and your profile stay grounded. Pick from the catalogue or
-              describe any bike.
-            </p>
-            <div>
-              <label className="text-xs font-medium text-[var(--r-muted)]" htmlFor="welcome-bike-search">
-                Search catalogue
-              </label>
-              <input
-                id="welcome-bike-search"
-                type="search"
-                value={bikeQuery}
-                onChange={(e) => {
-                  setOptionalBikeTouched(true);
-                  setBikeQuery(e.target.value);
-                  setPickedCatalogBikeId(null);
-                }}
-                placeholder="Brand or model (2+ letters)"
-                className="r-field mt-1 w-full min-w-0 px-3 py-2.5 text-sm"
-                autoComplete="off"
-              />
-              {catalogHits.length > 0 ? (
-                <ul className="mt-2 max-h-40 space-y-1 overflow-auto rounded-lg border border-[var(--r-border)] bg-neutral-50/80 p-1">
-                  {catalogHits.map((b) => (
-                    <li key={b.id}>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setOptionalBikeTouched(true);
-                          setPickedCatalogBikeId(b.id);
-                          setBikeBrand("");
-                          setBikeModel("");
-                          setBikeYear("");
-                          setBikeQuery(`${b.brand} ${b.model}`);
-                        }}
-                        className={`flex w-full min-w-0 flex-col rounded-md px-2 py-2 text-left text-[12px] transition ${
-                          pickedCatalogBikeId === b.id
-                            ? "bg-[var(--r-orange-soft)] ring-1 ring-[var(--r-orange)]/40"
-                            : "hover:bg-white"
-                        }`}
-                      >
-                        <span className="font-semibold text-[var(--foreground)]">
-                          {b.brand} {b.model}
-                        </span>
-                        <span className="text-[10px] text-[var(--r-muted)]">
-                          {b.category} · {b.year}
-                        </span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-            </div>
-            <p className="text-center text-[10px] font-semibold uppercase tracking-wide text-[var(--r-muted)]">
-              or describe
+              Add what they ride today — we&apos;ll do a live search to pull specs and an image.
             </p>
             <div className="grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-3">
               <div className="min-w-0 sm:col-span-1">
@@ -364,7 +281,6 @@ export default function RiderProfileForm({
                   onChange={(e) => {
                     setOptionalBikeTouched(true);
                     setBikeBrand(e.target.value);
-                    setPickedCatalogBikeId(null);
                   }}
                   placeholder="Norco"
                   className="r-field mt-1 w-full min-w-0 px-3 py-2 text-sm"
@@ -381,7 +297,6 @@ export default function RiderProfileForm({
                   onChange={(e) => {
                     setOptionalBikeTouched(true);
                     setBikeModel(e.target.value);
-                    setPickedCatalogBikeId(null);
                   }}
                   placeholder="Fluid HT 24"
                   className="r-field mt-1 w-full min-w-0 px-3 py-2 text-sm"
@@ -399,7 +314,6 @@ export default function RiderProfileForm({
                   onChange={(e) => {
                     setOptionalBikeTouched(true);
                     setBikeYear(e.target.value);
-                    setPickedCatalogBikeId(null);
                   }}
                   placeholder="2024"
                   className="r-field mt-1 w-full min-w-0 px-3 py-2 text-sm"
@@ -431,7 +345,7 @@ export default function RiderProfileForm({
       ) : null}
 
       {error ? (
-        <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
+        <p className="rounded-lg border border-warning/30 bg-warning-subtle/15 px-3 py-2 text-sm text-warning">
           {error}
         </p>
       ) : null}

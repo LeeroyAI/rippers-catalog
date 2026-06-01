@@ -68,12 +68,12 @@ function FamilyRiderCard({
     <div
       className={`flex min-w-0 flex-col gap-3 rounded-2xl border px-4 py-4 sm:flex-row sm:items-stretch ${
         isActive
-          ? "border-[var(--r-orange)]/50 bg-[rgba(229,71,26,0.06)] shadow-sm ring-1 ring-[var(--r-orange)]/20"
-          : "border-[var(--r-border)] bg-neutral-50/60"
+          ? "border-[var(--r-orange)]/50 bg-brand/5 shadow-sm ring-1 ring-[var(--r-orange)]/20"
+          : "border-stroke bg-surface"
       }`}
     >
       <div className="flex shrink-0 gap-3 sm:flex-col sm:items-center">
-        <div className="h-14 w-14 shrink-0 overflow-hidden rounded-2xl bg-gradient-to-br from-orange-400 via-[var(--r-orange)] to-orange-700 text-lg font-bold text-white shadow-inner ring-2 ring-white/30">
+        <div className="h-14 w-14 shrink-0 overflow-hidden rounded-2xl bg-gradient-to-br from-brand via-[var(--r-orange)] to-brand-hover text-lg font-bold text-white shadow-inner ring-2 ring-white/30">
           {photoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={photoUrl} alt="" className="h-full w-full object-cover" />
@@ -81,7 +81,7 @@ function FamilyRiderCard({
             <div className="flex h-full w-full items-center justify-center">{initial}</div>
           )}
         </div>
-        <div className="h-14 w-20 shrink-0 overflow-hidden rounded-xl bg-[#f5f3ef] sm:h-16 sm:w-full sm:max-w-[5.5rem]">
+        <div className="h-14 w-20 shrink-0 overflow-hidden rounded-xl bg-surface sm:h-16 sm:w-full sm:max-w-[5.5rem]">
           {entry?.type === "catalog" && catBike ? (
             <BikeProductImage
               bikeId={catBike.id}
@@ -114,7 +114,7 @@ function FamilyRiderCard({
         <div className="flex flex-wrap items-center gap-2">
           <p className="text-[15px] font-semibold tracking-tight text-[var(--foreground)]">{name}</p>
           {isActive ? (
-            <span className="rounded-full bg-[var(--r-orange)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+            <span className="rounded-full bg-[var(--r-orange)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand-fg">
               Active
             </span>
           ) : null}
@@ -140,7 +140,7 @@ function FamilyRiderCard({
           <button
             type="button"
             onClick={() => onViewSpecs(catBike)}
-            className="mt-2 text-left text-[11px] font-semibold text-[var(--r-orange)] underline-offset-2 hover:underline"
+            className="mt-2 text-left text-[11px] font-semibold text-brand-text underline-offset-2 hover:underline"
           >
             View full specs →
           </button>
@@ -149,7 +149,7 @@ function FamilyRiderCard({
           <button
             type="button"
             onClick={onEdit}
-            className="rounded-full bg-white px-3 py-1.5 text-[12px] font-semibold text-[var(--foreground)] shadow-sm ring-1 ring-[var(--r-border)] transition hover:bg-neutral-50"
+            className="rounded-full bg-surface-raised px-3 py-1.5 text-[12px] font-semibold text-[var(--foreground)] shadow-sm ring-1 ring-[var(--r-border)] transition hover:bg-surface"
           >
             Edit rider
           </button>
@@ -157,7 +157,7 @@ function FamilyRiderCard({
             <button
               type="button"
               onClick={onSwitch}
-              className="rounded-full bg-white px-3 py-1.5 text-[12px] font-semibold text-[var(--r-orange)] shadow-sm ring-1 ring-[var(--r-border)] transition hover:bg-orange-50/80"
+              className="rounded-full bg-surface-raised px-3 py-1.5 text-[12px] font-semibold text-brand-text shadow-sm ring-1 ring-[var(--r-border)] transition hover:bg-brand/10"
             >
               Switch to {name}
             </button>
@@ -165,7 +165,7 @@ function FamilyRiderCard({
           <button
             type="button"
             onClick={onRemove}
-            className="rounded-full px-3 py-1.5 text-[12px] font-semibold text-red-600 underline decoration-red-600/30 underline-offset-2"
+            className="rounded-full px-3 py-1.5 text-[12px] font-semibold text-danger underline decoration-danger/30 underline-offset-2"
           >
             Remove from device…
           </button>
@@ -226,20 +226,20 @@ export default function MyFamilySection({
           <button
             type="button"
             onClick={onOpenCreateFamily}
-            className="shrink-0 rounded-full bg-[var(--r-orange)] px-3.5 py-2 text-[12px] font-semibold text-white shadow-sm transition hover:brightness-105 active:scale-[0.98]"
+            className="shrink-0 rounded-full bg-[var(--r-orange)] px-3.5 py-2 text-[12px] font-semibold text-brand-fg shadow-sm transition hover:brightness-105 active:scale-[0.98]"
           >
             Create / add family
           </button>
           <Link
             href={fullPageAddHref}
-            className="shrink-0 rounded-full border border-[var(--r-border)] bg-white px-3 py-2 text-[11px] font-semibold text-[var(--foreground)] no-underline shadow-sm transition hover:bg-neutral-50"
+            className="shrink-0 rounded-full border border-[var(--r-border)] bg-surface px-3 py-2 text-[11px] font-semibold text-[var(--foreground)] no-underline shadow-sm transition hover:bg-surface"
           >
             Full-page form
           </Link>
         </div>
       </div>
 
-      <div className="space-y-4 rounded-2xl border border-[var(--r-border)] bg-white px-4 py-5 shadow-sm sm:px-6 sm:py-6">
+      <div className="space-y-4 rounded-2xl border border-[var(--r-border)] bg-surface px-4 py-5 shadow-sm sm:px-6 sm:py-6">
         <p className="text-[12px] leading-relaxed text-[var(--r-muted)]">
           Each rider has their own profile photo, match scores, Watch list, current ride, and trip saves — stored
           separately per person (not copied from whoever is active). Use{" "}

@@ -119,7 +119,7 @@ export default function WelcomeSetupPage() {
           <div className="flex justify-end">
             <button
               type="button"
-              className="rounded-lg px-2 py-1.5 text-[13px] font-semibold text-[var(--r-orange)] underline-offset-4 hover:underline"
+              className="rounded-lg px-2 py-1.5 text-[13px] font-semibold text-brand-text underline-offset-4 hover:underline"
               onClick={() => enterAppAfterOnboarding(afterOnboarding)}
             >
               Skip to app
@@ -131,7 +131,7 @@ export default function WelcomeSetupPage() {
           <div className="mt-1 flex justify-start">
             <Link
               href={welcomeHref}
-              className="text-[13px] font-semibold text-[var(--r-orange)] underline-offset-4 hover:underline"
+              className="text-[13px] font-semibold text-brand-text underline-offset-4 hover:underline"
             >
               ← What is Rippers?
             </Link>
@@ -158,7 +158,7 @@ export default function WelcomeSetupPage() {
               />
             </div>
             <div className="min-w-0 flex-1 text-center sm:text-left">
-              <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--r-orange)]">Rippers</p>
+              <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-brand-text">Rippers</p>
               <h1 className="mt-1.5 text-[1.35rem] font-semibold leading-snug tracking-tight text-[var(--foreground)] sm:text-2xl lg:text-[1.75rem] xl:text-[2rem]">
                 {formHero.title}
               </h1>
@@ -168,7 +168,7 @@ export default function WelcomeSetupPage() {
         </header>
 
         {!addMode && profile ? (
-          <p className="mt-5 rounded-2xl border border-[var(--r-border)] bg-white px-5 py-4 text-[13px] leading-snug shadow-sm text-[var(--r-muted)]">
+          <p className="mt-5 rounded-2xl border border-[var(--r-border)] bg-surface px-5 py-4 text-[13px] leading-snug shadow-sm text-[var(--r-muted)]">
             Updating how you ride as{" "}
             <strong className="text-[var(--foreground)]">{ridingStyleLabels(profile.style)}</strong>? Save again to
             refresh home recommendations.

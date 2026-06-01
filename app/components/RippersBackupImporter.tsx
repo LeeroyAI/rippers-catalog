@@ -77,8 +77,8 @@ export default function RippersBackupImporter({
         onClick={() => inputRef.current?.click()}
         className={
           isProfile
-            ? "w-full rounded-2xl border border-dashed border-[var(--r-border)] bg-white px-4 py-3 text-left text-[13px] font-semibold text-[var(--foreground)] transition hover:border-[var(--r-orange)]/40 hover:bg-[rgba(229,71,26,0.04)] disabled:opacity-60"
-            : "w-full rounded-[10px] border-2 border-dashed border-[var(--r-border)] bg-[var(--r-bg-well)] px-4 py-3.5 text-[14px] font-semibold text-[var(--foreground)] transition hover:border-[var(--r-orange)]/45 disabled:opacity-60"
+            ? "w-full rounded-2xl border border-dashed border-stroke bg-surface px-4 py-3 text-left text-[13px] font-semibold text-[var(--foreground)] transition hover:border-[var(--r-orange)]/40 hover:bg-brand/5 disabled:opacity-60"
+            : "w-full rounded-[10px] border-2 border-dashed border-stroke bg-[var(--r-bg-well)] px-4 py-3.5 text-[14px] font-semibold text-[var(--foreground)] transition hover:border-[var(--r-orange)]/45 disabled:opacity-60"
         }
       >
         {busy ? "Importing…" : "Import household backup"}
@@ -93,7 +93,7 @@ export default function RippersBackupImporter({
           on your other device. You stay in control — nothing is uploaded to a server.
         </span>
       </button>
-      {error ? <p className="mt-2 text-[12px] font-medium text-red-600">{error}</p> : null}
+      {error ? <p className="mt-2 text-[12px] font-medium text-danger">{error}</p> : null}
     </div>
   );
 }

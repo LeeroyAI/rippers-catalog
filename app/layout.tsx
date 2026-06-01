@@ -15,8 +15,15 @@ const geistMono = Geist_Mono({
 });
 
 export const viewport: Viewport = {
-  themeColor: "#f2f0eb",
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#0f0d0b" },
+    { media: "(prefers-color-scheme: light)", color: "#f2f0eb" },
+  ],
 };
+
+// Runs before first paint to set the theme class and prevent a flash of the wrong mode.
+// Dark is the default; light applies when stored or when the OS prefers light with no stored choice.
+const themeInitScript = `(function(){try{var s=localStorage.getItem('theme');if(s==='light'||(!s&&window.matchMedia('(prefers-color-scheme: light)').matches)){document.documentElement.classList.add('light');}}catch(e){}})();`;
 
 export const metadata: Metadata = {
   title: "Rippers App",
@@ -47,7 +54,10 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col bg-[var(--background)] text-[var(--foreground)] antialiased">
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
+      <body className="flex min-h-full flex-col bg-bg text-text antialiased">
         <PWARegister />
         <Providers>{children}</Providers>
       </body>

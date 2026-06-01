@@ -66,7 +66,7 @@ function SearchDropdown({
   return (
     <div ref={ref} className="relative w-full">
       <div className="relative">
-        <svg className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+        <svg className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-3" width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
           <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
           <path d="m21 21-4.35-4.35" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         </svg>
@@ -81,17 +81,17 @@ function SearchDropdown({
         />
       </div>
       {open && hits.length > 0 && (
-        <ul className="absolute left-0 right-0 top-full z-50 mt-1 max-h-60 overflow-auto rounded-xl border border-[var(--r-border)] bg-white shadow-xl">
+        <ul className="absolute left-0 right-0 top-full z-50 mt-1 max-h-60 overflow-auto rounded-xl border border-stroke bg-surface-raised shadow-xl">
           {hits.map((b) => {
             const price = getBestPrice(b);
             return (
               <li key={b.id}>
                 <button
                   type="button"
-                  className="flex w-full items-center gap-3 px-3 py-2.5 text-left hover:bg-orange-50"
+                  className="flex w-full items-center gap-3 px-3 py-2.5 text-left hover:bg-brand/10"
                   onClick={() => { onAdd(b); setQuery(""); setOpen(false); }}
                 >
-                  <div className="h-10 w-14 shrink-0 overflow-hidden rounded-lg bg-[#f5f3ef]">
+                  <div className="h-10 w-14 shrink-0 overflow-hidden rounded-lg bg-surface">
                     <BikeProductImage bikeId={b.id} alt="" className="h-full w-full object-contain p-1" />
                   </div>
                   <div className="min-w-0 flex-1">
@@ -163,12 +163,12 @@ function ComparePageContent() {
 
       {/* Empty state */}
       {bikes.length === 0 && (
-        <div className="mx-4 mt-8 rounded-2xl border border-dashed border-[var(--r-border)] bg-white px-6 py-10 md:mx-0">
+        <div className="mx-4 mt-8 rounded-2xl border border-dashed border-stroke bg-surface px-6 py-10 md:mx-0">
           <div className="flex flex-col items-center text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[rgba(37,99,235,0.08)]">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-info/10">
               <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden>
-                <rect x="2" y="3" width="9" height="18" rx="2" stroke="#2563eb" strokeWidth="1.7" />
-                <rect x="13" y="3" width="9" height="18" rx="2" stroke="#2563eb" strokeWidth="1.7" />
+                <rect x="2" y="3" width="9" height="18" rx="2" stroke="rgb(var(--c-info))" strokeWidth="1.7" />
+                <rect x="13" y="3" width="9" height="18" rx="2" stroke="rgb(var(--c-info))" strokeWidth="1.7" />
               </svg>
             </div>
             <p className="mt-4 text-[15px] font-semibold text-[var(--foreground)]">Pick your first bike</p>
@@ -198,21 +198,21 @@ function ComparePageContent() {
                 const price = getBestPrice(bike);
                 const matchPct = matchPercentForBike(bike, profile ?? null);
                 return (
-                  <div key={bike.id} className="flex flex-col rounded-2xl border border-[var(--r-border)] bg-white shadow-sm overflow-hidden">
+                  <div key={bike.id} className="flex flex-col rounded-2xl border border-stroke bg-surface shadow-sm overflow-hidden">
                     {/* Image */}
-                    <div className="relative aspect-[4/3] bg-[#f5f3ef]">
+                    <div className="relative aspect-[4/3] bg-surface">
                       <BikeProductImage bikeId={bike.id} alt={`${bike.brand} ${bike.model}`} className="h-full w-full object-contain p-2" />
                       <button
                         type="button"
                         onClick={() => removeBike(bike.id)}
-                        className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-white/90 shadow text-neutral-500 hover:text-red-500"
+                        className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-surface-raised/90 shadow text-text-2 hover:text-danger"
                         aria-label={`Remove ${bike.model}`}
                       >
                         <svg width="10" height="10" viewBox="0 0 14 14" fill="none" aria-hidden>
                           <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
                         </svg>
                       </button>
-                      <div className="absolute left-2 top-2 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-bold text-[var(--r-match-text)] shadow">
+                      <div className="absolute left-2 top-2 rounded-full bg-surface-raised/90 px-2 py-0.5 text-[10px] font-bold text-[var(--r-match-text)] shadow">
                         {matchPct}%
                       </div>
                     </div>
@@ -224,10 +224,10 @@ function ComparePageContent() {
                         <p className="mt-1 text-[15px] font-bold text-[var(--r-price-green)]">{aud(price)}</p>
                       )}
                       {bike.inStock.length > 0 && (
-                        <p className="mt-0.5 text-[10px] text-[#16a34a]">{bike.inStock.length} retailer{bike.inStock.length !== 1 ? "s" : ""} in stock</p>
+                        <p className="mt-0.5 text-[10px] text-success">{bike.inStock.length} retailer{bike.inStock.length !== 1 ? "s" : ""} in stock</p>
                       )}
                       {bike.inStock.length === 0 && Object.keys(bike.prices).length > 0 && (
-                        <p className="mt-0.5 text-[10px] text-neutral-400">Out of stock</p>
+                        <p className="mt-0.5 text-[10px] text-text-3">Out of stock</p>
                       )}
                     </div>
                   </div>
@@ -236,7 +236,7 @@ function ComparePageContent() {
 
               {/* Add bike column */}
               {canAdd && (
-                <div className="flex flex-col rounded-2xl border-2 border-dashed border-[var(--r-border)] bg-white/50 p-3">
+                <div className="flex flex-col rounded-2xl border-2 border-dashed border-stroke bg-surface/50 p-3">
                   <p className="mb-2 text-[12px] font-semibold text-[var(--r-muted)]">Add bike</p>
                   <SearchDropdown onAdd={addBike} excluded={bikes.map((b) => b.id)} />
                 </div>
@@ -245,8 +245,8 @@ function ComparePageContent() {
 
             {/* One-bike preview: first few spec rows before full compare */}
             {bikes.length === 1 && (
-              <div className="mt-4 overflow-hidden rounded-2xl border border-[var(--r-border)] bg-white shadow-sm">
-                <p className="border-b border-[var(--r-border)] bg-neutral-50/90 px-4 py-2.5 text-[11px] font-semibold leading-snug text-[var(--r-muted)]">
+              <div className="mt-4 overflow-hidden rounded-2xl border border-stroke bg-surface shadow-sm">
+                <p className="border-b border-stroke bg-surface/90 px-4 py-2.5 text-[11px] font-semibold leading-snug text-[var(--r-muted)]">
                   Quick look — add another bike for a side-by-side spec table.
                 </p>
                 {SPEC_ROWS.slice(0, 4).map((row, i) => {
@@ -255,10 +255,10 @@ function ComparePageContent() {
                   return (
                     <div
                       key={row.key}
-                      className={`grid grid-cols-[140px_1fr] items-start gap-3 px-4 py-2.5 ${i !== 0 ? "border-t border-[var(--r-border)]" : ""}`}
+                      className={`grid grid-cols-[140px_1fr] items-start gap-3 px-4 py-2.5 ${i !== 0 ? "border-t border-stroke" : ""}`}
                     >
                       <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--r-muted)]">{row.label}</p>
-                      <p className={`text-[13px] leading-snug ${val === "—" ? "text-neutral-300" : "text-[var(--foreground)]"}`}>{val}</p>
+                      <p className={`text-[13px] leading-snug ${val === "—" ? "text-text-3" : "text-[var(--foreground)]"}`}>{val}</p>
                     </div>
                   );
                 })}
@@ -267,7 +267,7 @@ function ComparePageContent() {
 
             {/* Spec table */}
             {showTable && (
-              <div className="mt-4 overflow-hidden rounded-2xl border border-[var(--r-border)] bg-white shadow-sm">
+              <div className="mt-4 overflow-hidden rounded-2xl border border-stroke bg-surface shadow-sm">
                 {activeRows.map((row, i) => {
                   const vals = bikes.map((b) => specVal(b, row.key));
                   const allSame = vals.every((v) => v === vals[0]);
@@ -275,7 +275,7 @@ function ComparePageContent() {
                   return (
                     <div
                       key={row.key}
-                      className={`grid items-start gap-3 px-4 py-3 ${i !== 0 ? "border-t border-[var(--r-border)]" : ""} ${i % 2 === 0 ? "" : "bg-neutral-50/50"}`}
+                      className={`grid items-start gap-3 px-4 py-3 ${i !== 0 ? "border-t border-stroke" : ""} ${i % 2 === 0 ? "" : "bg-surface-raised/50"}`}
                       style={{ gridTemplateColumns: `140px repeat(${bikes.length}, 1fr)` }}
                     >
                       <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--r-muted)] pt-0.5">{row.label}</p>
@@ -284,7 +284,7 @@ function ComparePageContent() {
                           key={j}
                           className={`text-[13px] leading-snug ${
                             val === "—"
-                              ? "text-neutral-300"
+                              ? "text-text-3"
                               : allSame
                                 ? "text-[var(--foreground)]"
                                 : "font-semibold text-[var(--foreground)]"
@@ -303,15 +303,15 @@ function ComparePageContent() {
                 {/* Sizes row */}
                 {bikes.some((b) => b.sizes?.length) && (
                   <div
-                    className="grid items-start gap-3 border-t border-[var(--r-border)] px-4 py-3"
+                    className="grid items-start gap-3 border-t border-stroke px-4 py-3"
                     style={{ gridTemplateColumns: `140px repeat(${bikes.length}, 1fr)` }}
                   >
                     <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--r-muted)] pt-0.5">Sizes</p>
                     {bikes.map((b) => (
                       <div key={b.id} className="flex flex-wrap gap-1">
                         {b.sizes?.length ? b.sizes.map((s) => (
-                          <span key={s} className="rounded-md border border-[var(--r-border)] px-1.5 py-0.5 text-[11px] font-semibold text-[var(--foreground)]">{s}</span>
-                        )) : <span className="text-[13px] text-neutral-300">—</span>}
+                          <span key={s} className="rounded-md border border-stroke px-1.5 py-0.5 text-[11px] font-semibold text-[var(--foreground)]">{s}</span>
+                        )) : <span className="text-[13px] text-text-3">—</span>}
                       </div>
                     ))}
                   </div>
