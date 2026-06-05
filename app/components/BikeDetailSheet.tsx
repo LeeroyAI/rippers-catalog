@@ -319,7 +319,7 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
             </svg>
           </button>
           {bike.isEbike && (
-            <span className="absolute bottom-3 left-3 rounded-full bg-brand px-3 py-1 text-[11px] font-bold text-white">
+            <span className="absolute bottom-3 left-3 rounded-full bg-brand px-3 py-1 text-[11px] font-bold text-brand-fg">
               eBike
             </span>
           )}
@@ -654,7 +654,7 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
                 className="r-btn-ios-primary flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 text-[15px] font-semibold no-underline shadow-[0_10px_24px_rgba(229,71,26,0.28)]"
               >
                 Shop this bike
-                <span className="text-white/90" aria-hidden>
+                <span className="text-brand-fg" aria-hidden>
                   ↗
                 </span>
               </a>
@@ -695,7 +695,7 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
                 type="button"
                 data-dialog-initial-focus
                 onClick={() => setAskOpen(true)}
-                className="r-btn-ios-primary flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 text-[15px] font-semibold text-white shadow-[0_10px_24px_rgba(229,71,26,0.28)]"
+                className="r-btn-ios-primary flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 text-[15px] font-semibold text-brand-fg shadow-[0_10px_24px_rgba(229,71,26,0.28)]"
               >
                 Ask AI about this bike
               </button>

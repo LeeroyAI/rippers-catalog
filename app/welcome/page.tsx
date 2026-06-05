@@ -131,7 +131,7 @@ export default function WelcomePage() {
                   <Link
                     href={welcomeSetupHref(queryKey, "solo")}
                     prefetch={false}
-                    className="r-btn-orange relative z-10 inline-flex min-h-[48px] w-full min-w-0 flex-1 items-center justify-center rounded-[10px] px-4 py-3.5 text-center text-[15px] font-semibold leading-snug text-white no-underline shadow-md transition active:scale-[0.99]"
+                    className="r-btn-orange relative z-10 inline-flex min-h-[48px] w-full min-w-0 flex-1 items-center justify-center rounded-[10px] px-4 py-3.5 text-center text-[15px] font-semibold leading-snug text-brand-fg no-underline shadow-md transition active:scale-[0.99]"
                   >
                     Create my Profile
                   </Link>
@@ -243,7 +243,7 @@ export default function WelcomePage() {
             <Link
               href={welcomeSetupHref(queryKey, "solo")}
               prefetch={false}
-              className="r-btn-orange relative z-10 inline-flex min-h-[48px] w-full min-w-0 flex-1 items-center justify-center rounded-[10px] px-4 py-3.5 text-center text-[15px] font-semibold leading-snug text-white no-underline shadow-md transition active:scale-[0.99]"
+              className="r-btn-orange relative z-10 inline-flex min-h-[48px] w-full min-w-0 flex-1 items-center justify-center rounded-[10px] px-4 py-3.5 text-center text-[15px] font-semibold leading-snug text-brand-fg no-underline shadow-md transition active:scale-[0.99]"
             >
               Create my Profile
             </Link>

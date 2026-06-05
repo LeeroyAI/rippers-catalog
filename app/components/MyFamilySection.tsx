@@ -73,7 +73,7 @@ function FamilyRiderCard({
       }`}
     >
       <div className="flex shrink-0 gap-3 sm:flex-col sm:items-center">
-        <div className="h-14 w-14 shrink-0 overflow-hidden rounded-2xl bg-gradient-to-br from-brand via-brand to-brand-hover text-lg font-bold text-white shadow-inner ring-2 ring-white/30">
+        <div className="h-14 w-14 shrink-0 overflow-hidden rounded-2xl bg-gradient-to-br from-brand via-brand to-brand-hover text-lg font-bold text-brand-fg shadow-inner ring-2 ring-brand-fg/30">
           {photoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={photoUrl} alt="" className="h-full w-full object-cover" />

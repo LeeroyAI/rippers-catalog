@@ -152,7 +152,7 @@ export default function TripMapInner({
         <Polyline
           positions={itineraryRoute as LatLngExpression[]}
           pathOptions={{
-            color: "#E5470A",
+            color: "#E5471A",
             weight: 3,
             opacity: 0.42,
             dashArray: "10 14",
@@ -166,8 +166,8 @@ export default function TripMapInner({
           center={center}
           radius={9}
           pathOptions={{
-            color: "#E5470A",
-            fillColor: "#E5470A",
+            color: "#E5471A",
+            fillColor: "#E5471A",
             fillOpacity: 1,
             weight: 2,
           }}

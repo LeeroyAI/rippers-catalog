@@ -75,7 +75,7 @@ export default function WatchlistPage() {
                 onClick={() => setSortBy(opt)}
                 className={`rounded-lg px-3 py-1.5 text-[12px] font-semibold transition-colors ${
                   sortBy === opt
-                    ? "bg-brand text-white shadow-sm"
+                    ? "bg-brand text-brand-fg shadow-sm"
                     : "text-text-3 hover:text-text"
                 }`}
               >
@@ -190,7 +190,7 @@ export default function WatchlistPage() {
 
                   {/* Stock status */}
                   {outOfStockOnly && (
-                    <span className="absolute bottom-2.5 left-2.5 rounded-full bg-neutral-700/80 px-2.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm">
+                    <span className="absolute bottom-2.5 left-2.5 rounded-full bg-black/60 px-2.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm">
                       Out of stock
                     </span>
                   )}

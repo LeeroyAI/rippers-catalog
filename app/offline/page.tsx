@@ -10,7 +10,7 @@ export default function OfflinePage() {
         </p>
         <Link
           href="/"
-          className="mt-6 inline-flex items-center justify-center rounded-full bg-brand px-5 py-2.5 text-[14px] font-semibold text-white no-underline shadow-[0_6px_20px_rgba(229,71,26,0.3)]"
+          className="mt-6 inline-flex items-center justify-center rounded-full bg-brand px-5 py-2.5 text-[14px] font-semibold text-brand-fg no-underline shadow-[0_6px_20px_rgba(229,71,26,0.3)]"
         >
           Try Home
         </Link>
