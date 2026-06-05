@@ -30,7 +30,7 @@ function FeatureBlock({
 }) {
   return (
     <div className="r-results-card min-w-0 px-5 py-5">
-      <h3 className="text-[15px] font-semibold tracking-tight text-text">{title}</h3>
+      <h3 className="r-subsection-title tracking-tight">{title}</h3>
       <div className="mt-2.5 text-[13px] leading-relaxed text-text-3">{children}</div>
     </div>
   );
@@ -202,7 +202,7 @@ export default function WelcomePage() {
         </section>
 
         <section className="r-stat-card mt-8 px-5 py-6 sm:px-7" aria-labelledby="welcome-steps-heading">
-          <h2 id="welcome-steps-heading" className="text-[15px] font-semibold text-text">
+          <h2 id="welcome-steps-heading" className="r-subsection-title">
             How it works
           </h2>
           <ol className="mt-4 space-y-4 text-[13px] leading-relaxed text-text-3">

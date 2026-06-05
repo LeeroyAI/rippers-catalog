@@ -232,7 +232,7 @@ export default function SizingPage() {
 
       {/* ── Adult size chart ── */}
       <section className="mt-6">
-        <h2 className="text-[17px] font-semibold text-text">MTB frame size chart</h2>
+        <h2 className="r-section-title">MTB frame size chart</h2>
         <p className="mt-1 text-[13px] text-text-3">Based on rider height — always cross-check the brand's geometry PDF.</p>
         <div className="mt-3 overflow-hidden rounded-2xl border border-stroke">
           <div className="grid grid-cols-4 bg-surface px-4 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-text-3">
@@ -264,7 +264,7 @@ export default function SizingPage() {
 
       {/* ── Kids wheel size chart ── */}
       <section className="mt-8">
-        <h2 className="text-[17px] font-semibold text-text">Kids bike sizing</h2>
+        <h2 className="r-section-title">Kids bike sizing</h2>
         <p className="mt-1 text-[13px] text-text-3">
           Wheel size is the primary spec for kids bikes. Height beats age — a tall 7-year-old may need a 24" wheel.
         </p>
@@ -302,7 +302,7 @@ export default function SizingPage() {
 
       {/* ── Reach explainer ── */}
       <section className="mt-8">
-        <h2 className="text-[17px] font-semibold text-text">Understanding reach</h2>
+        <h2 className="r-section-title">Understanding reach</h2>
         <p className="mt-1 text-[13px] leading-relaxed text-text-3">
           Reach is the horizontal distance from the bottom bracket to the top of the head tube. Modern trail and enduro
           bikes run longer reach than older designs — two bikes with the same size label can feel very different.
@@ -322,7 +322,7 @@ export default function SizingPage() {
 
       {/* ── Fit tips ── */}
       <section className="mt-8">
-        <h2 className="text-[17px] font-semibold text-text">Fitting tips from the trail</h2>
+        <h2 className="r-section-title">Fitting tips from the trail</h2>
         <div className="mt-3 grid gap-3 md:grid-cols-2">
           {[
             { icon: "📏", title: "Measure inseam accurately", body: "Stand barefoot, feet 15 cm apart, and measure crotch-to-floor. This is your inseam — not your trouser measurement." },

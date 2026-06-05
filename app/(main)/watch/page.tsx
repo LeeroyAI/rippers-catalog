@@ -205,7 +205,7 @@ export default function WatchlistPage() {
                 {/* Info */}
                 <div className="flex flex-1 flex-col px-4 pb-4 pt-3">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-text-3">{bike.brand}</p>
-                  <h3 className="mt-0.5 text-[15px] font-semibold leading-snug text-text">{bike.model}</h3>
+                  <h3 className="mt-0.5 r-subsection-title leading-snug">{bike.model}</h3>
 
                   <div className="mt-1.5 flex flex-wrap gap-1.5">
                     {bike.category && (

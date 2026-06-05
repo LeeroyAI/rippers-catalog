@@ -348,7 +348,7 @@ function HomePageContent() {
   const { title, sub } = heroLines(profile ?? null, greetName, catalog.length);
 
   return (
-    <main className="mx-auto w-full max-w-none pb-20">
+    <main className="mx-auto w-full max-w-none">
 
       {/* ─── Hero ─── */}
       <section className="relative overflow-hidden bg-bg pt-[max(3.5rem,calc(env(safe-area-inset-top)+2.5rem))] md:min-h-[420px] md:pt-0">
@@ -679,10 +679,12 @@ function HomePageContent() {
         </div>
       </section>
 
+      {/* Content below the full-bleed hero is capped to the wide tier (hero stays edge-to-edge). */}
+      <div className="mx-auto w-full max-w-[80rem]">
       {/* ─── New visitor: value story (above the fold scroll) ─── */}
       <section className="mx-4 mt-5 rounded-2xl border border-stroke bg-surface shadow-sm" aria-labelledby="home-value-heading">
         <div className="border-b border-stroke px-4 py-3.5">
-          <h2 id="home-value-heading" className="text-[14px] font-bold tracking-tight text-text">
+          <h2 id="home-value-heading" className="r-section-title tracking-tight">
             What Rippers helps you do
           </h2>
           <p className="mt-1 text-[12px] leading-snug text-text-3">
@@ -956,7 +958,7 @@ function HomePageContent() {
       <section id="results" className="scroll-mt-6 px-4 pt-8">
         <div className="flex flex-wrap items-end justify-between gap-2">
           <div>
-            <h2 className="text-[17px] font-semibold text-text">
+            <h2 className="r-section-title">
               {searchActive
                 ? "Search results"
                 : profile
@@ -1022,7 +1024,7 @@ function HomePageContent() {
         </div>
         {filteredBikes.length === 0 ? (
           <div className="mt-6 rounded-2xl border border-dashed border-stroke bg-surface/80 px-6 py-10 text-center shadow-sm">
-            <p className="text-[15px] font-semibold text-text">No bikes match those filters</p>
+            <p className="r-subsection-title">No bikes match those filters</p>
             <p className="mt-2 text-[13px] leading-relaxed text-text-3">
               Try clearing search text, widening the budget, or picking a different category.
             </p>
@@ -1094,7 +1096,7 @@ function HomePageContent() {
                 {/* Info — same pass-through pattern as image row */}
                 <div className="relative z-[2] flex flex-1 flex-col px-4 pb-4 pt-3 pointer-events-none">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-text-3">{bike.brand}</p>
-                  <h3 className="mt-1 text-[15px] font-semibold leading-snug text-text">{bike.model}</h3>
+                  <h3 className="mt-1 r-subsection-title leading-snug">{bike.model}</h3>
                   <p className="mt-1 text-[12px] text-text-3">
                     {[bike.category, bike.travel, bike.wheel].filter(Boolean).join(" · ")}
                   </p>
@@ -1146,6 +1148,7 @@ function HomePageContent() {
           })}
         </div>
       </section>
+      </div>
 
       <BikeDetailSheet bike={selectedBike} onClose={closeBikeSheet} />
       <MatchBreakdownSheet bike={matchBike} profile={profile ?? null} onClose={() => setMatchBike(null)} />
@@ -1157,7 +1160,7 @@ export default function Home() {
   return (
     <Suspense
       fallback={
-        <main className="mx-auto w-full max-w-none pb-20">
+        <main className="mx-auto w-full max-w-none">
           <div className="flex min-h-[40vh] items-center justify-center px-6 text-[14px] text-text-3">
             Loading catalogue…
           </div>

@@ -803,3 +803,19 @@ summary:focus-visible {
     transition: none;
   }
 }
+
+/* ---- Heading scale: one definition for section / subsection titles ---- */
+/* Page titles use <PageHeader>; these are the two in-page heading tiers so H2/H3
+   sizes stop drifting (they had ranged across 14/15/17/18/22px ad hoc). */
+.r-section-title {
+  font-size: 1.0625rem; /* 17px */
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: rgb(var(--c-text));
+}
+
+.r-subsection-title {
+  font-size: 0.9375rem; /* 15px */
+  font-weight: 600;
+  color: rgb(var(--c-text));
+}
