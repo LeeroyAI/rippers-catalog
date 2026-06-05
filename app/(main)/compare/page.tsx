@@ -9,6 +9,9 @@ import { getBestPrice } from "@/src/domain/bike-helpers";
 import { matchPercentForBike } from "@/src/domain/match-score";
 import type { Bike } from "@/src/domain/types";
 import { useRiderProfile } from "@/src/state/rider-profile-context";
+import PageContainer from "@/app/components/ui/PageContainer";
+import PageHeader from "@/app/components/ui/PageHeader";
+import EmptyState from "@/app/components/ui/EmptyState";
 
 const MAX = 3;
 const aud = (n: number) =>
@@ -149,40 +152,35 @@ function ComparePageContent() {
   const canAdd = bikes.length < MAX;
 
   return (
-    <main className="ios-shell-page mx-auto w-full max-w-[80rem] pb-24 md:px-8 xl:px-10">
-
-      {/* Header */}
-      <div className="px-4 pt-2 md:px-0 md:pt-6">
-        <h1 className="text-[22px] font-bold tracking-tight text-text md:text-[28px]">
-          Compare bikes
-        </h1>
-        <p className="mt-1 text-[13px] text-text-3">
-          Add up to {MAX} bikes to see them side by side
-        </p>
-      </div>
+    <PageContainer width="wide">
+      <PageHeader
+        title="Compare bikes"
+        subtitle={`Add up to ${MAX} bikes to see them side by side`}
+      />
 
       {/* Empty state */}
       {bikes.length === 0 && (
-        <div className="mx-4 mt-8 rounded-2xl border border-dashed border-stroke bg-surface px-6 py-10 md:mx-0">
-          <div className="flex flex-col items-center text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-info/10">
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden>
-                <rect x="2" y="3" width="9" height="18" rx="2" stroke="rgb(var(--c-info))" strokeWidth="1.7" />
-                <rect x="13" y="3" width="9" height="18" rx="2" stroke="rgb(var(--c-info))" strokeWidth="1.7" />
-              </svg>
+        <EmptyState
+          className="mt-8"
+          icon={
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <rect x="2" y="3" width="9" height="18" rx="2" stroke="currentColor" strokeWidth="1.7" />
+              <rect x="13" y="3" width="9" height="18" rx="2" stroke="currentColor" strokeWidth="1.7" />
+            </svg>
+          }
+          title="Pick your first bike"
+          description="Search below to start comparing"
+          action={
+            <div className="w-full max-w-sm">
+              <SearchDropdown onAdd={addBike} excluded={bikes.map((b) => b.id)} />
             </div>
-            <p className="mt-4 text-[15px] font-semibold text-text">Pick your first bike</p>
-            <p className="mt-1 text-[13px] text-text-3">Search below to start comparing</p>
-          </div>
-          <div className="mx-auto mt-6 max-w-sm">
-            <SearchDropdown onAdd={addBike} excluded={bikes.map((b) => b.id)} />
-          </div>
-        </div>
+          }
+        />
       )}
 
       {/* Comparison layout */}
       {bikes.length > 0 && (
-        <div className="mt-5 overflow-x-auto px-4 md:px-0">
+        <div className="mt-5 overflow-x-auto">
           <div className="min-w-[480px]">
 
             {/* Bike columns header */}
@@ -336,7 +334,7 @@ function ComparePageContent() {
           </div>
         </div>
       )}
-    </main>
+    </PageContainer>
   );
 }
 
