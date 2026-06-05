@@ -128,7 +128,7 @@ function HomePageContent() {
   }, [resetFilters]);
 
   const clearOpenBikeParam = useCallback(() => {
-    const next = new URLSearchParams(searchParams.toString());
+    const next = new URLSearchParams(searchParams?.toString());
     if (!next.has("openBike")) return;
     next.delete("openBike");
     const qs = next.toString();
@@ -139,7 +139,7 @@ function HomePageContent() {
     clearOpenBikeParam();
   }, [clearOpenBikeParam]);
 
-  const openBikeParam = searchParams.get("openBike");
+  const openBikeParam = searchParams?.get("openBike") ?? null;
   const selectedBike = useMemo((): Bike | null => {
     if (openBikeParam == null || openBikeParam === "") return null;
     const id = Number(openBikeParam);
@@ -148,7 +148,7 @@ function HomePageContent() {
   }, [openBikeParam]);
 
   useEffect(() => {
-    const raw = searchParams.get("openBike");
+    const raw = searchParams?.get("openBike");
     if (raw == null || raw === "") return;
     const id = Number(raw);
     if (!Number.isFinite(id) || !catalog.some((b) => b.id === id)) {

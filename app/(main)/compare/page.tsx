@@ -117,7 +117,7 @@ function ComparePageContent() {
 
   useEffect(() => {
     if (hydratedFromUrl.current) return;
-    const raw = searchParams.get("bikes");
+    const raw = searchParams?.get("bikes");
     if (!raw?.trim()) return;
     const ids = [
       ...new Set(

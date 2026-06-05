@@ -148,7 +148,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }, []);
 
   function isActive(tab: (typeof TABS)[number]): boolean {
-    const p = pathname;
+    const p = pathname ?? "/";
     if (tab.href === "/") return p === "/";
     return p.startsWith(tab.href);
   }
