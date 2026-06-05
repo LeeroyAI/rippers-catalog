@@ -37,6 +37,7 @@ import { currentBikeStorageKeyForRider } from "@/src/domain/current-bike-entry";
 import { webLookupSpecSummary } from "@/src/domain/bike-lookup";
 import { resolveCatalogBikeForCurrentRide } from "@/src/domain/current-ride-versus";
 import { forceWebBikeLookupRefresh } from "@/src/lib/bike-web-lookup-client";
+import PageContainer from "@/app/components/ui/PageContainer";
 
 const PROFILE_PHOTO_CHANGED = "rippers:profile-photo-changed";
 const LEGACY_CURRENT_BIKE_KEY = "rippers:current-bike:v2";
@@ -509,7 +510,7 @@ export default function ProfilePage() {
   return (
     <div className="r-home-bg w-full">
       <CreateFamilyModal open={familyModalOpen} onClose={() => setFamilyModalOpen(false)} />
-      <div className="mx-auto w-full max-w-3xl px-4 pb-20 pt-5 md:px-6">
+      <PageContainer width="default">
         <nav
           className="sticky top-0 z-30 -mx-4 mb-4 flex flex-wrap gap-1 border-b border-stroke bg-bg/95 px-2 py-2 backdrop-blur-md md:-mx-6 md:px-4"
           aria-label="Profile sections"
@@ -1260,7 +1261,7 @@ export default function ProfilePage() {
             Reset rider account
           </button>
         </div>
-      </div>
+      </PageContainer>
 
       {/* Bike detail sheet */}
       <BikeDetailSheet bike={selectedBike} onClose={() => setSelectedBike(null)} />

@@ -14,6 +14,9 @@ import { matchPercentForBike } from "@/src/domain/match-score";
 import type { Bike } from "@/src/domain/types";
 import { useFavourites } from "@/src/state/favourites-store";
 import { useRiderProfile } from "@/src/state/rider-profile-context";
+import PageContainer from "@/app/components/ui/PageContainer";
+import PageHeader from "@/app/components/ui/PageHeader";
+import EmptyState from "@/app/components/ui/EmptyState";
 
 const aud = (n: number) =>
   new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD", maximumFractionDigits: 0 }).format(n);
@@ -48,46 +51,43 @@ export default function WatchlistPage() {
   const inStockCount = savedBikes.filter((b) => b.inStock.length > 0).length;
 
   return (
-    <main className="ios-shell-page mx-auto w-full max-w-[72rem] pb-24 md:px-8 xl:px-10">
-
-      {/* Header */}
-      <div className="flex items-end justify-between gap-4 px-4 pt-2 md:px-0 md:pt-6">
-        <div>
-          <h1 className="text-[22px] font-bold tracking-tight text-text md:text-[28px]">
-            Saved bikes
-          </h1>
-          {savedBikes.length > 0 && (
-            <p className="mt-0.5 text-[13px] text-text-3">
+    <PageContainer width="wide">
+      <PageHeader
+        title="Saved bikes"
+        subtitle={
+          savedBikes.length > 0 ? (
+            <>
               {savedBikes.length} bike{savedBikes.length !== 1 ? "s" : ""} saved
               {inStockCount > 0 && (
                 <> · <span className="font-semibold text-success">{inStockCount} in stock</span></>
               )}
-            </p>
-          )}
-        </div>
-
-        {savedBikes.length > 1 && (
-          <div className="flex items-center gap-1 rounded-xl border border-stroke bg-surface p-1 shadow-sm">
-            {(["saved", "match", "price"] as const).map((opt) => (
-              <button
-                key={opt}
-                type="button"
-                onClick={() => setSortBy(opt)}
-                className={`rounded-lg px-3 py-1.5 text-[12px] font-semibold transition-colors ${
-                  sortBy === opt
-                    ? "bg-brand text-brand-fg shadow-sm"
-                    : "text-text-3 hover:text-text"
-                }`}
-              >
-                {opt === "saved" ? "Saved" : opt === "match" ? "Best match" : "Price ↑"}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+            </>
+          ) : undefined
+        }
+        action={
+          savedBikes.length > 1 ? (
+            <div className="flex items-center gap-1 rounded-xl border border-stroke bg-surface p-1 shadow-sm">
+              {(["saved", "match", "price"] as const).map((opt) => (
+                <button
+                  key={opt}
+                  type="button"
+                  onClick={() => setSortBy(opt)}
+                  className={`rounded-lg px-3 py-1.5 text-[12px] font-semibold transition-colors ${
+                    sortBy === opt
+                      ? "bg-brand text-brand-fg shadow-sm"
+                      : "text-text-3 hover:text-text"
+                  }`}
+                >
+                  {opt === "saved" ? "Saved" : opt === "match" ? "Best match" : "Price ↑"}
+                </button>
+              ))}
+            </div>
+          ) : undefined
+        }
+      />
 
       {hydrated && profile && riders.length > 0 ? (
-        <div className="mx-4 mt-3 rounded-2xl border border-stroke bg-surface px-3 py-3 shadow-sm sm:px-4 md:mx-0">
+        <div className="mt-3 rounded-2xl border border-stroke bg-surface px-3 py-3 shadow-sm sm:px-4">
           <RiderContextPicker
             id="watch-household-rider"
             description="This list is per rider — switch before saving or comparing hearts."
@@ -98,7 +98,7 @@ export default function WatchlistPage() {
       ) : null}
 
       {savedBikes.length >= 2 && (
-        <div className="mt-3 px-4 md:px-0">
+        <div className="mt-3">
           <Link
             href={`/compare?bikes=${savedBikes.slice(0, 3).map((b) => b.id).join(",")}`}
             className="inline-flex items-center gap-1.5 rounded-xl border border-brand/35 bg-brand/5 px-3.5 py-2 text-[12px] font-semibold text-brand-text no-underline transition hover:bg-brand/10"
@@ -110,33 +110,34 @@ export default function WatchlistPage() {
 
       {/* Empty state */}
       {savedBikes.length === 0 && (
-        <div className="mx-4 mt-10 flex flex-col items-center rounded-2xl border border-dashed border-stroke bg-surface px-8 py-14 text-center md:mx-0">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-brand/10">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden>
+        <EmptyState
+          className="mt-10"
+          icon={
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden>
               <path
                 d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-                stroke="rgb(var(--c-brand))"
+                stroke="currentColor"
                 strokeWidth="1.8"
                 fill="rgb(var(--c-brand) / 0.1)"
               />
             </svg>
-          </div>
-          <p className="mt-4 text-[16px] font-semibold text-text">No saved bikes yet</p>
-          <p className="mt-1.5 max-w-[260px] text-[13px] leading-relaxed text-text-3">
-            Tap the heart on any bike to save it here for easy access.
-          </p>
-          <Link
-            href="/#results"
-            className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-brand px-5 py-3 text-[14px] font-semibold text-brand-fg shadow-[0_6px_20px_rgba(229,71,26,0.35)] no-underline"
-          >
-            Browse bikes →
-          </Link>
-        </div>
+          }
+          title="No saved bikes yet"
+          description="Tap the heart on any bike to save it here for easy access."
+          action={
+            <Link
+              href="/#results"
+              className="inline-flex items-center gap-2 rounded-2xl bg-brand px-5 py-3 text-[14px] font-semibold text-brand-fg shadow-[0_6px_20px_rgba(229,71,26,0.35)] no-underline"
+            >
+              Browse bikes →
+            </Link>
+          }
+        />
       )}
 
       {/* Bikes grid */}
       {savedBikes.length > 0 && (
-        <div className="mt-5 grid gap-3 px-4 md:grid-cols-2 md:px-0 xl:grid-cols-3">
+        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {savedBikes.map((bike) => {
             const bestPrice = getBestPrice(bike);
             const matchPct = matchPercentForBike(bike, profile ?? null);
@@ -248,7 +249,7 @@ export default function WatchlistPage() {
 
       {/* Price note */}
       {savedBikes.length > 0 && (
-        <p className="mt-6 px-4 text-[11px] text-text-3 md:px-0">
+        <p className="mt-6 text-[11px] text-text-3">
           Prices pulled from AU retailers at catalog refresh · Tap any bike to check current availability
         </p>
       )}
@@ -256,6 +257,6 @@ export default function WatchlistPage() {
       {/* Detail sheet */}
       <BikeDetailSheet bike={selectedBike} onClose={() => setSelectedBike(null)} />
       <MatchBreakdownSheet bike={matchBike} profile={profile ?? null} onClose={() => setMatchBike(null)} />
-    </main>
+    </PageContainer>
   );
 }

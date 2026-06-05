@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { useRiderProfile } from "@/src/state/rider-profile-context";
+import PageContainer from "@/app/components/ui/PageContainer";
+import PageHeader from "@/app/components/ui/PageHeader";
 
 // ─── Sizing data ────────────────────────────────────────────────────────────
 
@@ -83,17 +85,17 @@ export default function SizingPage() {
   const inseam = height && height >= 140 ? estimateInseam(height) : null;
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-4 pb-20 pt-6 md:px-6">
-      <div className="mb-2 flex items-center gap-2">
+    <PageContainer width="narrow">
+      <div className="mb-3 flex items-center gap-2">
         <Link href="/" className="text-[12px] font-semibold text-brand-text no-underline">← Home</Link>
         <span className="text-[12px] text-text-3">/</span>
         <span className="text-[12px] text-text-3">Bike Sizing Guide</span>
       </div>
 
-      <h1 className="text-[26px] font-bold tracking-tight text-text">Bike Sizing Guide</h1>
-      <p className="mt-2 text-[14px] leading-relaxed text-text-3">
-        Get the right frame size before you buy. Height is the primary driver — reach and inseam fine-tune the fit.
-      </p>
+      <PageHeader
+        title="Bike Sizing Guide"
+        subtitle="Get the right frame size before you buy. Height is the primary driver, reach and inseam fine-tune the fit."
+      />
 
       {profile && profile.heightCm > 0 ? (
         <p className="mt-4 rounded-2xl border border-stroke bg-surface px-4 py-3 text-[13px] leading-relaxed text-text-3 shadow-sm">
@@ -363,6 +365,6 @@ export default function SizingPage() {
           Update my profile
         </Link>
       </div>
-    </main>
+    </PageContainer>
   );
 }
