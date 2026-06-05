@@ -4,7 +4,11 @@
 name: Build and deploy Node.js app to Azure Web App - rippers-mtb
 
 on:
-  push:
+  # Deploy only after the CI workflow (typecheck + tests + build + lint) passes
+  # on main. Manual runs via the Actions tab are always allowed.
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
     branches:
       - main
   workflow_dispatch:
@@ -12,11 +16,15 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # Gate: run only when CI succeeded on main, or on a manual dispatch.
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     permissions:
       contents: read #This is required for actions/checkout
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.ref }}
 
       - name: Set up Node.js version
         uses: actions/setup-node@v3
