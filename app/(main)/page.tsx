@@ -76,19 +76,19 @@ function heroLines(
   if (!profile) {
     return {
       title: "Find the right MTB\nfor you or your family.",
-      sub: `${catalogSize} Australian bikes in one snapshot — search, filters, and sizing help you shop for yourself or a junior rider. Add a profile to unlock match-ranked picks.`,
+      sub: `${catalogSize} Australian bikes in one snapshot, search, filters, and sizing help you shop for yourself or a junior rider. Add a profile to unlock match-ranked picks.`,
     };
   }
   switch (profile.style) {
     case "gravity":
       return {
         title: `Hey ${name}!\nReady to rip?`,
-        sub: "Enduro & gravity builds, sorted with your match scores — nothing hidden, you choose where to look.",
+        sub: "Enduro & gravity builds, sorted with your match scores, nothing hidden, you choose where to look.",
       };
     case "jump":
       return {
         title: `Hey ${name}!\nPark sessions incoming.`,
-        sub: "Playful bikes first in the list — same full catalogue, ordered for how you ride.",
+        sub: "Playful bikes first in the list, same full catalogue, ordered for how you ride.",
       };
     case "crossCountry":
       return {
@@ -98,7 +98,7 @@ function heroLines(
     default:
       return {
         title: `Hey ${name}!\nReady to rip?`,
-        sub: "Your best profile matches surface first — handy when you’re buying for yourself or shortlisting bikes for someone else in the family.",
+        sub: "Your best profile matches surface first, handy when you’re buying for yourself or shortlisting bikes for someone else in the family.",
       };
   }
 }
@@ -274,7 +274,7 @@ function HomePageContent() {
     if (listScope === "full") {
       return "Viewing: every bike that matches your filters, ranked for your profile.";
     }
-    return `Viewing: top ${HOME_MATCH_SHORTLIST} profile matches — open the full list or narrow filters for a tighter shortlist.`;
+    return `Viewing: top ${HOME_MATCH_SHORTLIST} profile matches, open the full list or narrow filters for a tighter shortlist.`;
   }, [searchActive, profile, listScope]);
 
   const homeListBikes = useMemo(() => {
@@ -351,16 +351,12 @@ function HomePageContent() {
   return (
     <main className="mx-auto w-full max-w-none">
 
-      {/* ─── Hero ─── */}
-      <section className="relative overflow-hidden bg-bg pt-[max(3.5rem,calc(env(safe-area-inset-top)+2.5rem))] md:min-h-[420px] md:pt-0">
-        {/* Ambient glows */}
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_65%_80%_at_78%_55%,rgba(229,71,26,0.20),transparent_70%)]" />
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_45%_55%_at_12%_40%,rgba(229,71,26,0.10),transparent_65%)]" />
-
-        <div className="relative mx-auto flex max-w-[92rem] flex-col md:min-h-[420px] md:flex-row md:items-center">
+      {/* ─── Header (restrained to match inner pages: no poster gradient) ─── */}
+      <section className="mx-auto w-full max-w-[80rem] px-4 pt-4 md:px-6 md:pt-8">
+        <div className="flex flex-col md:flex-row md:items-center md:gap-10">
 
           {/* ── Left column ── */}
-          <div className="flex flex-col px-5 pb-10 md:w-[52%] md:py-14 md:pl-10 md:pr-6">
+          <div className="flex flex-col pb-8 md:w-[54%] md:pb-0">
 
             {/* Mobile-only top bar */}
             <div className="mb-8 flex items-center justify-between gap-3 md:hidden">
@@ -385,10 +381,10 @@ function HomePageContent() {
               </Link>
             </div>
 
-            <h1 className="whitespace-pre-line text-[2.15rem] font-bold leading-[1.15] tracking-tight text-text md:text-[3.25rem]">
+            <h1 className="whitespace-pre-line text-2xl font-bold leading-tight tracking-tight text-text md:text-[28px]">
               {title}
             </h1>
-            <p className="mt-3 max-w-[22rem] text-[14px] leading-relaxed text-text-2 md:text-[15px]">{sub}</p>
+            <p className="mt-2 max-w-prose text-[14px] leading-relaxed text-text-2">{sub}</p>
 
             {hydrated && profile ? (
               <div className="mt-4 max-w-[26rem] rounded-2xl border border-stroke bg-surface/70 px-4 py-3.5 backdrop-blur-sm">
@@ -415,7 +411,7 @@ function HomePageContent() {
                     <p className="mt-1 text-[13px] font-medium leading-snug text-text">{currentRideLabel}</p>
                   ) : (
                     <p className="mt-1 text-[12px] leading-snug text-text-3">
-                      None on file —{" "}
+                      None on file,{" "}
                       <Link href="/profile#profile-ride" className="font-semibold text-brand-text no-underline hover:underline">
                         add in Profile
                       </Link>{" "}
@@ -425,29 +421,6 @@ function HomePageContent() {
                 </div>
               </div>
             ) : null}
-
-            {/* Stat pills — with a profile, lead with care (ranking) not a bare catalogue count */}
-            <div className="mt-5 flex flex-wrap gap-2">
-              <span className="rounded-full border border-stroke bg-surface/70 px-3 py-1.5 text-[11px] font-semibold text-text-2">
-                {!profile
-                  ? `${catalog.length} bikes to explore`
-                  : searchActive
-                    ? `${filteredBikes.length} search · ${catalog.length} in snapshot`
-                    : shortlistIsTruncated
-                      ? `${homeListBikes.length} top matches · ${filteredBikes.length} with filters`
-                      : listScope === "full"
-                        ? `${filteredBikes.length} listed · full match list`
-                        : `${homeListBikes.length} match${homeListBikes.length !== 1 ? "es" : ""} · your filters`}
-              </span>
-              <span className="rounded-full border border-stroke bg-surface/70 px-3 py-1.5 text-[11px] font-semibold text-text-2">
-                Prices from 20+ AU stores
-              </span>
-              {hydrated && profile && (
-                <span className="rounded-full border border-brand/40 bg-brand/12 px-3 py-1.5 text-[11px] font-semibold text-brand-text">
-                  {ridingStyleLabels(profile.style)}
-                </span>
-              )}
-            </div>
 
             {/* CTA if no profile */}
             {hydrated && !profile && (
@@ -462,7 +435,7 @@ function HomePageContent() {
             )}
           </div>
 
-          {/* ── Right column — desktop hero bike ── */}
+          {/* ── Right column, desktop hero bike ── */}
           <div className="hidden md:flex md:w-[48%] md:items-center md:justify-center md:py-10 md:pr-10">
             {(() => {
               if (!heroBikeDisplay) {
@@ -491,7 +464,6 @@ function HomePageContent() {
                 const webSpecLine = lu?.status === "ok" ? webLookupSpecSummary(lu.specs) : "";
                 return (
                   <div className="relative flex w-full max-w-[480px] flex-col items-center">
-                    <div className="pointer-events-none absolute inset-0 rounded-3xl bg-[radial-gradient(ellipse_80%_60%_at_50%_60%,rgba(229,71,26,0.22),transparent_70%)]" />
                     <div className="relative z-10 mb-2 flex flex-col items-center gap-1.5">
                       <div className="flex flex-wrap items-center justify-center gap-2">
                         <span className="rounded-full border border-stroke bg-surface/70 px-3 py-1 text-[11px] font-semibold text-text-2">
@@ -550,7 +522,7 @@ function HomePageContent() {
                           </p>
                           <p className="max-w-[16rem] text-[11px] leading-snug text-text-3">
                             {lu?.status === "failed"
-                              ? "We couldn't find a confident image or spec sheet online — try Refresh below or tweak brand / model / year in Profile."
+                              ? "We couldn't find a confident image or spec sheet online, try Refresh below or tweak brand / model / year in Profile."
                               : "Save your bike in Profile to look up product photos and specs from the web."}
                           </p>
                         </div>
@@ -603,7 +575,6 @@ function HomePageContent() {
               return (
                 <div className="relative flex w-full max-w-[480px] flex-col items-center">
                   {/* Glow ring behind bike */}
-                  <div className="pointer-events-none absolute inset-0 rounded-3xl bg-[radial-gradient(ellipse_80%_60%_at_50%_60%,rgba(229,71,26,0.22),transparent_70%)]" />
 
                   {/* Badge */}
                   <div className="relative z-10 mb-2 flex flex-col items-center gap-1.5">
@@ -689,7 +660,7 @@ function HomePageContent() {
             What Rippers helps you do
           </h2>
           <p className="mt-1 text-[12px] leading-snug text-text-3">
-            One AU-focused workspace: research bikes, compare builds, and plan where to ride — without losing context in a dozen retailer tabs.
+            One AU-focused workspace: research bikes, compare builds, and plan where to ride, without losing context in a dozen retailer tabs.
           </p>
         </div>
         <ol className="divide-y divide-stroke text-[12px] leading-snug">
@@ -711,7 +682,7 @@ function HomePageContent() {
             <div>
               <p className="font-semibold text-text">Family &amp; multi-rider profiles</p>
               <p className="mt-0.5 text-[11px] text-text-3">
-                Add household riders on this device — each gets their own Watch list, current ride, and match scores. Switch the active rider from{" "}
+                Add household riders on this device, each gets their own Watch list, current ride, and match scores. Switch the active rider from{" "}
                 <Link href="/profile#profile-riders" className="font-semibold text-brand-text underline decoration-brand/30 underline-offset-2">
                   Profile → Family
                 </Link>
@@ -727,7 +698,7 @@ function HomePageContent() {
               <p className="font-semibold text-text">Plan a trip around where you want to ride</p>
               <p className="mt-0.5 text-[11px] text-text-3">
                 Search a town or trail head, see OSM trails and nearby shops. Full trip dossiers, saved routes, and verified hire intel are planned as{" "}
-                <span className="font-semibold text-text">Premium</span> — the map preview stays free while we build that layer.
+                <span className="font-semibold text-text">Premium</span>, the map preview stays free while we build that layer.
               </p>
             </div>
           </li>
@@ -738,7 +709,7 @@ function HomePageContent() {
             <div>
               <p className="font-semibold text-text">Premium ideas we&apos;re exploring</p>
               <p className="mt-0.5 text-[11px] text-text-3">
-                Stock alerts on saved bikes, retailer deep-links with your size pre-filled, curated trail packs per region, and family plan billing — tell us what you&apos;d pay for first.
+                Stock alerts on saved bikes, retailer deep-links with your size pre-filled, curated trail packs per region, and family plan billing, tell us what you&apos;d pay for first.
               </p>
             </div>
           </li>
@@ -749,7 +720,7 @@ function HomePageContent() {
       <section className="mt-5 grid grid-cols-2 gap-2.5 px-4 sm:grid-cols-4">
         <Link
           href="/trip"
-          title="Ride map — free preview; saved routes and deeper trip intel planned as Premium"
+          title="Ride map, free preview; saved routes and deeper trip intel planned as Premium"
           className="relative flex flex-col items-start gap-2 rounded-2xl border border-stroke bg-surface p-3.5 pr-14 no-underline shadow-sm"
         >
           <span className="absolute right-2 top-2 rounded-full bg-warning px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-bg shadow-sm">
@@ -843,7 +814,7 @@ function HomePageContent() {
           <p className="text-[13px] leading-relaxed text-text-3">
             Rippers is an Australian MTB research companion: one catalogue snapshot, real prices from major AU retailers,
             and match scoring once we know how you ride. Use it to shop for yourself, a teenager, or anyone you&apos;re
-            helping into their first proper bike — then jump to Compare, Watch, or the ride map when you&apos;re ready to
+            helping into their first proper bike, then jump to Compare, Watch, or the ride map when you&apos;re ready to
             leave the spreadsheet behind.
           </p>
           <div className="mt-4 grid grid-cols-3 divide-x divide-stroke text-center">
@@ -859,7 +830,7 @@ function HomePageContent() {
               <p className="text-[22px] font-bold tracking-tight text-success">
                 {bestFiltered != null
                   ? new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD", maximumFractionDigits: 0 }).format(bestFiltered)
-                  : "AU$—"}
+                  : "n/a"}
               </p>
               <p className="mt-0.5 text-[10px] font-medium leading-tight text-text-3">best in match set</p>
             </div>
@@ -868,7 +839,7 @@ function HomePageContent() {
             Snapshot = every model in this build ({catalog.length}). Below you see{" "}
             <span className="font-semibold text-text">{homeListBikes.length}</span>
             {profile && !searchActive && shortlistIsTruncated
-              ? ` top profile matches (${filteredBikes.length} match your filters — open full list for the rest).`
+              ? ` top profile matches (${filteredBikes.length} match your filters, open full list for the rest).`
               : profile && searchActive
                 ? ` from search (${filteredBikes.length} hit${filteredBikes.length !== 1 ? "s" : ""}).`
                 : profile
@@ -907,7 +878,7 @@ function HomePageContent() {
           <div className="r-glass-well mt-2 px-3 py-3 sm:px-4 sm:py-3.5">
             <RiderContextPicker
               id="home-household-rider"
-              description="Match scores, search ranking, and Watch use whoever is selected here — switch before you shop."
+              description="Match scores, search ranking, and Watch use whoever is selected here, switch before you shop."
               addHref={householdAddRiderHref("/")}
             />
             <RiderContextBanner addHref={householdAddRiderHref("/")} className="mt-1" />
@@ -970,12 +941,12 @@ function HomePageContent() {
             </h2>
             <p className="mt-0.5 text-[11px] leading-snug text-text-3">
               {searchActive
-                ? `Text search on the ${catalog.length}-bike snapshot — ${filteredBikes.length} hit${filteredBikes.length !== 1 ? "s" : ""}.`
+                ? `Text search on the ${catalog.length}-bike snapshot, ${filteredBikes.length} hit${filteredBikes.length !== 1 ? "s" : ""}.`
                 : profile
                   ? listScope === "full"
                     ? `Ranked by your rider profile (${filteredBikes.length} after category & budget).`
-                    : `Top ${homeListBikes.length} by match for your profile and filters — open full list to see the rest.`
-                  : "Filter by category and budget, or search — data is the bundled AU snapshot in this build."}
+                    : `Top ${homeListBikes.length} by match for your profile and filters, open full list to see the rest.`
+                  : "Filter by category and budget, or search, data is the bundled AU snapshot in this build."}
             </p>
             {profile && currentRideLabel ? (
               <p className="mt-2 text-[11px] leading-snug text-text-3">
@@ -993,7 +964,7 @@ function HomePageContent() {
                 <Link href="/profile#profile-ride" className="font-semibold text-brand-text underline-offset-2 hover:underline">
                   Profile → Ride
                 </Link>{" "}
-                — we’ll fetch product images and specs where needed, and show comparisons when you open any listing.
+               , we’ll fetch product images and specs where needed, and show comparisons when you open any listing.
               </p>
             ) : null}
             <p className="mt-2 text-[11px] font-semibold leading-snug text-brand-text">{viewModeLine}</p>
@@ -1056,18 +1027,18 @@ function HomePageContent() {
                   className="absolute inset-0 z-[1] rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
                   aria-label={`View ${bike.brand} ${bike.model} specs`}
                 />
-                {/* Image — pointer-events-none so the underlying Link receives taps; buttons opt back in */}
+                {/* Image, pointer-events-none so the underlying Link receives taps; buttons opt back in */}
                 <div className="relative z-[2] aspect-[16/10] overflow-hidden bg-surface pointer-events-none">
                   <BikeProductImage
                     bikeId={bike.id}
                     alt={`${bike.brand} ${bike.model}`}
                     className="absolute inset-0 h-full w-full object-contain p-3 transition duration-500 ease-out group-hover:scale-[1.03]"
                   />
-                  {/* Match badge — tappable */}
+                  {/* Match badge, tappable */}
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); setMatchBike(bike); }}
-                    aria-label={`${matchPct}% match — tap for breakdown`}
+                    aria-label={`${matchPct}% match, tap for breakdown`}
                     className="pointer-events-auto absolute right-2.5 top-2.5 z-[3] rounded-full bg-surface-raised/95 px-2.5 py-1 text-[11px] font-bold tracking-tight text-danger shadow ring-1 ring-stroke backdrop-blur-[2px] transition-transform active:scale-95"
                   >
                     {matchPct}%
@@ -1094,7 +1065,7 @@ function HomePageContent() {
                     </span>
                   )}
                 </div>
-                {/* Info — same pass-through pattern as image row */}
+                {/* Info, same pass-through pattern as image row */}
                 <div className="relative z-[2] flex flex-1 flex-col px-4 pb-4 pt-3 pointer-events-none">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-text-3">{bike.brand}</p>
                   <h3 className="mt-1 r-subsection-title leading-snug">{bike.model}</h3>
