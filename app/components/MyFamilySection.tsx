@@ -219,7 +219,7 @@ export default function MyFamilySection({
       />
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3 px-1">
         <div>
-          <h2 className="text-[15px] font-semibold text-text">My Family</h2>
+          <h2 className="r-subsection-title">My Family</h2>
           <p className="mt-0.5 text-[11px] text-text-3">{riders.length} rider{riders.length === 1 ? "" : "s"} on this device</p>
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2">

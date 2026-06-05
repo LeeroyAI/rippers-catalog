@@ -26,7 +26,7 @@ export default function EmptyState({
           {icon}
         </div>
       ) : null}
-      <p className="text-[15px] font-semibold text-text">{title}</p>
+      <p className="r-subsection-title">{title}</p>
       {description ? (
         <p className="mt-1 max-w-sm text-[13px] leading-relaxed text-text-3">{description}</p>
       ) : null}

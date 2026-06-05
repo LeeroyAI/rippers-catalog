@@ -831,7 +831,7 @@ export default function ProfilePage() {
 
         {/* ── Tools ── */}
         <div id="profile-tools" className="mt-5 scroll-mt-24">
-          <h2 className="mb-2 px-1 text-[15px] font-semibold text-text">Tools</h2>
+          <h2 className="mb-2 px-1 r-subsection-title">Tools</h2>
           <div className="overflow-hidden rounded-2xl border border-stroke bg-surface">
             {[
               { label: "Sizing Guide", href: "/sizing", icon: (
@@ -880,7 +880,7 @@ export default function ProfilePage() {
         {/* ── Current Ride ── */}
         <div id="profile-ride" className="mt-5 scroll-mt-24">
           <div className="mb-3 flex items-center justify-between px-1">
-            <h2 className="text-[15px] font-semibold text-text">My current ride</h2>
+            <h2 className="r-subsection-title">My current ride</h2>
             {currentBikeEntry && (
               <button
                 type="button"
@@ -1112,7 +1112,7 @@ export default function ProfilePage() {
         {/* ── Favourites ── */}
         <div id="profile-favs" className="mt-5 scroll-mt-24">
           <div className="mb-3 flex items-center justify-between px-1">
-            <h2 className="text-[15px] font-semibold text-text">
+            <h2 className="r-subsection-title">
               My favourites
               {favBikes.length > 0 && (
                 <span className="ml-2 rounded-full bg-brand/10 px-2 py-0.5 text-[11px] font-bold text-brand-text">
@@ -1194,7 +1194,7 @@ export default function ProfilePage() {
 
         {/* ── Gear recommendations ── */}
         <div id="profile-gear" className="mt-6 scroll-mt-24">
-          <h2 className="mb-3 px-1 text-[15px] font-semibold text-text">
+          <h2 className="mb-3 px-1 r-subsection-title">
             Gear for your ride
             <span className="ml-2 text-[12px] font-normal text-text-3">
               {ridingStyleLabels(profile.style)} picks
