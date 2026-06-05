@@ -19,7 +19,7 @@ export default function EmptyState({
 }) {
   return (
     <div
-      className={`flex flex-col items-center rounded-2xl border border-dashed border-stroke bg-surface px-6 py-10 text-center ${className}`}
+      className={`r-anim-in flex flex-col items-center rounded-2xl border border-dashed border-stroke bg-surface px-6 py-10 text-center ${className}`}
     >
       {icon ? (
         <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand/10 text-brand-text">
