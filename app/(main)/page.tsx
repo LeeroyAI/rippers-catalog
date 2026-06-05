@@ -348,7 +348,7 @@ function HomePageContent() {
   const { title, sub } = heroLines(profile ?? null, greetName, catalog.length);
 
   return (
-    <main className="mx-auto w-full max-w-none pb-20">
+    <main className="mx-auto w-full max-w-none">
 
       {/* ─── Hero ─── */}
       <section className="relative overflow-hidden bg-bg pt-[max(3.5rem,calc(env(safe-area-inset-top)+2.5rem))] md:min-h-[420px] md:pt-0">
@@ -679,6 +679,8 @@ function HomePageContent() {
         </div>
       </section>
 
+      {/* Content below the full-bleed hero is capped to the wide tier (hero stays edge-to-edge). */}
+      <div className="mx-auto w-full max-w-[80rem]">
       {/* ─── New visitor: value story (above the fold scroll) ─── */}
       <section className="mx-4 mt-5 rounded-2xl border border-stroke bg-surface shadow-sm" aria-labelledby="home-value-heading">
         <div className="border-b border-stroke px-4 py-3.5">
@@ -1146,6 +1148,7 @@ function HomePageContent() {
           })}
         </div>
       </section>
+      </div>
 
       <BikeDetailSheet bike={selectedBike} onClose={closeBikeSheet} />
       <MatchBreakdownSheet bike={matchBike} profile={profile ?? null} onClose={() => setMatchBike(null)} />
@@ -1157,7 +1160,7 @@ export default function Home() {
   return (
     <Suspense
       fallback={
-        <main className="mx-auto w-full max-w-none pb-20">
+        <main className="mx-auto w-full max-w-none">
           <div className="flex min-h-[40vh] items-center justify-center px-6 text-[14px] text-text-3">
             Loading catalogue…
           </div>
