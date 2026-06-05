@@ -261,7 +261,7 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
           >
             <div className="min-h-0 overflow-hidden">
               <div className="flex items-center gap-3 border-t border-stroke px-4 pb-2.5 pt-1">
-                <p className="min-w-0 flex-1 truncate text-[14px] font-semibold text-[var(--foreground)]">
+                <p className="min-w-0 flex-1 truncate text-[14px] font-semibold text-text">
                   {bike.model}
                 </p>
                 <button
@@ -319,7 +319,7 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
             </svg>
           </button>
           {bike.isEbike && (
-            <span className="absolute bottom-3 left-3 rounded-full bg-[var(--r-orange)] px-3 py-1 text-[11px] font-bold text-white">
+            <span className="absolute bottom-3 left-3 rounded-full bg-brand px-3 py-1 text-[11px] font-bold text-white">
               eBike
             </span>
           )}
@@ -329,10 +329,10 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
         <div className="px-5 pt-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-[var(--r-muted)]">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-text-3">
                 {bike.brand} · {bike.year}
               </p>
-              <h2 className="mt-1 text-[22px] font-semibold leading-[1.2] tracking-tight text-[var(--foreground)]">
+              <h2 className="mt-1 text-[22px] font-semibold leading-[1.2] tracking-tight text-text">
                 {bike.model}
               </h2>
               {([bike.category, bike.wheel, bike.travel].filter(Boolean) as string[]).length > 0 && (
@@ -340,7 +340,7 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
                   {[bike.category, bike.wheel, bike.travel].filter(Boolean).map((bit) => (
                     <span
                       key={bit}
-                      className="rounded-full border border-stroke bg-surface px-2.5 py-1 text-[11px] font-semibold text-[var(--r-muted)]"
+                      className="rounded-full border border-stroke bg-surface px-2.5 py-1 text-[11px] font-semibold text-text-3"
                     >
                       {bit}
                     </span>
@@ -351,9 +351,9 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
             {bestPrice != null && (
               <div className="shrink-0 rounded-xl border border-stroke bg-gradient-to-b from-surface to-surface px-3 py-2 text-right shadow-sm">
                 {sortedRetailers.length > 1 && (
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--r-muted)]">From</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-text-3">From</p>
                 )}
-                <p className="text-[21px] font-bold leading-tight tabular-nums text-[var(--r-price-green)]">
+                <p className="text-[21px] font-bold leading-tight tabular-nums text-success">
                   {aud(bestPrice)}
                 </p>
                 {bike.wasPrice != null && bike.wasPrice > bestPrice && (
@@ -369,7 +369,7 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
           </div>
           <div className="mt-4">
             <p
-              className={`text-[13px] leading-relaxed text-[var(--r-muted)] ${
+              className={`text-[13px] leading-relaxed text-text-3 ${
                 !descExpanded && descLong ? "line-clamp-4" : ""
               }`}
             >
@@ -394,10 +394,10 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
               {matchPct}%
             </span>
             <div className="min-w-0 flex-1">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--r-muted)]">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-text-3">
                 Match score
               </p>
-              <p className="mt-0.5 text-[12px] font-medium leading-snug text-[var(--foreground)]">
+              <p className="mt-0.5 text-[12px] font-medium leading-snug text-text">
                 {profile
                   ? `Tap for ${matchFactors.length} reason${matchFactors.length === 1 ? "" : "s"} · ${matchPositive} aligned with you`
                   : "Add a profile in Rippers to personalise this score"}
@@ -443,8 +443,8 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
                   )}
                 </span>
                 <div>
-                  <p className="text-[12px] font-semibold text-[var(--foreground)]">{f.label}</p>
-                  <p className="mt-0.5 text-[11px] leading-snug text-[var(--r-muted)]">{f.detail}</p>
+                  <p className="text-[12px] font-semibold text-text">{f.label}</p>
+                  <p className="mt-0.5 text-[11px] leading-snug text-text-3">{f.detail}</p>
                 </div>
               </div>
             ))}
@@ -458,12 +458,12 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
               <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-text">
                 Compared to your current ride
               </p>
-              <p className="mt-1.5 text-[13px] font-semibold leading-snug text-[var(--foreground)]">{currentRideTitle}</p>
-              <p className="mt-1 text-[11px] leading-snug text-[var(--r-muted)]">
+              <p className="mt-1.5 text-[13px] font-semibold leading-snug text-text">{currentRideTitle}</p>
+              <p className="mt-1 text-[11px] leading-snug text-text-3">
                 Here is how this catalogue snapshot lines up versus the bike saved on your profile — including web-sourced specs when your ride is custom or no longer in the snapshot.
               </p>
               {currentBikeEntry.type === "custom" && currentBikeEntry.lookup?.status === "loading" ? (
-                <p className="mt-2 flex items-center gap-2 text-[11px] font-medium text-[var(--r-muted)]">
+                <p className="mt-2 flex items-center gap-2 text-[11px] font-medium text-text-3">
                   <span
                     className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-stroke border-t-brand"
                     aria-hidden
@@ -487,7 +487,7 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
               ) : null}
             </div>
             {versusRows.length === 0 ? (
-              <p className="px-4 py-4 text-[12px] leading-relaxed text-[var(--r-muted)]">
+              <p className="px-4 py-4 text-[12px] leading-relaxed text-text-3">
                 {currentBikeEntry.type === "custom" && currentBikeEntry.lookup?.status === "loading"
                   ? "Hang tight — as soon as we have specs for your current bike, key differences will appear here."
                   : "No overlapping spec lines yet — check both bikes below or update your current ride details in Profile."}
@@ -499,9 +499,9 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
             ) : (
               <div className="divide-y divide-stroke border-t border-stroke">
                 <div className="grid grid-cols-[minmax(0,34%)_minmax(0,33%)_minmax(0,33%)] gap-2 bg-surface/50 px-3 py-2 sm:px-4">
-                  <span className="text-[9px] font-bold uppercase tracking-wider text-[var(--r-muted)]">Spec</span>
-                  <span className="text-[9px] font-bold uppercase tracking-wider text-[var(--r-muted)]">Your ride</span>
-                  <span className="text-[9px] font-bold uppercase tracking-wider text-[var(--r-muted)]">This bike</span>
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-text-3">Spec</span>
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-text-3">Your ride</span>
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-text-3">This bike</span>
                 </div>
                 {versusRows.map((row) => {
                   const cur = row.current ?? "—";
@@ -512,14 +512,14 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
                     cur.trim().toLowerCase() !== pr.trim().toLowerCase();
                   return (
                     <div key={row.label} className="grid grid-cols-[minmax(0,34%)_minmax(0,33%)_minmax(0,33%)] gap-2 px-3 py-2.5 sm:px-4">
-                      <p className="text-[11px] font-semibold leading-snug text-[var(--r-muted)]">{row.label}</p>
+                      <p className="text-[11px] font-semibold leading-snug text-text-3">{row.label}</p>
                       <p
-                        className={`text-[11px] leading-snug ${diff ? "font-semibold text-[var(--foreground)]" : "text-[var(--foreground)]/90"}`}
+                        className={`text-[11px] leading-snug ${diff ? "font-semibold text-text" : "text-text/90"}`}
                       >
                         {cur}
                       </p>
                       <p
-                        className={`text-[11px] leading-snug ${diff ? "font-semibold text-[var(--foreground)]" : "text-[var(--foreground)]/90"}`}
+                        className={`text-[11px] leading-snug ${diff ? "font-semibold text-text" : "text-text/90"}`}
                       >
                         {pr}
                       </p>
@@ -532,16 +532,16 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
         )}
 
         {isViewingOwnCurrentBike && (
-          <p className="mx-4 mt-5 rounded-2xl border border-stroke bg-surface/60 px-4 py-3 text-[12px] leading-snug text-[var(--r-muted)]">
+          <p className="mx-4 mt-5 rounded-2xl border border-stroke bg-surface/60 px-4 py-3 text-[12px] leading-snug text-text-3">
             This listing is saved as{" "}
-            <span className="font-semibold text-[var(--foreground)]">your current ride</span>. Browse other bikes to see side-by-side spec comparisons.
+            <span className="font-semibold text-text">your current ride</span>. Browse other bikes to see side-by-side spec comparisons.
           </p>
         )}
 
         {/* Sizes */}
         {bike.sizes && bike.sizes.length > 0 && (
           <div className="px-5 pt-4">
-            <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--r-muted)]">
+            <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-text-3">
               Available sizes
             </p>
             <div className="flex flex-wrap gap-2">
@@ -553,7 +553,7 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
                     className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[12px] font-semibold transition-colors ${
                       isSuggested
                         ? "border-brand bg-brand/5 text-brand-text"
-                        : "border-stroke text-[var(--foreground)]"
+                        : "border-stroke text-text"
                     }`}
                   >
                     {s}
@@ -565,7 +565,7 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
               })}
             </div>
             {suggested && (
-              <p className="mt-2 text-[11px] text-[var(--r-muted)]">
+              <p className="mt-2 text-[11px] text-text-3">
                 Based on your height ({profile!.heightCm} cm)
               </p>
             )}
@@ -577,7 +577,7 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
           {activeGroups.map((group) => (
             <div key={group.heading} className="overflow-hidden rounded-2xl border border-stroke">
               <div className="bg-surface px-4 py-2">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--r-muted)]">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-text-3">
                   {group.heading}
                 </p>
               </div>
@@ -588,8 +588,8 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
                     i < group.rows.length - 1 ? "border-b border-stroke" : ""
                   }`}
                 >
-                  <span className="shrink-0 text-[12px] font-medium text-[var(--r-muted)]">{row.label}</span>
-                  <span className="text-right text-[13px] font-semibold text-[var(--foreground)]">
+                  <span className="shrink-0 text-[12px] font-medium text-text-3">{row.label}</span>
+                  <span className="text-right text-[13px] font-semibold text-text">
                     {specVal(bike, row.key)}
                   </span>
                 </div>
@@ -601,7 +601,7 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
         {/* Retailer prices */}
         {sortedRetailers.length > 0 && (
           <div className="mx-4 mt-5">
-            <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--r-muted)]">
+            <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-text-3">
               Prices &amp; availability
             </p>
             <div className="space-y-2">
@@ -616,7 +616,7 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
                     }`}
                   >
                     <div>
-                      <p className="text-[13px] font-semibold text-[var(--foreground)]">{label}</p>
+                      <p className="text-[13px] font-semibold text-text">{label}</p>
                       <p
                         className={`mt-0.5 text-[11px] font-medium ${
                           inStock ? "text-success" : "text-text-3"
@@ -627,7 +627,7 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
                     </div>
                     <p
                       className={`text-[16px] font-bold ${
-                        inStock ? "text-[var(--r-price-green)]" : "text-text-3"
+                        inStock ? "text-success" : "text-text-3"
                       }`}
                     >
                       {aud(price)}
@@ -674,8 +674,8 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
                   onClick={() => toggle(bike.id)}
                   className={`flex items-center justify-center gap-1.5 rounded-xl border py-3 text-[13px] font-semibold transition-colors ${
                     isFav
-                      ? "border-brand/35 bg-[var(--r-orange-soft)] text-brand-text"
-                      : "border-stroke bg-surface-raised text-[var(--foreground)]"
+                      ? "border-brand/35 bg-brand/12 text-brand-text"
+                      : "border-stroke bg-surface-raised text-text"
                   }`}
                 >
                   <svg width="15" height="15" viewBox="0 0 24 24" fill={isFav ? "rgb(var(--c-brand))" : "none"} aria-hidden>
@@ -704,8 +704,8 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
                 onClick={() => toggle(bike.id)}
                 className={`mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl border py-3 text-[13px] font-semibold transition-colors ${
                   isFav
-                    ? "border-brand/35 bg-[var(--r-orange-soft)] text-brand-text"
-                    : "border-stroke bg-surface text-[var(--foreground)]"
+                    ? "border-brand/35 bg-brand/12 text-brand-text"
+                    : "border-stroke bg-surface text-text"
                 }`}
               >
                 <svg width="15" height="15" viewBox="0 0 24 24" fill={isFav ? "rgb(var(--c-brand))" : "none"} aria-hidden>

@@ -20,8 +20,8 @@ const SENTIMENT_STYLES = {
         <path d="m7.5 12 3 3 6-6" stroke="rgb(var(--c-success))" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     ),
-    labelClass: "text-[var(--foreground)]",
-    detailClass: "text-[var(--r-muted)]",
+    labelClass: "text-text",
+    detailClass: "text-text-3",
     rowClass: "",
   },
   neutral: {
@@ -31,8 +31,8 @@ const SENTIMENT_STYLES = {
         <path d="M8 12h8" stroke="rgb(var(--c-text-3))" strokeWidth="2" strokeLinecap="round" />
       </svg>
     ),
-    labelClass: "text-[var(--r-muted)]",
-    detailClass: "text-[var(--r-muted)]",
+    labelClass: "text-text-3",
+    detailClass: "text-text-3",
     rowClass: "",
   },
   negative: {
@@ -42,8 +42,8 @@ const SENTIMENT_STYLES = {
         <path d="m9 9 6 6M15 9l-6 6" stroke="rgb(var(--c-brand-text))" strokeWidth="2" strokeLinecap="round" />
       </svg>
     ),
-    labelClass: "text-[var(--foreground)]",
-    detailClass: "text-[var(--r-muted)]",
+    labelClass: "text-text",
+    detailClass: "text-text-3",
     rowClass: "",
   },
 };
@@ -92,21 +92,21 @@ export default function MatchBreakdownSheet({ bike, profile, onClose }: Props) {
             <span className="text-[22px] font-bold text-brand">{pct}%</span>
           </div>
           <div>
-            <p className="text-[16px] font-bold text-[var(--foreground)]">Match score</p>
-            <p className="text-[12px] text-[var(--r-muted)]">
+            <p className="text-[16px] font-bold text-text">Match score</p>
+            <p className="text-[12px] text-text-3">
               {bike.brand} {bike.model}
             </p>
           </div>
         </div>
 
         {/* Factors */}
-        <div className="mx-4 mb-2 overflow-hidden rounded-2xl border border-[var(--r-border)]">
+        <div className="mx-4 mb-2 overflow-hidden rounded-2xl border border-stroke">
           {factors.map((f, i) => {
             const s = SENTIMENT_STYLES[f.sentiment];
             return (
               <div
                 key={f.label}
-                className={`flex items-start gap-3 px-4 py-3 ${i < factors.length - 1 ? "border-b border-[var(--r-border)]" : ""}`}
+                className={`flex items-start gap-3 px-4 py-3 ${i < factors.length - 1 ? "border-b border-stroke" : ""}`}
               >
                 <span className="mt-0.5 shrink-0">{s.icon}</span>
                 <div>
@@ -119,7 +119,7 @@ export default function MatchBreakdownSheet({ bike, profile, onClose }: Props) {
         </div>
 
         {!profile && (
-          <p className="px-5 pb-2 text-center text-[12px] text-[var(--r-muted)]">
+          <p className="px-5 pb-2 text-center text-[12px] text-text-3">
             <a href="/profile" className="font-semibold text-brand-text underline-offset-2 hover:underline">
               Set up your profile
             </a>{" "}
@@ -132,7 +132,7 @@ export default function MatchBreakdownSheet({ bike, profile, onClose }: Props) {
             type="button"
             data-dialog-initial-focus
             onClick={onClose}
-            className="w-full rounded-2xl border border-[var(--r-border)] py-3 text-[14px] font-semibold text-[var(--r-muted)]"
+            className="w-full rounded-2xl border border-stroke py-3 text-[14px] font-semibold text-text-3"
           >
             Close
           </button>

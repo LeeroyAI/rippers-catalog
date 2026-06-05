@@ -30,7 +30,7 @@ const DEFAULT_ZOOM = 10;
 const TripMapInner = dynamic(() => import("@/app/trip/TripMapInner"), {
   ssr: false,
   loading: () => (
-    <div className="absolute inset-0 flex items-center justify-center bg-surface-raised text-sm text-[var(--r-muted)]">
+    <div className="absolute inset-0 flex items-center justify-center bg-surface-raised text-sm text-text-3">
       Loading map…
     </div>
   ),
@@ -616,11 +616,11 @@ export default function TripMapExplorer() {
                 }}
               />
               {loadingPlaces && !loadingMap && (
-                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 animate-spin rounded-full border-2 border-[var(--r-orange)] border-t-transparent" />
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 animate-spin rounded-full border-2 border-brand border-t-transparent" />
               )}
             </div>
             <button type="button" onClick={useMyLocation} title="Use my location"
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--r-orange)] text-brand-fg shadow-[0_6px_16px_rgba(229,71,26,0.35)] transition hover:brightness-105 active:scale-[0.98]">
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand text-brand-fg shadow-[0_6px_16px_rgba(229,71,26,0.35)] transition hover:brightness-105 active:scale-[0.98]">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
                 <path d="M12 2a7 7 0 0 1 7 7c0 5.25-7 13-7 13S5 14.25 5 9a7 7 0 0 1 7-7Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
                 <circle cx="12" cy="9" r="2.5" fill="currentColor" stroke="none"/>
@@ -669,7 +669,7 @@ export default function TripMapExplorer() {
           {place && !isPremiumRidePlannerUnlocked() ? (
             <div className="border-t border-stroke bg-gradient-to-r from-warning-subtle/15 to-surface px-4 py-3 sm:px-5">
               <p className="text-[11px] font-bold uppercase tracking-wide text-warning">Multi-stop trip planner</p>
-              <p className="mt-1 text-[12px] leading-snug text-[var(--r-muted)]">
+              <p className="mt-1 text-[12px] leading-snug text-text-3">
                 Premium adds Google Maps–style legs: stack towns or trail heads, then load trails, hire, and bike shops for
                 each stop in one flow.
               </p>
@@ -694,7 +694,7 @@ export default function TripMapExplorer() {
           {place && isPremiumRidePlannerUnlocked() ? (
             <div className="border-t border-stroke px-4 py-3 sm:px-5">
               <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--r-muted)]">Trip legs</p>
+                <p className="text-[11px] font-bold uppercase tracking-wide text-text-3">Trip legs</p>
                 <div className="flex flex-wrap items-center gap-1.5">
                   {itinerary.length >= 2 ? (
                     <div className="mr-1 inline-flex rounded-full border border-stroke bg-surface">
@@ -702,18 +702,18 @@ export default function TripMapExplorer() {
                         type="button"
                         onClick={() => selectStop(Math.max(0, activeStopIdx - 1))}
                         disabled={activeStopIdx <= 0}
-                        className="rounded-l-full px-2.5 py-1 text-[10px] font-semibold text-[var(--r-muted)] disabled:opacity-35"
+                        className="rounded-l-full px-2.5 py-1 text-[10px] font-semibold text-text-3 disabled:opacity-35"
                       >
                         Prev
                       </button>
-                      <span className="border-l border-r border-stroke px-2 py-1 text-[10px] font-bold text-[var(--foreground)]">
+                      <span className="border-l border-r border-stroke px-2 py-1 text-[10px] font-bold text-text">
                         {activeStopIdx + 1}/{itinerary.length}
                       </span>
                       <button
                         type="button"
                         onClick={() => selectStop(Math.min(itinerary.length - 1, activeStopIdx + 1))}
                         disabled={activeStopIdx >= itinerary.length - 1}
-                        className="rounded-r-full px-2.5 py-1 text-[10px] font-semibold text-[var(--r-muted)] disabled:opacity-35"
+                        className="rounded-r-full px-2.5 py-1 text-[10px] font-semibold text-text-3 disabled:opacity-35"
                       >
                         Next
                       </button>
@@ -726,7 +726,7 @@ export default function TripMapExplorer() {
                         setAppendMode(false);
                         setNotice(null);
                       }}
-                      className="rounded-full border border-stroke bg-surface px-2.5 py-1 text-[10px] font-semibold text-[var(--r-muted)]"
+                      className="rounded-full border border-stroke bg-surface px-2.5 py-1 text-[10px] font-semibold text-text-3"
                     >
                       Cancel add
                     </button>
@@ -739,7 +739,7 @@ export default function TripMapExplorer() {
                       setNotice("Search and pick the next stop — it is added as a new leg on your trip.");
                       focusSearchInput();
                     }}
-                    className="rounded-full border border-[var(--r-orange)]/45 bg-brand/5 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-brand-text disabled:opacity-40"
+                    className="rounded-full border border-brand/45 bg-brand/5 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-brand-text disabled:opacity-40"
                   >
                     Add stop
                   </button>
@@ -766,7 +766,7 @@ export default function TripMapExplorer() {
                   const active = idx === activeStopIdx;
                   return (
                     <li key={`${hit.id}-${idx}-${hit.lat}`}>
-                      <div className={`flex gap-1.5 rounded-xl border px-2 py-2 ${active ? "border-[var(--r-orange)]/55 bg-brand/5 shadow-[inset_0_0_0_1px_rgba(229,71,26,0.08)]" : "border-stroke bg-surface/60"}`}>
+                      <div className={`flex gap-1.5 rounded-xl border px-2 py-2 ${active ? "border-brand/55 bg-brand/5 shadow-[inset_0_0_0_1px_rgba(229,71,26,0.08)]" : "border-stroke bg-surface/60"}`}>
                         <button
                           type="button"
                           className="min-w-0 flex-1 text-left"
@@ -775,14 +775,14 @@ export default function TripMapExplorer() {
                         >
                           <span className="inline-flex items-baseline gap-1.5">
                             <span className="tabular-nums text-[12px] font-black text-brand-text">{idx + 1}.</span>
-                            <span className={`truncate text-[12px] font-semibold ${active ? "text-[var(--foreground)]" : "text-[var(--r-muted)]"}`}>
+                            <span className={`truncate text-[12px] font-semibold ${active ? "text-text" : "text-text-3"}`}>
                               {brief}
                             </span>
                           </span>
                           {active ? (
                             <span className="mt-0.5 block text-[10px] font-medium text-brand-text">Active — map and lists</span>
                           ) : (
-                            <span className="mt-0.5 block text-[10px] text-[var(--r-muted)]">Tap to plan this stop</span>
+                            <span className="mt-0.5 block text-[10px] text-text-3">Tap to plan this stop</span>
                           )}
                         </button>
                         <div className="flex shrink-0 flex-col gap-0.5">
@@ -792,7 +792,7 @@ export default function TripMapExplorer() {
                             aria-label={`Move ${brief} up`}
                             disabled={idx === 0}
                             onClick={() => moveStop(idx, -1)}
-                            className="flex h-7 w-7 items-center justify-center rounded-lg border border-stroke bg-surface text-[11px] font-bold text-[var(--r-muted)] disabled:opacity-30"
+                            className="flex h-7 w-7 items-center justify-center rounded-lg border border-stroke bg-surface text-[11px] font-bold text-text-3 disabled:opacity-30"
                           >
                             ↑
                           </button>
@@ -802,7 +802,7 @@ export default function TripMapExplorer() {
                             aria-label={`Move ${brief} down`}
                             disabled={idx === itinerary.length - 1}
                             onClick={() => moveStop(idx, 1)}
-                            className="flex h-7 w-7 items-center justify-center rounded-lg border border-stroke bg-surface text-[11px] font-bold text-[var(--r-muted)] disabled:opacity-30"
+                            className="flex h-7 w-7 items-center justify-center rounded-lg border border-stroke bg-surface text-[11px] font-bold text-text-3 disabled:opacity-30"
                           >
                             ↓
                           </button>
@@ -823,12 +823,12 @@ export default function TripMapExplorer() {
               </ol>
               {itinerary.length >= 2 ? (
                 <div className="mt-2 space-y-2">
-                  <p className="text-[10px] leading-relaxed text-[var(--r-muted)]">
+                  <p className="text-[10px] leading-relaxed text-text-3">
                     Dashed line on the map is straight-line order only — use it to eyeball driving days, not turn-by-turn
                     routing.
                   </p>
                   <div className="rounded-xl border border-stroke bg-surface/75 p-2.5">
-                    <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wide text-[var(--r-muted)]">
+                    <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wide text-text-3">
                       Navigate legs
                     </p>
                     <div className="flex flex-col gap-1.5">
@@ -859,14 +859,14 @@ export default function TripMapExplorer() {
 
           {/* Radius pills */}
           <div className="flex flex-wrap items-center gap-2 border-t border-stroke px-4 py-3">
-            <span className="shrink-0 text-[11px] font-bold uppercase tracking-wide text-[var(--r-muted)]">Radius</span>
+            <span className="shrink-0 text-[11px] font-bold uppercase tracking-wide text-text-3">Radius</span>
             <div className="flex min-w-0 flex-1 gap-1.5">
               {RADII.map((r) => (
                 <button key={r} type="button" onClick={() => setRadiusKm(r)}
                   className={`min-w-0 flex-1 rounded-full py-2 text-[11px] font-semibold transition-colors ${
                     radiusKm === r
-                      ? "bg-[var(--r-orange)] text-brand-fg shadow-[0_2px_8px_rgba(229,71,26,0.35)]"
-                      : "bg-surface-raised text-[var(--r-muted)] hover:bg-surface-raised"
+                      ? "bg-brand text-brand-fg shadow-[0_2px_8px_rgba(229,71,26,0.35)]"
+                      : "bg-surface-raised text-text-3 hover:bg-surface-raised"
                   }`}>
                   {r} km
                 </button>
@@ -905,7 +905,7 @@ export default function TripMapExplorer() {
                     onClick={() => void loadFeatures(place.lat, place.lon)}
                     title="Reload map data"
                     aria-label="Reload map data"
-                    className="flex h-9 w-9 items-center justify-center rounded-full border border-stroke bg-surface text-[var(--r-muted)] transition hover:border-stroke hover:bg-surface hover:text-[var(--foreground)]"
+                    className="flex h-9 w-9 items-center justify-center rounded-full border border-stroke bg-surface text-text-3 transition hover:border-stroke hover:bg-surface hover:text-text"
                   >
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden>
                       <path
@@ -931,17 +931,17 @@ export default function TripMapExplorer() {
             >
               <div className="mb-2 flex items-center gap-2.5">
                 <span
-                  className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-[var(--r-orange)] border-t-transparent"
+                  className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-brand border-t-transparent"
                   aria-hidden
                 />
-                <p className="text-[12px] font-semibold text-[var(--foreground)]">Loading trails &amp; shops</p>
+                <p className="text-[12px] font-semibold text-text">Loading trails &amp; shops</p>
               </div>
-              <p className="mb-3 text-[11px] leading-snug text-[var(--r-muted)]">
+              <p className="mb-3 text-[11px] leading-snug text-text-3">
                 Fetching OpenStreetMap data — usually a few seconds, sometimes longer on slow networks.
               </p>
               <div className="r-trip-load-track relative mb-3 h-2.5 w-full overflow-hidden rounded-full bg-stroke/90 ring-1 ring-inset ring-stroke">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-[var(--r-orange)] to-brand-hover transition-[width] duration-300 ease-out"
+                  className="h-full rounded-full bg-gradient-to-r from-brand to-brand-hover transition-[width] duration-300 ease-out"
                   style={{ width: `${Math.max(loadProgressPct, 8)}%` }}
                 />
                 <div className="r-trip-load-shine" aria-hidden />
@@ -950,15 +950,15 @@ export default function TripMapExplorer() {
                 <div
                   className={`rounded-xl border bg-surface px-3 py-2.5 ${
                     legShops === "loading"
-                      ? "border-[var(--r-orange)]/35 shadow-[0_0_0_1px_rgba(229,71,26,0.08)]"
+                      ? "border-brand/35 shadow-[0_0_0_1px_rgba(229,71,26,0.08)]"
                       : "border-stroke"
                   }`}
                 >
-                  <p className="text-[10px] font-bold uppercase tracking-wide text-[var(--r-muted)]">Bike shops</p>
-                  <p className="mt-1 flex items-center gap-2 text-[12px] font-semibold text-[var(--foreground)]">
+                  <p className="text-[10px] font-bold uppercase tracking-wide text-text-3">Bike shops</p>
+                  <p className="mt-1 flex items-center gap-2 text-[12px] font-semibold text-text">
                     {legShops === "loading" && (
                       <span
-                        className="h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-[var(--r-orange)] border-t-transparent"
+                        className="h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-brand border-t-transparent"
                         aria-hidden
                       />
                     )}
@@ -976,15 +976,15 @@ export default function TripMapExplorer() {
                 <div
                   className={`rounded-xl border bg-surface px-3 py-2.5 ${
                     legTrails === "loading"
-                      ? "border-[var(--r-orange)]/35 shadow-[0_0_0_1px_rgba(229,71,26,0.08)]"
+                      ? "border-brand/35 shadow-[0_0_0_1px_rgba(229,71,26,0.08)]"
                       : "border-stroke"
                   }`}
                 >
-                  <p className="text-[10px] font-bold uppercase tracking-wide text-[var(--r-muted)]">Trails</p>
-                  <p className="mt-1 flex items-center gap-2 text-[12px] font-semibold text-[var(--foreground)]">
+                  <p className="text-[10px] font-bold uppercase tracking-wide text-text-3">Trails</p>
+                  <p className="mt-1 flex items-center gap-2 text-[12px] font-semibold text-text">
                     {legTrails === "loading" && (
                       <span
-                        className="h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-[var(--r-orange)] border-t-transparent"
+                        className="h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-brand border-t-transparent"
                         aria-hidden
                       />
                     )}
@@ -1001,13 +1001,13 @@ export default function TripMapExplorer() {
                 </div>
               </div>
               <details className="mt-3 rounded-xl border border-stroke bg-surface/90 px-3 py-2.5">
-                <summary className="cursor-pointer list-none text-[11px] font-semibold text-[var(--r-muted)] [&::-webkit-details-marker]:hidden">
+                <summary className="cursor-pointer list-none text-[11px] font-semibold text-text-3 [&::-webkit-details-marker]:hidden">
                   <span className="flex items-center justify-between gap-3 pr-0.5">
                     <span className="min-w-0">Data sources &amp; cache</span>
                     <span className="shrink-0 text-[10px] font-normal tabular-nums text-text-3">More</span>
                   </span>
                 </summary>
-                <p className="mt-2 text-[10px] leading-relaxed text-[var(--r-muted)]">
+                <p className="mt-2 text-[10px] leading-relaxed text-text-3">
                   Two OpenStreetMap requests run in parallel. Results are cached on our server for about ten minutes, then
                   refreshed. Trail and shop coverage depends on what mappers have added in OpenStreetMap — it varies by
                   area.
@@ -1018,23 +1018,23 @@ export default function TripMapExplorer() {
 
           {loadSummary && !loadingMap && place && (
             <div className="border-t border-stroke bg-brand/5 px-4 py-3">
-              <p className="text-[12px] leading-snug text-[var(--foreground)]">
+              <p className="text-[12px] leading-snug text-text">
                 <span className="font-bold tabular-nums">{loadSummary.trails}</span> {trailPlural(loadSummary.trails)} ·{" "}
                 <span className="font-bold tabular-nums">{loadSummary.shops}</span> {shopPlural(loadSummary.shops)}
-                <span className="text-[var(--r-muted)]"> · </span>
+                <span className="text-text-3"> · </span>
                 <button
                   type="button"
-                  className="font-semibold text-brand-text underline decoration-[var(--r-orange)]/30 underline-offset-2 hover:decoration-[var(--r-orange)]"
+                  className="font-semibold text-brand-text underline decoration-brand/30 underline-offset-2 hover:decoration-brand"
                   onClick={() => setResultsOpen(true)}
                 >
                   Open list
                 </button>
               </p>
               {loadSummary.shops === 0 && (
-                <p className="mt-2 text-[11px] leading-snug text-[var(--r-muted)]">
+                <p className="mt-2 text-[11px] leading-snug text-text-3">
                   No retail bike shops matched in OSM for this radius — try a wider radius, or help improve local data on{" "}
                   <a
-                    className="font-semibold text-brand-text underline decoration-[var(--r-orange)]/30 underline-offset-2"
+                    className="font-semibold text-brand-text underline decoration-brand/30 underline-offset-2"
                     href={`https://www.openstreetmap.org/#map=14/${place.lat}/${place.lon}`}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -1045,10 +1045,10 @@ export default function TripMapExplorer() {
                 </p>
               )}
               <details className="mt-2">
-                <summary className="cursor-pointer list-none text-[10px] font-medium text-[var(--r-muted)] [&::-webkit-details-marker]:hidden hover:text-[var(--foreground)]">
+                <summary className="cursor-pointer list-none text-[10px] font-medium text-text-3 [&::-webkit-details-marker]:hidden hover:text-text">
                   What counts as a trail here?
                 </summary>
-                <p className="mt-1.5 text-[10px] leading-relaxed text-[var(--r-muted)]">
+                <p className="mt-1.5 text-[10px] leading-relaxed text-text-3">
                   Only named or MTB-tagged OpenStreetMap ways — fewer anonymous paths, more rideable lines on the map.
                 </p>
               </details>
@@ -1058,15 +1058,15 @@ export default function TripMapExplorer() {
           {/* Trailforks (secondary) + profile */}
           {(place || profile) && !loadingMap && (
             <div className="flex flex-col gap-2.5 border-t border-stroke px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-              <div className="min-w-0 text-[12px] leading-snug text-[var(--r-muted)]">
+              <div className="min-w-0 text-[12px] leading-snug text-text-3">
                 {profile && (
                   <p>
                     <span className="font-semibold text-brand-text">{ridingStyleLabels(profile.style)}</span>
-                    <span className="text-[var(--r-muted)]"> — shops ranked for your style</span>
+                    <span className="text-text-3"> — shops ranked for your style</span>
                   </p>
                 )}
                 {!profile && (
-                  <Link href="/profile" className="font-semibold text-[var(--foreground)] underline decoration-stroke underline-offset-4 hover:decoration-[var(--r-orange)]">
+                  <Link href="/profile" className="font-semibold text-text underline decoration-stroke underline-offset-4 hover:decoration-brand">
                     Set up profile for smarter shop picks
                   </Link>
                 )}
@@ -1079,7 +1079,7 @@ export default function TripMapExplorer() {
                   })}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex shrink-0 items-center justify-center gap-1.5 self-start rounded-xl border border-[var(--r-orange)]/40 bg-surface px-3.5 py-2 text-[12px] font-semibold text-brand-text shadow-sm transition hover:bg-brand/5 sm:self-auto"
+                  className="inline-flex shrink-0 items-center justify-center gap-1.5 self-start rounded-xl border border-brand/40 bg-surface px-3.5 py-2 text-[12px] font-semibold text-brand-text shadow-sm transition hover:bg-brand/5 sm:self-auto"
                 >
                   Trailforks map
                   <span aria-hidden>↗</span>
@@ -1108,7 +1108,7 @@ export default function TripMapExplorer() {
       {hasResults && !resultsOpen && (
         <button type="button" onClick={() => setResultsOpen(true)}
           className="absolute bottom-[max(1rem,calc(env(safe-area-inset-bottom)+0.75rem))] left-1/2 z-[1100] flex max-w-[min(92vw,24rem)] -translate-x-1/2 items-center gap-2 rounded-full border border-stroke bg-surface-raised/97 px-4 py-2.5 text-[13px] font-semibold shadow-lg backdrop-blur-md">
-          <span className="h-2 w-2 shrink-0 rounded-full bg-[var(--r-orange)]" />
+          <span className="h-2 w-2 shrink-0 rounded-full bg-brand" />
           <span className="truncate">
             {groupedTrails.length} {trailPlural(groupedTrails.length)}
           </span>
@@ -1136,14 +1136,14 @@ export default function TripMapExplorer() {
           <div className="shrink-0 border-b border-stroke px-4 pt-2 pb-0 md:pt-3">
             {locationShort && (
               <div className="mb-2 flex items-center gap-2">
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--r-orange)]">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand">
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="white" aria-hidden>
                     <path d="M12 2a7 7 0 0 1 7 7c0 5.25-7 13-7 13S5 14.25 5 9a7 7 0 0 1 7-7Z"/>
                   </svg>
                 </span>
-                <span className="min-w-0 flex-1 truncate text-[13px] font-semibold text-[var(--foreground)]">{locationShort}</span>
+                <span className="min-w-0 flex-1 truncate text-[13px] font-semibold text-text">{locationShort}</span>
                 <button type="button" onClick={() => setResultsOpen(false)}
-                  className="shrink-0 rounded-full p-1.5 text-[var(--r-muted)] hover:bg-surface-raised" aria-label="Close list">
+                  className="shrink-0 rounded-full p-1.5 text-text-3 hover:bg-surface-raised" aria-label="Close list">
                   <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden>
                     <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round"/>
                   </svg>
@@ -1154,19 +1154,19 @@ export default function TripMapExplorer() {
             {/* Tabs */}
             <div className="flex gap-1">
               {([
-                { key: "trails", label: "Trails", count: groupedTrails.length, color: "var(--r-orange)" },
+                { key: "trails", label: "Trails", count: groupedTrails.length, color: "rgb(var(--c-brand))" },
                 { key: "shops", label: "Shops", count: rankedShops.length, color: "rgb(var(--c-info))" },
               ] as const).map(({ key, label, count, color }) => (
                 <button key={key} type="button" onClick={() => setResultsTab(key)}
                   className={`-mb-px flex items-center gap-1.5 rounded-t-lg border border-b-0 px-4 py-2 text-[13px] font-semibold transition-colors ${
                     resultsTab === key
-                      ? "border-stroke bg-surface-raised text-[var(--foreground)]"
-                      : "border-transparent text-[var(--r-muted)] hover:text-[var(--foreground)]"
+                      ? "border-stroke bg-surface-raised text-text"
+                      : "border-transparent text-text-3 hover:text-text"
                   }`}>
                   <span className="h-2 w-2 rounded-full" style={{ background: color }} />
                   {label}
                   <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
-                    resultsTab === key ? "bg-[var(--r-orange-soft)] text-brand-text" : "bg-surface-raised text-[var(--r-muted)]"
+                    resultsTab === key ? "bg-brand/12 text-brand-text" : "bg-surface-raised text-text-3"
                   }`}>{count}</span>
                 </button>
               ))}
@@ -1184,14 +1184,14 @@ export default function TripMapExplorer() {
                       <path d="M7 18c1-2 2-4 5-4s4 2 5 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity="0.5"/>
                     </svg>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-[13px] font-semibold text-[var(--foreground)]">{t.name}</p>
+                      <p className="truncate text-[13px] font-semibold text-text">{t.name}</p>
                       {t.segments > 1 && (
-                        <span className="mt-0.5 inline-block rounded-full bg-surface-raised px-1.5 py-0.5 text-[10px] font-semibold text-[var(--r-muted)]">
+                        <span className="mt-0.5 inline-block rounded-full bg-surface-raised px-1.5 py-0.5 text-[10px] font-semibold text-text-3">
                           {t.segments} segments
                         </span>
                       )}
                     </div>
-                    <span className="shrink-0 rounded-full bg-surface-raised px-2 py-0.5 text-[11px] font-semibold tabular-nums text-[var(--r-muted)]">
+                    <span className="shrink-0 rounded-full bg-surface-raised px-2 py-0.5 text-[11px] font-semibold tabular-nums text-text-3">
                       {t.kmFromCenter.toFixed(1)} km
                     </span>
                     <div className="flex shrink-0 gap-1.5">
@@ -1203,7 +1203,7 @@ export default function TripMapExplorer() {
                         })}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="rounded-full bg-[var(--r-orange-soft)] px-2.5 py-1 text-[10px] font-bold text-brand-text hover:brightness-95">
+                        className="rounded-full bg-brand/12 px-2.5 py-1 text-[10px] font-bold text-brand-text hover:brightness-95">
                         Trailforks
                       </a>
                       <a href={googleMapsSearchUrl(t.centroidLat, t.centroidLon, t.name)} target="_blank" rel="noopener noreferrer"
@@ -1214,7 +1214,7 @@ export default function TripMapExplorer() {
                   </li>
                 ))}
                 {groupedTrails.length === 0 && (
-                  <li className="px-4 py-10 text-center text-sm text-[var(--r-muted)]">No trails found — try a wider radius.</li>
+                  <li className="px-4 py-10 text-center text-sm text-text-3">No trails found — try a wider radius.</li>
                 )}
               </ul>
             ) : (
@@ -1238,7 +1238,7 @@ export default function TripMapExplorer() {
                           </svg>
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-[13px] font-semibold text-[var(--foreground)]">{s.name}</p>
+                          <p className="truncate text-[13px] font-semibold text-text">{s.name}</p>
                           <div className="mt-1 flex flex-wrap gap-1">
                             {s.sales && <span className="rounded-full bg-info/10 px-2 py-0.5 text-[10px] font-semibold text-info">Sales</span>}
                             {s.repair && <span className="rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-semibold text-success">Service</span>}
@@ -1248,16 +1248,16 @@ export default function TripMapExplorer() {
                               </span>
                             )}
                           </div>
-                          {svc && <p className="mt-0.5 text-[11px] text-[var(--r-muted)]">{svc}</p>}
-                          <p className="mt-0.5 text-[10px] text-[var(--r-muted)]">{hours}</p>
-                          <p className="mt-1 text-[10px] text-[var(--r-muted)]">
+                          {svc && <p className="mt-0.5 text-[11px] text-text-3">{svc}</p>}
+                          <p className="mt-0.5 text-[10px] text-text-3">{hours}</p>
+                          <p className="mt-1 text-[10px] text-text-3">
                             Contact:{" "}
                             {s.phone ? (
-                              <a href={`tel:${s.phone}`} className="font-semibold text-[var(--foreground)] underline underline-offset-2">
+                              <a href={`tel:${s.phone}`} className="font-semibold text-text underline underline-offset-2">
                                 {phone}
                               </a>
                             ) : (
-                              <span className="font-medium text-[var(--foreground)]">{phone}</span>
+                              <span className="font-medium text-text">{phone}</span>
                             )}
                           </p>
                           <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
@@ -1274,7 +1274,7 @@ export default function TripMapExplorer() {
                             </a>
                           </div>
                         </div>
-                        <span className="mt-0.5 shrink-0 rounded-full bg-surface-raised px-2 py-0.5 text-[11px] font-semibold tabular-nums text-[var(--r-muted)]">
+                        <span className="mt-0.5 shrink-0 rounded-full bg-surface-raised px-2 py-0.5 text-[11px] font-semibold tabular-nums text-text-3">
                           {s.kmFromCenter.toFixed(1)} km
                         </span>
                       </div>
@@ -1282,7 +1282,7 @@ export default function TripMapExplorer() {
                   );
                 })}
                 {rankedShops.length === 0 && (
-                  <li className="px-4 py-10 text-center text-sm text-[var(--r-muted)]">No shops found — try a wider radius.</li>
+                  <li className="px-4 py-10 text-center text-sm text-text-3">No shops found — try a wider radius.</li>
                 )}
               </ul>
             )}
@@ -1301,10 +1301,10 @@ export default function TripMapExplorer() {
           }}
         >
           <div className="w-full max-w-md rounded-2xl border border-stroke bg-surface-raised p-5 shadow-2xl">
-            <p id="trip-save-family-title" className="text-[15px] font-bold text-[var(--foreground)]">
+            <p id="trip-save-family-title" className="text-[15px] font-bold text-text">
               Save trip to family profile
             </p>
-            <p className="mt-2 text-[13px] leading-relaxed text-[var(--r-muted)]">
+            <p className="mt-2 text-[13px] leading-relaxed text-text-3">
               Choose which rider profile should own this saved trip.
             </p>
             <div className="mt-3 space-y-2">
@@ -1313,15 +1313,15 @@ export default function TripMapExplorer() {
                   key={r.id}
                   className={`flex cursor-pointer items-center justify-between rounded-xl border px-3 py-2.5 ${
                     saveTargetRiderId === r.id
-                      ? "border-[var(--r-orange)] bg-brand/5"
+                      ? "border-brand bg-brand/5"
                       : "border-stroke bg-surface-raised"
                   }`}
                 >
-                  <span className="text-[13px] font-semibold text-[var(--foreground)]">{r.nickname || "Rider"}</span>
+                  <span className="text-[13px] font-semibold text-text">{r.nickname || "Rider"}</span>
                   <input
                     type="radio"
                     name="save-trip-rider"
-                    className="h-4 w-4 accent-[var(--r-orange)]"
+                    className="h-4 w-4 accent-brand"
                     checked={saveTargetRiderId === r.id}
                     onChange={() => setSaveTargetRiderId(r.id)}
                   />
@@ -1331,14 +1331,14 @@ export default function TripMapExplorer() {
             <div className="mt-5 flex flex-wrap justify-end gap-2">
               <button
                 type="button"
-                className="rounded-xl border border-stroke bg-surface-raised px-4 py-2.5 text-[13px] font-semibold text-[var(--foreground)]"
+                className="rounded-xl border border-stroke bg-surface-raised px-4 py-2.5 text-[13px] font-semibold text-text"
                 onClick={closeSaveProfilePicker}
               >
                 Cancel
               </button>
               <button
                 type="button"
-                className="rounded-xl bg-[var(--r-orange)] px-4 py-2.5 text-[13px] font-semibold text-brand-fg shadow-[0_4px_14px_rgba(229,71,26,0.35)]"
+                className="rounded-xl bg-brand px-4 py-2.5 text-[13px] font-semibold text-brand-fg shadow-[0_4px_14px_rgba(229,71,26,0.35)]"
                 onClick={confirmSaveToProfile}
               >
                 Save to profile
@@ -1359,24 +1359,24 @@ export default function TripMapExplorer() {
           }}
         >
           <div className="w-full max-w-md rounded-2xl border border-stroke bg-surface-raised p-5 shadow-2xl">
-            <p id="trip-save-premium-title" className="text-[15px] font-bold text-[var(--foreground)]">
+            <p id="trip-save-premium-title" className="text-[15px] font-bold text-text">
               Trip planner and saved trips — Premium
             </p>
-            <p className="mt-2 text-[13px] leading-relaxed text-[var(--r-muted)]">
+            <p className="mt-2 text-[13px] leading-relaxed text-text-3">
               Multi-stop ride planning (trails, hire, shops per stop), saved trips per rider on this device, and future sync
               are Premium. Live map browsing stays free while billing is wired.
             </p>
             <div className="mt-5 flex flex-wrap justify-end gap-2">
               <button
                 type="button"
-                className="rounded-xl border border-stroke bg-surface-raised px-4 py-2.5 text-[13px] font-semibold text-[var(--foreground)]"
+                className="rounded-xl border border-stroke bg-surface-raised px-4 py-2.5 text-[13px] font-semibold text-text"
                 onClick={() => setTripSavePaywallOpen(false)}
               >
                 Got it
               </button>
               <Link
                 href="/"
-                className="rounded-xl bg-[var(--r-orange)] px-4 py-2.5 text-[13px] font-semibold text-brand-fg no-underline shadow-[0_4px_14px_rgba(229,71,26,0.35)]"
+                className="rounded-xl bg-brand px-4 py-2.5 text-[13px] font-semibold text-brand-fg no-underline shadow-[0_4px_14px_rgba(229,71,26,0.35)]"
                 onClick={() => setTripSavePaywallOpen(false)}
               >
                 Back to home

@@ -23,7 +23,7 @@ export default function HomeCarouselCard({ bike, matchPct, onMatchClick }: Props
       <Link
         href={`/?openBike=${bike.id}`}
         scroll={false}
-        className="absolute inset-0 z-[1] rounded-[1.125rem] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--r-orange)] focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+        className="absolute inset-0 z-[1] rounded-[1.125rem] focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
         aria-label={`View ${bike.brand} ${bike.model} specs`}
       />
       <div className="r-carousel-thumb relative z-[2] aspect-[3/4] w-full overflow-hidden pointer-events-none">
@@ -37,7 +37,7 @@ export default function HomeCarouselCard({ bike, matchPct, onMatchClick }: Props
           type="button"
           onClick={(e) => { e.stopPropagation(); onMatchClick?.(bike); }}
           aria-label={`${matchPct}% match — tap for breakdown`}
-          className="pointer-events-auto absolute right-2.5 top-2.5 z-[3] rounded-full bg-surface-raised/95 px-2.5 py-1 text-[11px] font-bold tracking-tight text-[var(--r-match-text)] shadow-md ring-1 ring-stroke backdrop-blur-[2px] transition-transform active:scale-95"
+          className="pointer-events-auto absolute right-2.5 top-2.5 z-[3] rounded-full bg-surface-raised/95 px-2.5 py-1 text-[11px] font-bold tracking-tight text-danger shadow-md ring-1 ring-stroke backdrop-blur-[2px] transition-transform active:scale-95"
         >
           {matchPct}%
         </button>
@@ -57,11 +57,11 @@ export default function HomeCarouselCard({ bike, matchPct, onMatchClick }: Props
         </button>
       </div>
       <div className="relative z-[2] flex flex-1 flex-col px-3.5 pb-3.5 pt-3 pointer-events-none">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--r-muted)]">{bike.brand}</p>
-        <p className="mt-1 line-clamp-2 min-h-[2.5rem] text-[14px] font-semibold leading-snug text-[var(--foreground)]">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-text-3">{bike.brand}</p>
+        <p className="mt-1 line-clamp-2 min-h-[2.5rem] text-[14px] font-semibold leading-snug text-text">
           {bike.model}
         </p>
-        <p className="mt-auto pt-2.5 text-[16px] font-bold tracking-tight text-[var(--r-price-green)]">
+        <p className="mt-auto pt-2.5 text-[16px] font-bold tracking-tight text-success">
           {best != null
             ? new Intl.NumberFormat("en-AU", {
                 style: "currency",

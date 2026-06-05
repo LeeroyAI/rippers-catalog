@@ -145,9 +145,9 @@ export default function WelcomeSetupPage() {
         ) : null}
 
         <header className="r-home-hero relative mt-3 w-full overflow-hidden px-5 py-6 sm:px-6 sm:py-7 lg:px-8">
-          <div className="pointer-events-none absolute left-0 top-0 h-full w-1 bg-gradient-to-b from-[var(--r-orange)]/70 via-[var(--r-orange)]/25 to-transparent" />
+          <div className="pointer-events-none absolute left-0 top-0 h-full w-1 bg-gradient-to-b from-brand/70 via-brand/25 to-transparent" />
           <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-center sm:gap-6 sm:text-left lg:gap-8 xl:gap-10">
-            <div className="shrink-0 rounded-2xl border border-[var(--r-border)] bg-[var(--r-bg-well)] p-3 shadow-[0_8px_24px_rgba(18,16,12,0.06)]">
+            <div className="shrink-0 rounded-2xl border border-stroke bg-surface p-3 shadow-[0_8px_24px_rgba(18,16,12,0.06)]">
               <Image
                 src="/icons/icon-512.png"
                 alt="Rippers"
@@ -159,24 +159,24 @@ export default function WelcomeSetupPage() {
             </div>
             <div className="min-w-0 flex-1 text-center sm:text-left">
               <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-brand-text">Rippers</p>
-              <h1 className="mt-1.5 text-[1.35rem] font-semibold leading-snug tracking-tight text-[var(--foreground)] sm:text-2xl lg:text-[1.75rem] xl:text-[2rem]">
+              <h1 className="mt-1.5 text-[1.35rem] font-semibold leading-snug tracking-tight text-text sm:text-2xl lg:text-[1.75rem] xl:text-[2rem]">
                 {formHero.title}
               </h1>
-              <p className="mt-2 text-[14px] leading-relaxed text-[var(--r-muted)]">{formHero.body}</p>
+              <p className="mt-2 text-[14px] leading-relaxed text-text-3">{formHero.body}</p>
             </div>
           </div>
         </header>
 
         {!addMode && profile ? (
-          <p className="mt-5 rounded-2xl border border-[var(--r-border)] bg-surface px-5 py-4 text-[13px] leading-snug shadow-sm text-[var(--r-muted)]">
+          <p className="mt-5 rounded-2xl border border-stroke bg-surface px-5 py-4 text-[13px] leading-snug shadow-sm text-text-3">
             Updating how you ride as{" "}
-            <strong className="text-[var(--foreground)]">{ridingStyleLabels(profile.style)}</strong>? Save again to
+            <strong className="text-text">{ridingStyleLabels(profile.style)}</strong>? Save again to
             refresh home recommendations.
           </p>
         ) : null}
 
         <div className="mt-6">
-          <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-[var(--r-muted)]">
+          <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-text-3">
             {addMode ? "New rider" : profile ? "Details" : "Your details"}
           </p>
           <RiderProfileForm

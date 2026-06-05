@@ -45,10 +45,10 @@ export default function RiderHouseholdPhotoField({
           : "rounded-2xl border border-stroke bg-surface px-4 py-4 shadow-sm"
       }
     >
-      <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--r-muted)]">Profile photo (optional)</p>
-      <p className="mt-1 text-[12px] leading-snug text-[var(--r-muted)]">
+      <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-text-3">Profile photo (optional)</p>
+      <p className="mt-1 text-[12px] leading-snug text-text-3">
         Each family member has their own photo on this device. You can change it anytime under{" "}
-        <strong className="text-[var(--foreground)]">Edit rider</strong>.
+        <strong className="text-text">Edit rider</strong>.
       </p>
       <div className={`mt-3 flex items-start gap-3 ${isCard ? "sm:items-center" : ""}`}>
         <button
@@ -58,7 +58,7 @@ export default function RiderHouseholdPhotoField({
           aria-label="Choose profile photo"
         >
           <div
-            className={`overflow-hidden rounded-2xl bg-gradient-to-br from-brand via-[var(--r-orange)] to-brand-hover shadow-md ring-2 ring-stroke ${
+            className={`overflow-hidden rounded-2xl bg-gradient-to-br from-brand via-brand to-brand-hover shadow-md ring-2 ring-stroke ${
               isCard ? "h-16 w-16" : "h-20 w-20"
             }`}
           >
@@ -94,7 +94,7 @@ export default function RiderHouseholdPhotoField({
               Remove photo
             </button>
           ) : (
-            <p className="text-[12px] text-[var(--r-muted)]">Square photos work best. Stored only on this device.</p>
+            <p className="text-[12px] text-text-3">Square photos work best. Stored only on this device.</p>
           )}
           {error ? <p className="mt-2 text-[12px] font-medium text-danger">{error}</p> : null}
         </div>

@@ -164,7 +164,7 @@ export default function RiderProfileForm({
   return (
     <form onSubmit={handleSubmit} className="flex w-full min-w-0 flex-col gap-4 py-6">
       <div className="min-w-0">
-        <label className="text-xs font-medium text-[var(--r-muted)]" htmlFor="nickname">
+        <label className="text-xs font-medium text-text-3" htmlFor="nickname">
           What should we call you? (optional)
         </label>
         <input
@@ -190,7 +190,7 @@ export default function RiderProfileForm({
 
       <div className="grid min-w-0 grid-cols-2 gap-3 sm:gap-4">
         <div className="min-w-0">
-          <label className="text-xs font-medium text-[var(--r-muted)]" htmlFor="height">
+          <label className="text-xs font-medium text-text-3" htmlFor="height">
             Height (cm)
           </label>
           <input
@@ -206,7 +206,7 @@ export default function RiderProfileForm({
           />
         </div>
         <div className="min-w-0">
-          <label className="text-xs font-medium text-[var(--r-muted)]" htmlFor="weight">
+          <label className="text-xs font-medium text-text-3" htmlFor="weight">
             Weight (kg)
           </label>
           <input
@@ -224,7 +224,7 @@ export default function RiderProfileForm({
       </div>
 
       <div className="min-w-0">
-        <label className="text-xs font-medium text-[var(--r-muted)]" htmlFor="style">
+        <label className="text-xs font-medium text-text-3" htmlFor="style">
           How do you ride?
         </label>
         <select
@@ -240,38 +240,38 @@ export default function RiderProfileForm({
             </option>
           ))}
         </select>
-        <p className="mt-2 text-[11px] leading-relaxed text-[var(--r-muted)]">
+        <p className="mt-2 text-[11px] leading-relaxed text-text-3">
           {RIDING_STYLE_OPTIONS.find((o) => o.value === style)?.hint}
         </p>
       </div>
 
-      <label className="flex min-w-0 cursor-pointer gap-3 rounded-xl border border-[var(--r-border)] bg-surface px-3 py-3 text-sm">
+      <label className="flex min-w-0 cursor-pointer gap-3 rounded-xl border border-stroke bg-surface px-3 py-3 text-sm">
         <input
           type="checkbox"
-          className="mt-0.5 h-5 w-5 accent-[var(--r-orange)]"
+          className="mt-0.5 h-5 w-5 accent-brand"
           checked={preferEbike}
           onChange={(e) => setPreferEbike(e.target.checked)}
         />
         <span className="min-w-0 flex-1">
           <span className="font-semibold">Interested in e-bikes</span>
-          <span className="block text-xs leading-snug text-[var(--r-muted)]">
+          <span className="block text-xs leading-snug text-text-3">
             Filters the catalogue toward eMTB and gives rental shops slightly more relevance.
           </span>
         </span>
       </label>
 
       {includeOptionalCurrentBike ? (
-        <details className="min-w-0 rounded-xl border border-[var(--r-border)] bg-surface px-3 py-2 shadow-sm open:shadow-md">
-          <summary className="cursor-pointer list-none py-2 text-[13px] font-semibold text-[var(--foreground)] marker:content-none [&::-webkit-details-marker]:hidden">
-            Current bike <span className="font-normal text-[var(--r-muted)]">(optional)</span>
+        <details className="min-w-0 rounded-xl border border-stroke bg-surface px-3 py-2 shadow-sm open:shadow-md">
+          <summary className="cursor-pointer list-none py-2 text-[13px] font-semibold text-text marker:content-none [&::-webkit-details-marker]:hidden">
+            Current bike <span className="font-normal text-text-3">(optional)</span>
           </summary>
-          <div className="space-y-3 border-t border-[var(--r-border)] pb-3 pt-3">
-            <p className="text-[11px] leading-relaxed text-[var(--r-muted)]">
+          <div className="space-y-3 border-t border-stroke pb-3 pt-3">
+            <p className="text-[11px] leading-relaxed text-text-3">
               Add what they ride today — we&apos;ll do a live search to pull specs and an image.
             </p>
             <div className="grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-3">
               <div className="min-w-0 sm:col-span-1">
-                <label className="text-xs font-medium text-[var(--r-muted)]" htmlFor="bike-brand">
+                <label className="text-xs font-medium text-text-3" htmlFor="bike-brand">
                   Brand
                 </label>
                 <input
@@ -287,7 +287,7 @@ export default function RiderProfileForm({
                 />
               </div>
               <div className="min-w-0 sm:col-span-1">
-                <label className="text-xs font-medium text-[var(--r-muted)]" htmlFor="bike-model">
+                <label className="text-xs font-medium text-text-3" htmlFor="bike-model">
                   Model
                 </label>
                 <input
@@ -303,7 +303,7 @@ export default function RiderProfileForm({
                 />
               </div>
               <div className="min-w-0 sm:col-span-1">
-                <label className="text-xs font-medium text-[var(--r-muted)]" htmlFor="bike-year">
+                <label className="text-xs font-medium text-text-3" htmlFor="bike-year">
                   Year
                 </label>
                 <input
@@ -325,7 +325,7 @@ export default function RiderProfileForm({
       ) : null}
 
       {showSizingHint ? (
-        <div className="r-card min-w-0 space-y-1 p-4 text-[11px] leading-relaxed text-[var(--r-muted)]">
+        <div className="r-card min-w-0 space-y-1 p-4 text-[11px] leading-relaxed text-text-3">
           {reachPreview != null ? (
             <p>
               Rough reach starting point (~{reachPreview}
@@ -337,7 +337,7 @@ export default function RiderProfileForm({
           {catHint ? (
             <p>
               Catalogue first pass: prioritise{" "}
-              <strong className="text-[var(--foreground)]">{catHint}</strong> bikes unless you adjust
+              <strong className="text-text">{catHint}</strong> bikes unless you adjust
               filters.
             </p>
           ) : null}

@@ -156,7 +156,7 @@ function GearIcon({ id }: { id: string }) {
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
         <rect x="3" y="5" width="18" height="13" rx="2" stroke="currentColor" strokeWidth="1.7" fill="currentColor" fillOpacity="0.08"/>
         <path d="M7 9l2 4 2-5 2 4 2-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-        <circle cx="18" cy="6" r="2.5" fill="var(--r-orange)" stroke="white" strokeWidth="1"/>
+        <circle cx="18" cy="6" r="2.5" fill="rgb(var(--c-brand))" stroke="white" strokeWidth="1"/>
       </svg>
     ),
     bib: (
@@ -384,7 +384,7 @@ export default function ProfilePage() {
   if (!hydrated) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <span className="h-9 w-9 animate-spin rounded-full border-[3px] border-[var(--r-orange)] border-t-transparent" />
+        <span className="h-9 w-9 animate-spin rounded-full border-[3px] border-brand border-t-transparent" />
       </div>
     );
   }
@@ -511,7 +511,7 @@ export default function ProfilePage() {
       <CreateFamilyModal open={familyModalOpen} onClose={() => setFamilyModalOpen(false)} />
       <div className="mx-auto w-full max-w-3xl px-4 pb-20 pt-5 md:px-6">
         <nav
-          className="sticky top-0 z-30 -mx-4 mb-4 flex flex-wrap gap-1 border-b border-[var(--r-border)] bg-[var(--r-bg-canvas)]/95 px-2 py-2 backdrop-blur-md md:-mx-6 md:px-4"
+          className="sticky top-0 z-30 -mx-4 mb-4 flex flex-wrap gap-1 border-b border-stroke bg-bg/95 px-2 py-2 backdrop-blur-md md:-mx-6 md:px-4"
           aria-label="Profile sections"
         >
           {(
@@ -528,7 +528,7 @@ export default function ProfilePage() {
               key={id}
               type="button"
               onClick={() => scrollToProfileSection(id)}
-              className="rounded-lg px-2.5 py-1.5 text-[11px] font-semibold text-[var(--r-muted)] transition hover:bg-surface hover:text-[var(--foreground)]"
+              className="rounded-lg px-2.5 py-1.5 text-[11px] font-semibold text-text-3 transition hover:bg-surface hover:text-text"
             >
               {label}
             </button>
@@ -550,7 +550,7 @@ export default function ProfilePage() {
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={photo} alt="Profile" className="h-full w-full object-cover" />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-brand via-[var(--r-orange)] to-brand-hover">
+                  <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-brand via-brand to-brand-hover">
                     <span className="text-3xl font-bold text-brand-fg">
                       {displayName[0]?.toUpperCase() ?? "R"}
                     </span>
@@ -575,7 +575,7 @@ export default function ProfilePage() {
             {/* Name + badges */}
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-xl font-semibold tracking-tight text-[var(--foreground)]">
+                <h1 className="text-xl font-semibold tracking-tight text-text">
                   {displayName}
                 </h1>
                 <span className="rounded-full bg-brand/10 px-2.5 py-0.5 text-[11px] font-bold text-brand-text">
@@ -587,7 +587,7 @@ export default function ProfilePage() {
                   </span>
                 )}
               </div>
-              <p className="mt-1 text-[12px] text-[var(--r-muted)]">Tap photo to change</p>
+              <p className="mt-1 text-[12px] text-text-3">Tap photo to change</p>
               {photoError && <p className="mt-1 text-[12px] font-medium text-danger">{photoError}</p>}
             </div>
           </div>
@@ -595,10 +595,10 @@ export default function ProfilePage() {
           {/* Rider summary + inline edit (active rider) */}
           <div
             id="profile-edit"
-            className="mt-5 scroll-mt-24 overflow-hidden rounded-2xl border border-[var(--r-border)] bg-surface/90 shadow-sm"
+            className="mt-5 scroll-mt-24 overflow-hidden rounded-2xl border border-stroke bg-surface/90 shadow-sm"
           >
-            <div className="flex items-center justify-between gap-2 border-b border-[var(--r-border)] bg-surface/90 px-4 py-2.5 sm:px-5">
-              <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[var(--r-muted)]">
+            <div className="flex items-center justify-between gap-2 border-b border-stroke bg-surface/90 px-4 py-2.5 sm:px-5">
+              <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-text-3">
                 {formOpen ? "Update rider profile" : "Rider summary"}
               </p>
               {!formOpen ? (
@@ -613,7 +613,7 @@ export default function ProfilePage() {
                 <button
                   type="button"
                   onClick={cancelProfileEdit}
-                  className="shrink-0 rounded-lg px-2.5 py-1 text-[12px] font-semibold text-[var(--r-muted)] transition hover:bg-surface-raised hover:text-[var(--foreground)]"
+                  className="shrink-0 rounded-lg px-2.5 py-1 text-[12px] font-semibold text-text-3 transition hover:bg-surface-raised hover:text-text"
                 >
                   Cancel
                 </button>
@@ -633,13 +633,13 @@ export default function ProfilePage() {
                 ].map(({ label, value }, i, arr) => (
                   <div
                     key={label}
-                    className={`flex items-center justify-between px-4 py-2.5 sm:px-5 ${i < arr.length - 1 ? "border-b border-[var(--r-border)]" : ""}`}
+                    className={`flex items-center justify-between px-4 py-2.5 sm:px-5 ${i < arr.length - 1 ? "border-b border-stroke" : ""}`}
                   >
-                    <p className="text-[13px] text-[var(--r-muted)]">{label}</p>
-                    <p className="text-[13px] font-bold text-[var(--foreground)]">{value}</p>
+                    <p className="text-[13px] text-text-3">{label}</p>
+                    <p className="text-[13px] font-bold text-text">{value}</p>
                   </div>
                 ))}
-                <div className="border-t border-[var(--r-border)] bg-surface/40 px-4 py-3 sm:px-5">
+                <div className="border-t border-stroke bg-surface/40 px-4 py-3 sm:px-5">
                   <button
                     type="button"
                     onClick={() => setFormOpen(true)}
@@ -652,14 +652,14 @@ export default function ProfilePage() {
             ) : (
               <form onSubmit={handleSave} className="space-y-4 px-4 py-4 sm:space-y-5 sm:px-5 sm:py-5">
                 {riders.length > 1 ? (
-                  <p className="rounded-lg border border-[var(--r-border)] bg-surface/80 px-3 py-2 text-[11px] leading-snug text-[var(--r-muted)]">
-                    Updates apply to the <strong className="text-[var(--foreground)]">active</strong> rider only. Switch
-                    them in <strong className="text-[var(--foreground)]">My Family</strong> (section below)
+                  <p className="rounded-lg border border-stroke bg-surface/80 px-3 py-2 text-[11px] leading-snug text-text-3">
+                    Updates apply to the <strong className="text-text">active</strong> rider only. Switch
+                    them in <strong className="text-text">My Family</strong> (section below)
                     first if you meant to edit someone else.
                   </p>
                 ) : null}
                 <div className="min-w-0">
-                  <label className="text-xs font-semibold text-[var(--r-muted)]" htmlFor="profile-nickname">
+                  <label className="text-xs font-semibold text-text-3" htmlFor="profile-nickname">
                     Nickname <span className="font-normal opacity-60">(optional)</span>
                   </label>
                   <input
@@ -676,7 +676,7 @@ export default function ProfilePage() {
 
                 <div className="grid min-w-0 grid-cols-2 gap-3 sm:gap-4">
                   <div className="min-w-0">
-                    <label className="text-xs font-semibold text-[var(--r-muted)]" htmlFor="profile-height">
+                    <label className="text-xs font-semibold text-text-3" htmlFor="profile-height">
                       Height
                     </label>
                     <div className="relative mt-2">
@@ -691,13 +691,13 @@ export default function ProfilePage() {
                         onChange={(e) => setHeightCm(e.target.value)}
                         className={`r-field w-full min-w-0 max-w-full px-4 py-3 pr-10 text-sm box-border ${numberNoSpin}`}
                       />
-                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-[var(--r-muted)]">
+                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-text-3">
                         cm
                       </span>
                     </div>
                   </div>
                   <div className="min-w-0">
-                    <label className="text-xs font-semibold text-[var(--r-muted)]" htmlFor="profile-weight">
+                    <label className="text-xs font-semibold text-text-3" htmlFor="profile-weight">
                       Weight
                     </label>
                     <div className="relative mt-2">
@@ -712,7 +712,7 @@ export default function ProfilePage() {
                         onChange={(e) => setWeightKg(e.target.value)}
                         className={`r-field w-full min-w-0 max-w-full px-4 py-3 pr-10 text-sm box-border ${numberNoSpin}`}
                       />
-                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-[var(--r-muted)]">
+                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-text-3">
                         kg
                       </span>
                     </div>
@@ -720,12 +720,12 @@ export default function ProfilePage() {
                 </div>
 
                 {reach != null && (
-                  <p className="rounded-xl bg-brand/5 px-4 py-3 text-[12px] leading-relaxed text-[var(--r-muted)]">
-                    Estimated reach: <strong className="text-[var(--foreground)]">~{reach}mm</strong>
+                  <p className="rounded-xl bg-brand/5 px-4 py-3 text-[12px] leading-relaxed text-text-3">
+                    Estimated reach: <strong className="text-text">~{reach}mm</strong>
                     {draftCat && (
                       <>
                         {" "}
-                        · Category: <strong className="text-[var(--foreground)]">{draftCat}</strong>
+                        · Category: <strong className="text-text">{draftCat}</strong>
                       </>
                     )}
                     <span className="ml-1 opacity-70">— confirm fit with retailer before buying.</span>
@@ -733,7 +733,7 @@ export default function ProfilePage() {
                 )}
 
                 <div className="min-w-0">
-                  <p className="text-xs font-semibold text-[var(--r-muted)]">Riding style</p>
+                  <p className="text-xs font-semibold text-text-3">Riding style</p>
                   <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
                     {RIDING_STYLE_OPTIONS.map((opt) => {
                       const active = style === opt.value;
@@ -744,17 +744,17 @@ export default function ProfilePage() {
                           onClick={() => setStyle(opt.value)}
                           className={`flex min-w-0 flex-col items-start rounded-xl border px-3 py-3 text-left transition-all ${
                             active
-                              ? "border-[var(--r-orange)] bg-brand/10 shadow-sm"
-                              : "border-[var(--r-border)] bg-surface hover:border-[var(--r-orange)]/40"
+                              ? "border-brand bg-brand/10 shadow-sm"
+                              : "border-stroke bg-surface hover:border-brand/40"
                           }`}
                         >
-                          <span className={`h-2 w-2 shrink-0 rounded-full ${active ? "bg-[var(--r-orange)]" : "bg-stroke"}`} />
+                          <span className={`h-2 w-2 shrink-0 rounded-full ${active ? "bg-brand" : "bg-stroke"}`} />
                           <span
-                            className={`mt-2 text-[12px] font-semibold leading-tight sm:text-[13px] ${active ? "text-brand-text" : "text-[var(--foreground)]"}`}
+                            className={`mt-2 text-[12px] font-semibold leading-tight sm:text-[13px] ${active ? "text-brand-text" : "text-text"}`}
                           >
                             {opt.label}
                           </span>
-                          <span className="mt-0.5 line-clamp-2 text-[9px] leading-tight text-[var(--r-muted)] sm:text-[10px]">
+                          <span className="mt-0.5 line-clamp-2 text-[9px] leading-tight text-text-3 sm:text-[10px]">
                             {opt.hint}
                           </span>
                         </button>
@@ -763,10 +763,10 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                <div className="flex min-w-0 items-center justify-between gap-3 rounded-xl border border-[var(--r-border)] bg-surface/80 px-4 py-4">
+                <div className="flex min-w-0 items-center justify-between gap-3 rounded-xl border border-stroke bg-surface/80 px-4 py-4">
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-[var(--foreground)]">Interested in e-bikes</p>
-                    <p className="mt-0.5 text-[11px] leading-snug text-[var(--r-muted)]">Prioritises eMTB · boosts rental shops on the trip map</p>
+                    <p className="text-sm font-semibold text-text">Interested in e-bikes</p>
+                    <p className="mt-0.5 text-[11px] leading-snug text-text-3">Prioritises eMTB · boosts rental shops on the trip map</p>
                   </div>
                   <button
                     type="button"
@@ -774,7 +774,7 @@ export default function ProfilePage() {
                     aria-checked={preferEbikeAriaChecked}
                     aria-label="Interested in e-bikes"
                     onClick={() => setPreferEbike((v) => !v)}
-                    className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${preferEbike ? "bg-[var(--r-orange)]" : "bg-stroke"}`}
+                    className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${preferEbike ? "bg-brand" : "bg-stroke"}`}
                   >
                     <span
                       className={`absolute left-0.5 top-0.5 h-6 w-6 rounded-full bg-surface shadow-sm transition-transform ${preferEbike ? "translate-x-5" : "translate-x-0"}`}
@@ -790,7 +790,7 @@ export default function ProfilePage() {
                   <button
                     type="button"
                     onClick={cancelProfileEdit}
-                    className="rounded-xl border border-[var(--r-border)] bg-surface px-4 py-3 text-sm font-semibold text-[var(--foreground)] transition hover:bg-surface-raised sm:min-w-[7rem]"
+                    className="rounded-xl border border-stroke bg-surface px-4 py-3 text-sm font-semibold text-text transition hover:bg-surface-raised sm:min-w-[7rem]"
                   >
                     Discard
                   </button>
@@ -830,8 +830,8 @@ export default function ProfilePage() {
 
         {/* ── Tools ── */}
         <div id="profile-tools" className="mt-5 scroll-mt-24">
-          <h2 className="mb-2 px-1 text-[15px] font-semibold text-[var(--foreground)]">Tools</h2>
-          <div className="overflow-hidden rounded-2xl border border-[var(--r-border)] bg-surface">
+          <h2 className="mb-2 px-1 text-[15px] font-semibold text-text">Tools</h2>
+          <div className="overflow-hidden rounded-2xl border border-stroke bg-surface">
             {[
               { label: "Sizing Guide", href: "/sizing", icon: (
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden><rect x="2" y="8" width="20" height="8" rx="2" stroke="currentColor" strokeWidth="1.7"/><path d="M6 8V6M10 8V5M14 8V6M18 8V5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
@@ -849,23 +849,23 @@ export default function ProfilePage() {
               <Link
                 key={label}
                 href={href}
-                className={`flex items-center gap-3.5 px-4 py-3.5 no-underline transition-colors hover:bg-surface-raised ${i < arr.length - 1 ? "border-b border-[var(--r-border)]" : ""}`}
+                className={`flex items-center gap-3.5 px-4 py-3.5 no-underline transition-colors hover:bg-surface-raised ${i < arr.length - 1 ? "border-b border-stroke" : ""}`}
               >
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-surface-raised text-[var(--r-muted)]">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-surface-raised text-text-3">
                   {icon}
                 </span>
-                <p className="flex-1 text-[14px] font-medium text-[var(--foreground)]">{label}</p>
-                <span className="text-[14px] text-[var(--r-muted)]">›</span>
+                <p className="flex-1 text-[14px] font-medium text-text">{label}</p>
+                <span className="text-[14px] text-text-3">›</span>
               </Link>
             ))}
           </div>
           <button
             type="button"
             onClick={exportRippersBackup}
-            className="mt-3 w-full rounded-2xl border border-dashed border-[var(--r-border)] bg-surface px-4 py-3 text-left text-[13px] font-semibold text-[var(--foreground)] transition hover:border-[var(--r-orange)]/40 hover:bg-brand/5"
+            className="mt-3 w-full rounded-2xl border border-dashed border-stroke bg-surface px-4 py-3 text-left text-[13px] font-semibold text-text transition hover:border-brand/40 hover:bg-brand/5"
           >
             Export my data (JSON backup)
-            <span className="mt-0.5 block text-[11px] font-normal text-[var(--r-muted)]">
+            <span className="mt-0.5 block text-[11px] font-normal text-text-3">
               Whole household: riders, per-rider saved bikes and photos, current rides, and trip saves — move to
               another browser or device with Import below.
             </span>
@@ -879,12 +879,12 @@ export default function ProfilePage() {
         {/* ── Current Ride ── */}
         <div id="profile-ride" className="mt-5 scroll-mt-24">
           <div className="mb-3 flex items-center justify-between px-1">
-            <h2 className="text-[15px] font-semibold text-[var(--foreground)]">My current ride</h2>
+            <h2 className="text-[15px] font-semibold text-text">My current ride</h2>
             {currentBikeEntry && (
               <button
                 type="button"
                 onClick={() => saveCurrentBike(null)}
-                className="text-[12px] font-semibold text-[var(--r-muted)] no-underline"
+                className="text-[12px] font-semibold text-text-3 no-underline"
               >
                 Remove
               </button>
@@ -916,7 +916,7 @@ export default function ProfilePage() {
                 ) : currentBikeEntry.type === "custom" && currentBikeEntry.lookup?.status === "loading" ? (
                   <div className="flex h-full w-full items-center justify-center">
                     <span
-                      className="h-7 w-7 animate-spin rounded-full border-2 border-[var(--r-border)] border-t-[var(--r-orange)]"
+                      className="h-7 w-7 animate-spin rounded-full border-2 border-stroke border-t-brand"
                       aria-hidden
                     />
                   </div>
@@ -927,9 +927,9 @@ export default function ProfilePage() {
               <div className="min-w-0 flex-1">
                 {currentBikeEntry.type === "catalog" && currentCatalogBike ? (
                   <>
-                    <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--r-muted)]">{currentCatalogBike.brand}</p>
-                    <p className="text-[15px] font-bold text-[var(--foreground)]">{currentCatalogBike.model}</p>
-                    <p className="mt-0.5 text-[12px] text-[var(--r-muted)]">{currentCatalogBike.category} · {currentCatalogBike.travel} · {currentCatalogBike.wheel}</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-text-3">{currentCatalogBike.brand}</p>
+                    <p className="text-[15px] font-bold text-text">{currentCatalogBike.model}</p>
+                    <p className="mt-0.5 text-[12px] text-text-3">{currentCatalogBike.category} · {currentCatalogBike.travel} · {currentCatalogBike.wheel}</p>
                     <button
                       type="button"
                       onClick={() => setSelectedBike(currentCatalogBike)}
@@ -940,32 +940,32 @@ export default function ProfilePage() {
                   </>
                 ) : currentBikeEntry.type === "catalog" ? (
                   <>
-                    <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--r-muted)]">{currentBikeEntry.brand}</p>
-                    <p className="text-[15px] font-bold text-[var(--foreground)]">{currentBikeEntry.model}</p>
-                    <p className="mt-0.5 text-[12px] text-[var(--r-muted)]">Model year {currentBikeEntry.year}</p>
-                    <p className="mt-1.5 text-[11px] leading-snug text-[var(--r-muted)]">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-text-3">{currentBikeEntry.brand}</p>
+                    <p className="text-[15px] font-bold text-text">{currentBikeEntry.model}</p>
+                    <p className="mt-0.5 text-[12px] text-text-3">Model year {currentBikeEntry.year}</p>
+                    <p className="mt-1.5 text-[11px] leading-snug text-text-3">
                       This bike isn&apos;t matched to the bundled catalogue row yet — tap{" "}
-                      <strong className="text-[var(--foreground)]">Remove</strong> then pick it again from search, or run{" "}
+                      <strong className="text-text">Remove</strong> then pick it again from search, or run{" "}
                       <code className="rounded bg-surface-raised px-1 py-0.5 text-[10px]">npm run sync-catalog</code> if your data snapshot is stale.
                     </p>
                   </>
                 ) : currentBikeEntry.type === "custom" ? (
                   <>
                     {currentBikeEntry.brand && (
-                      <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--r-muted)]">{currentBikeEntry.brand}</p>
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-text-3">{currentBikeEntry.brand}</p>
                     )}
-                    <p className="text-[15px] font-bold text-[var(--foreground)]">{currentBikeEntry.name}</p>
+                    <p className="text-[15px] font-bold text-text">{currentBikeEntry.name}</p>
                     {currentBikeEntry.year && (
-                      <p className="mt-0.5 text-[12px] text-[var(--r-muted)]">{currentBikeEntry.year}</p>
+                      <p className="mt-0.5 text-[12px] text-text-3">{currentBikeEntry.year}</p>
                     )}
                     {currentBikeEntry.lookup?.status === "loading" ? (
-                      <p className="mt-1 text-[11px] text-[var(--r-muted)]">Looking up photo &amp; specs from the web…</p>
+                      <p className="mt-1 text-[11px] text-text-3">Looking up photo &amp; specs from the web…</p>
                     ) : currentBikeEntry.lookup?.status === "failed" ? (
-                      <p className="mt-1 text-[11px] text-[var(--r-muted)]">
+                      <p className="mt-1 text-[11px] text-text-3">
                         No confident match online — edit brand / model / year or tap Refresh.
                       </p>
                     ) : currentBikeEntry.lookup?.status === "ok" && webLookupSpecSummary(currentBikeEntry.lookup.specs) ? (
-                      <p className="mt-1 text-[11px] leading-snug text-[var(--r-muted)]">
+                      <p className="mt-1 text-[11px] leading-snug text-text-3">
                         {webLookupSpecSummary(currentBikeEntry.lookup.specs)}
                       </p>
                     ) : null}
@@ -983,7 +983,7 @@ export default function ProfilePage() {
                       <button
                         type="button"
                         onClick={() => forceWebBikeLookupRefresh(currentBikeStorageKey)}
-                        className="text-[11px] font-semibold text-[var(--r-muted)] underline-offset-2 hover:text-brand-text hover:underline"
+                        className="text-[11px] font-semibold text-text-3 underline-offset-2 hover:text-brand-text hover:underline"
                       >
                         Refresh image &amp; specs
                       </button>
@@ -1003,7 +1003,7 @@ export default function ProfilePage() {
                     type="button"
                     onClick={() => setBikeMode(m)}
                     className={`flex-1 rounded-lg py-1.5 text-[12px] font-semibold transition-all ${
-                      bikeMode === m ? "bg-surface text-[var(--foreground)] shadow-sm" : "text-[var(--r-muted)]"
+                      bikeMode === m ? "bg-surface text-text shadow-sm" : "text-text-3"
                     }`}
                   >
                     {m === "catalog" ? "Search catalogue" : "Add custom bike"}
@@ -1023,7 +1023,7 @@ export default function ProfilePage() {
                     autoComplete="off"
                   />
                   {bikeSearchOpen && catalogSearchHits.length > 0 && (
-                    <ul className="absolute left-0 right-0 top-full z-40 mt-1 max-h-52 overflow-auto rounded-xl border border-[var(--r-border)] bg-surface-raised shadow-xl">
+                    <ul className="absolute left-0 right-0 top-full z-40 mt-1 max-h-52 overflow-auto rounded-xl border border-stroke bg-surface-raised shadow-xl">
                       {catalogSearchHits.map((b) => (
                         <li key={b.id}>
                           <button
@@ -1039,8 +1039,8 @@ export default function ProfilePage() {
                               <BikeProductImage bikeId={b.id} alt={b.model} className="h-full w-full object-contain p-0.5" />
                             </div>
                             <div>
-                              <p className="text-[12px] font-semibold text-[var(--foreground)]">{b.brand} {b.model}</p>
-                              <p className="text-[11px] text-[var(--r-muted)]">{b.category} · {b.year}</p>
+                              <p className="text-[12px] font-semibold text-text">{b.brand} {b.model}</p>
+                              <p className="text-[11px] text-text-3">{b.category} · {b.year}</p>
                             </div>
                           </button>
                         </li>
@@ -1048,7 +1048,7 @@ export default function ProfilePage() {
                     </ul>
                   )}
                   {bikeSearch.trim().length >= 2 && catalogSearchHits.length === 0 && (
-                    <p className="mt-2 text-[12px] text-[var(--r-muted)]">No matches — try the custom bike tab.</p>
+                    <p className="mt-2 text-[12px] text-text-3">No matches — try the custom bike tab.</p>
                   )}
                 </div>
               ) : (
@@ -1080,7 +1080,7 @@ export default function ProfilePage() {
                     <button
                       type="button"
                       onClick={() => customBikePhotoRef.current?.click()}
-                      className="flex items-center gap-1.5 rounded-xl border border-[var(--r-border)] bg-surface px-3 py-2 text-[12px] font-semibold text-[var(--foreground)]"
+                      className="flex items-center gap-1.5 rounded-xl border border-stroke bg-surface px-3 py-2 text-[12px] font-semibold text-text"
                     >
                       {customBikePhoto ? "✓ Photo added" : "+ Add photo"}
                     </button>
@@ -1088,7 +1088,7 @@ export default function ProfilePage() {
                       <button
                         type="button"
                         onClick={saveCustomBike}
-                        className="flex-1 rounded-xl bg-[var(--r-orange)] py-2 text-[13px] font-semibold text-brand-fg"
+                        className="flex-1 rounded-xl bg-brand py-2 text-[13px] font-semibold text-brand-fg"
                       >
                         Save my bike
                       </button>
@@ -1111,7 +1111,7 @@ export default function ProfilePage() {
         {/* ── Favourites ── */}
         <div id="profile-favs" className="mt-5 scroll-mt-24">
           <div className="mb-3 flex items-center justify-between px-1">
-            <h2 className="text-[15px] font-semibold text-[var(--foreground)]">
+            <h2 className="text-[15px] font-semibold text-text">
               My favourites
               {favBikes.length > 0 && (
                 <span className="ml-2 rounded-full bg-brand/10 px-2 py-0.5 text-[11px] font-bold text-brand-text">
@@ -1129,8 +1129,8 @@ export default function ProfilePage() {
               <svg width="36" height="36" viewBox="0 0 24 24" fill="none" className="mb-3 opacity-30" aria-hidden>
                 <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" stroke="currentColor" strokeWidth="1.6" />
               </svg>
-              <p className="text-[13px] text-[var(--r-muted)]">No saved bikes yet.</p>
-              <p className="mt-1 text-[12px] text-[var(--r-muted)]">
+              <p className="text-[13px] text-text-3">No saved bikes yet.</p>
+              <p className="mt-1 text-[12px] text-text-3">
                 Tap the ♡ on any bike tile to save it here.
               </p>
             </div>
@@ -1144,13 +1144,13 @@ export default function ProfilePage() {
                 return (
                   <article
                     key={bike.id}
-                    className="group relative flex w-36 shrink-0 snap-start flex-col overflow-hidden rounded-2xl border border-[var(--r-border)] bg-surface shadow-sm ring-1 ring-stroke transition active:scale-95"
+                    className="group relative flex w-36 shrink-0 snap-start flex-col overflow-hidden rounded-2xl border border-stroke bg-surface shadow-sm ring-1 ring-stroke transition active:scale-95"
                   >
                     <button
                       type="button"
                       onClick={() => setSelectedBike(bike)}
                       aria-label={`View ${bike.brand} ${bike.model} specs`}
-                      className="absolute inset-0 z-[1] rounded-2xl border-0 bg-transparent p-0 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--r-orange)] focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+                      className="absolute inset-0 z-[1] rounded-2xl border-0 bg-transparent p-0 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
                     />
                     <div className="relative z-[2] flex flex-col pointer-events-none">
                       <div className="relative aspect-[4/3] w-full overflow-hidden bg-surface">
@@ -1175,9 +1175,9 @@ export default function ProfilePage() {
                         </button>
                       </div>
                       <div className="px-2.5 pb-2.5 pt-2 text-left">
-                        <p className="text-[9px] font-semibold uppercase tracking-wider text-[var(--r-muted)]">{bike.brand}</p>
-                        <p className="mt-0.5 line-clamp-2 text-[12px] font-semibold leading-snug text-[var(--foreground)]">{bike.model}</p>
-                        <p className="mt-1.5 text-[13px] font-bold text-[var(--r-price-green)]">
+                        <p className="text-[9px] font-semibold uppercase tracking-wider text-text-3">{bike.brand}</p>
+                        <p className="mt-0.5 line-clamp-2 text-[12px] font-semibold leading-snug text-text">{bike.model}</p>
+                        <p className="mt-1.5 text-[13px] font-bold text-success">
                           {best != null
                             ? new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD", maximumFractionDigits: 0 }).format(best)
                             : "—"}
@@ -1193,15 +1193,15 @@ export default function ProfilePage() {
 
         {/* ── Gear recommendations ── */}
         <div id="profile-gear" className="mt-6 scroll-mt-24">
-          <h2 className="mb-3 px-1 text-[15px] font-semibold text-[var(--foreground)]">
+          <h2 className="mb-3 px-1 text-[15px] font-semibold text-text">
             Gear for your ride
-            <span className="ml-2 text-[12px] font-normal text-[var(--r-muted)]">
+            <span className="ml-2 text-[12px] font-normal text-text-3">
               {ridingStyleLabels(profile.style)} picks
             </span>
           </h2>
 
           {/* Gear tabs */}
-          <div className="mb-3 flex gap-1 rounded-2xl border border-[var(--r-border)] bg-surface/60 p-1">
+          <div className="mb-3 flex gap-1 rounded-2xl border border-stroke bg-surface/60 p-1">
             {(["protection", "clothing", "tools"] as const).map((tab) => (
               <button
                 key={tab}
@@ -1209,8 +1209,8 @@ export default function ProfilePage() {
                 onClick={() => setGearTab(tab)}
                 className={`flex-1 rounded-xl py-2 text-[12px] font-semibold capitalize transition-all ${
                   gearTab === tab
-                    ? "bg-[var(--r-orange)] text-brand-fg shadow-sm"
-                    : "text-[var(--r-muted)] hover:text-[var(--foreground)]"
+                    ? "bg-brand text-brand-fg shadow-sm"
+                    : "text-text-3 hover:text-text"
                 }`}
               >
                 {tab}
@@ -1229,8 +1229,8 @@ export default function ProfilePage() {
               >
                 <GearIcon id={item.icon} />
                 <div className="min-w-0 flex-1">
-                  <p className="text-[13px] font-semibold text-[var(--foreground)]">{item.name}</p>
-                  <p className="mt-0.5 text-[11px] leading-snug text-[var(--r-muted)]">{item.desc}</p>
+                  <p className="text-[13px] font-semibold text-text">{item.name}</p>
+                  <p className="mt-0.5 text-[11px] leading-snug text-text-3">{item.desc}</p>
                 </div>
                 <span className="mt-0.5 shrink-0 text-[12px] font-semibold text-brand-text">Shop →</span>
               </a>
@@ -1239,14 +1239,14 @@ export default function ProfilePage() {
         </div>
 
         {/* ── Account ── */}
-        <p className="mx-4 mt-6 text-center text-[11px] leading-relaxed text-[var(--r-muted)]">
+        <p className="mx-4 mt-6 text-center text-[11px] leading-relaxed text-text-3">
           Rippers supports both light and dark themes. Use the appearance toggle above to switch; your choice is remembered
           on this device.
         </p>
 
-        <div className="mt-4 rounded-2xl border border-[var(--r-border)] px-5 py-4">
-          <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--r-muted)]">Account</p>
-          <p className="text-[12px] leading-relaxed text-[var(--r-muted)]">
+        <div className="mt-4 rounded-2xl border border-stroke px-5 py-4">
+          <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-text-3">Account</p>
+          <p className="text-[12px] leading-relaxed text-text-3">
             Resetting clears your profile and restarts onboarding. Favourites stored in this browser will also be cleared.
           </p>
           <button

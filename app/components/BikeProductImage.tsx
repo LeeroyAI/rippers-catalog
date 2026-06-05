@@ -34,7 +34,7 @@ export default function BikeProductImage({ bikeId, alt, className }: Props) {
       >
         <div className="flex h-full w-full items-center justify-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-stroke bg-surface-raised px-3 py-1 text-[11px] font-semibold text-text-2 shadow-sm">
-            <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--r-orange)]" aria-hidden />
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-brand" aria-hidden />
             Image unavailable
           </div>
         </div>

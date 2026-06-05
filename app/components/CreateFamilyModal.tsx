@@ -71,11 +71,11 @@ export default function CreateFamilyModal({ open, onClose }: Props) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="create-family-title"
-        className="relative flex max-h-[min(92dvh,880px)] w-full max-w-lg flex-col rounded-t-3xl border border-[var(--r-border)] bg-[var(--background)] shadow-[0_-12px_48px_rgba(0,0,0,0.18)] sm:rounded-3xl sm:shadow-2xl"
+        className="relative flex max-h-[min(92dvh,880px)] w-full max-w-lg flex-col rounded-t-3xl border border-stroke bg-bg shadow-[0_-12px_48px_rgba(0,0,0,0.18)] sm:rounded-3xl sm:shadow-2xl"
       >
         {/* DOM order: body first so Tab reaches the form before the close control */}
         <div className="order-2 min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-4 pt-2 sm:px-6">
-          <p className="text-[13px] leading-relaxed text-[var(--r-muted)]">
+          <p className="text-[13px] leading-relaxed text-text-3">
             Enter their height, weight, and how they ride. Add an optional profile photo and current bike from the
             catalogue or as a custom bike — same as onboarding, without leaving Profile.
           </p>
@@ -103,14 +103,14 @@ export default function CreateFamilyModal({ open, onClose }: Props) {
           ) : null}
         </div>
 
-        <div className="order-1 flex shrink-0 items-center justify-between gap-3 border-b border-[var(--r-border)] px-5 py-4 sm:px-6">
-          <h2 id="create-family-title" className="text-lg font-semibold tracking-tight text-[var(--foreground)]">
+        <div className="order-1 flex shrink-0 items-center justify-between gap-3 border-b border-stroke px-5 py-4 sm:px-6">
+          <h2 id="create-family-title" className="text-lg font-semibold tracking-tight text-text">
             Add someone to My Family
           </h2>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full p-2 text-[var(--r-muted)] transition hover:bg-surface-raised hover:text-[var(--foreground)]"
+            className="rounded-full p-2 text-text-3 transition hover:bg-surface-raised hover:text-text"
             aria-label="Close dialog"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -119,11 +119,11 @@ export default function CreateFamilyModal({ open, onClose }: Props) {
           </button>
         </div>
 
-        <div className="order-3 shrink-0 border-t border-[var(--r-border)] bg-[var(--background)] px-5 py-4 sm:px-6">
+        <div className="order-3 shrink-0 border-t border-stroke bg-bg px-5 py-4 sm:px-6">
           <button
             type="button"
             onClick={onClose}
-            className="w-full rounded-2xl border border-[var(--r-border)] bg-surface-raised py-3 text-[14px] font-semibold text-[var(--foreground)] transition hover:bg-surface"
+            className="w-full rounded-2xl border border-stroke bg-surface-raised py-3 text-[14px] font-semibold text-text transition hover:bg-surface"
           >
             Done
           </button>

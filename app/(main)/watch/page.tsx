@@ -53,11 +53,11 @@ export default function WatchlistPage() {
       {/* Header */}
       <div className="flex items-end justify-between gap-4 px-4 pt-2 md:px-0 md:pt-6">
         <div>
-          <h1 className="text-[22px] font-bold tracking-tight text-[var(--foreground)] md:text-[28px]">
+          <h1 className="text-[22px] font-bold tracking-tight text-text md:text-[28px]">
             Saved bikes
           </h1>
           {savedBikes.length > 0 && (
-            <p className="mt-0.5 text-[13px] text-[var(--r-muted)]">
+            <p className="mt-0.5 text-[13px] text-text-3">
               {savedBikes.length} bike{savedBikes.length !== 1 ? "s" : ""} saved
               {inStockCount > 0 && (
                 <> · <span className="font-semibold text-success">{inStockCount} in stock</span></>
@@ -75,8 +75,8 @@ export default function WatchlistPage() {
                 onClick={() => setSortBy(opt)}
                 className={`rounded-lg px-3 py-1.5 text-[12px] font-semibold transition-colors ${
                   sortBy === opt
-                    ? "bg-[var(--r-orange)] text-white shadow-sm"
-                    : "text-[var(--r-muted)] hover:text-[var(--foreground)]"
+                    ? "bg-brand text-white shadow-sm"
+                    : "text-text-3 hover:text-text"
                 }`}
               >
                 {opt === "saved" ? "Saved" : opt === "match" ? "Best match" : "Price ↑"}
@@ -101,7 +101,7 @@ export default function WatchlistPage() {
         <div className="mt-3 px-4 md:px-0">
           <Link
             href={`/compare?bikes=${savedBikes.slice(0, 3).map((b) => b.id).join(",")}`}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--r-orange)]/35 bg-brand/5 px-3.5 py-2 text-[12px] font-semibold text-brand-text no-underline transition hover:bg-brand/10"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-brand/35 bg-brand/5 px-3.5 py-2 text-[12px] font-semibold text-brand-text no-underline transition hover:bg-brand/10"
           >
             Compare {Math.min(3, savedBikes.length)} in spec table →
           </Link>
@@ -115,19 +115,19 @@ export default function WatchlistPage() {
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden>
               <path
                 d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-                stroke="var(--r-orange)"
+                stroke="rgb(var(--c-brand))"
                 strokeWidth="1.8"
                 fill="rgb(var(--c-brand) / 0.1)"
               />
             </svg>
           </div>
-          <p className="mt-4 text-[16px] font-semibold text-[var(--foreground)]">No saved bikes yet</p>
-          <p className="mt-1.5 max-w-[260px] text-[13px] leading-relaxed text-[var(--r-muted)]">
+          <p className="mt-4 text-[16px] font-semibold text-text">No saved bikes yet</p>
+          <p className="mt-1.5 max-w-[260px] text-[13px] leading-relaxed text-text-3">
             Tap the heart on any bike to save it here for easy access.
           </p>
           <Link
             href="/#results"
-            className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-[var(--r-orange)] px-5 py-3 text-[14px] font-semibold text-brand-fg shadow-[0_6px_20px_rgba(229,71,26,0.35)] no-underline"
+            className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-brand px-5 py-3 text-[14px] font-semibold text-brand-fg shadow-[0_6px_20px_rgba(229,71,26,0.35)] no-underline"
           >
             Browse bikes →
           </Link>
@@ -167,7 +167,7 @@ export default function WatchlistPage() {
                     type="button"
                     onClick={(e) => { e.stopPropagation(); setMatchBike(bike); }}
                     aria-label={`${matchPct}% match — tap for breakdown`}
-                    className="absolute right-2.5 top-2.5 rounded-full bg-surface-raised/95 px-2.5 py-1 text-[11px] font-bold tracking-tight text-[var(--r-match-text)] shadow ring-1 ring-stroke transition-transform active:scale-95"
+                    className="absolute right-2.5 top-2.5 rounded-full bg-surface-raised/95 px-2.5 py-1 text-[11px] font-bold tracking-tight text-danger shadow ring-1 ring-stroke transition-transform active:scale-95"
                   >
                     {matchPct}%
                   </button>
@@ -195,7 +195,7 @@ export default function WatchlistPage() {
                     </span>
                   )}
                   {bike.isEbike && (
-                    <span className="absolute bottom-2.5 right-2.5 rounded-full bg-[var(--r-orange)] px-2.5 py-0.5 text-[10px] font-bold text-brand-fg">
+                    <span className="absolute bottom-2.5 right-2.5 rounded-full bg-brand px-2.5 py-0.5 text-[10px] font-bold text-brand-fg">
                       eBike
                     </span>
                   )}
@@ -203,18 +203,18 @@ export default function WatchlistPage() {
 
                 {/* Info */}
                 <div className="flex flex-1 flex-col px-4 pb-4 pt-3">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--r-muted)]">{bike.brand}</p>
-                  <h3 className="mt-0.5 text-[15px] font-semibold leading-snug text-[var(--foreground)]">{bike.model}</h3>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-text-3">{bike.brand}</p>
+                  <h3 className="mt-0.5 text-[15px] font-semibold leading-snug text-text">{bike.model}</h3>
 
                   <div className="mt-1.5 flex flex-wrap gap-1.5">
                     {bike.category && (
-                      <span className="rounded-full bg-surface-raised px-2 py-0.5 text-[10px] font-semibold text-[var(--r-muted)]">{bike.category}</span>
+                      <span className="rounded-full bg-surface-raised px-2 py-0.5 text-[10px] font-semibold text-text-3">{bike.category}</span>
                     )}
                     {bike.travel && (
-                      <span className="rounded-full bg-surface-raised px-2 py-0.5 text-[10px] font-semibold text-[var(--r-muted)]">{bike.travel}</span>
+                      <span className="rounded-full bg-surface-raised px-2 py-0.5 text-[10px] font-semibold text-text-3">{bike.travel}</span>
                     )}
                     {bike.wheel && (
-                      <span className="rounded-full bg-surface-raised px-2 py-0.5 text-[10px] font-semibold text-[var(--r-muted)]">{bike.wheel}</span>
+                      <span className="rounded-full bg-surface-raised px-2 py-0.5 text-[10px] font-semibold text-text-3">{bike.wheel}</span>
                     )}
                   </div>
 
@@ -222,13 +222,13 @@ export default function WatchlistPage() {
                     <div>
                       {bestPrice ? (
                         <>
-                          <p className="text-[18px] font-bold leading-none text-[var(--r-price-green)]">{aud(bestPrice)}</p>
-                          <p className="mt-0.5 text-[10px] text-[var(--r-muted)]">
+                          <p className="text-[18px] font-bold leading-none text-success">{aud(bestPrice)}</p>
+                          <p className="mt-0.5 text-[10px] text-text-3">
                             {isInStock ? `${bike.inStock.length} retailer${bike.inStock.length !== 1 ? "s" : ""}` : "check availability"}
                           </p>
                         </>
                       ) : (
-                        <p className="text-[13px] text-[var(--r-muted)]">Price on request</p>
+                        <p className="text-[13px] text-text-3">Price on request</p>
                       )}
                     </div>
                     <button
@@ -248,7 +248,7 @@ export default function WatchlistPage() {
 
       {/* Price note */}
       {savedBikes.length > 0 && (
-        <p className="mt-6 px-4 text-[11px] text-[var(--r-muted)] md:px-0">
+        <p className="mt-6 px-4 text-[11px] text-text-3 md:px-0">
           Prices pulled from AU retailers at catalog refresh · Tap any bike to check current availability
         </p>
       )}

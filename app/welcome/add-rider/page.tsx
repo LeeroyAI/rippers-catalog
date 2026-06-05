@@ -52,13 +52,13 @@ export default function AddHouseholdRiderPage() {
       <div className="r-welcome-inner pb-[max(4rem,env(safe-area-inset-bottom)+16px)] pt-[max(2rem,calc(env(safe-area-inset-top)+28px))]">
         <button
           type="button"
-          className="text-[13px] font-semibold text-[var(--r-orange)] underline-offset-4 hover:underline"
+          className="text-[13px] font-semibold text-brand-text underline-offset-4 hover:underline"
           onClick={() => enterAppAfterOnboarding(afterSave)}
         >
           ← Back
         </button>
-        <h1 className="mt-6 text-2xl font-semibold tracking-tight text-[var(--foreground)]">Add a household rider</h1>
-        <p className="mt-3 text-[14px] leading-relaxed text-[var(--r-muted)]">
+        <h1 className="mt-6 text-2xl font-semibold tracking-tight text-text">Add a household rider</h1>
+        <p className="mt-3 text-[14px] leading-relaxed text-text-3">
           Each rider gets their own profile photo, match scores, saved bikes, and current ride on this device. The rider
           you add becomes the active rider; switch anytime under Profile.
         </p>

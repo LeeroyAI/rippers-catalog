@@ -95,10 +95,10 @@ function SearchDropdown({
                     <BikeProductImage bikeId={b.id} alt="" className="h-full w-full object-contain p-1" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[13px] font-semibold text-[var(--foreground)]">{b.brand} {b.model}</p>
-                    <p className="text-[11px] text-[var(--r-muted)]">{b.category} · {b.year}</p>
+                    <p className="truncate text-[13px] font-semibold text-text">{b.brand} {b.model}</p>
+                    <p className="text-[11px] text-text-3">{b.category} · {b.year}</p>
                   </div>
-                  {price && <p className="shrink-0 text-[13px] font-bold text-[var(--r-price-green)]">{aud(price)}</p>}
+                  {price && <p className="shrink-0 text-[13px] font-bold text-success">{aud(price)}</p>}
                 </button>
               </li>
             );
@@ -153,10 +153,10 @@ function ComparePageContent() {
 
       {/* Header */}
       <div className="px-4 pt-2 md:px-0 md:pt-6">
-        <h1 className="text-[22px] font-bold tracking-tight text-[var(--foreground)] md:text-[28px]">
+        <h1 className="text-[22px] font-bold tracking-tight text-text md:text-[28px]">
           Compare bikes
         </h1>
-        <p className="mt-1 text-[13px] text-[var(--r-muted)]">
+        <p className="mt-1 text-[13px] text-text-3">
           Add up to {MAX} bikes to see them side by side
         </p>
       </div>
@@ -171,8 +171,8 @@ function ComparePageContent() {
                 <rect x="13" y="3" width="9" height="18" rx="2" stroke="rgb(var(--c-info))" strokeWidth="1.7" />
               </svg>
             </div>
-            <p className="mt-4 text-[15px] font-semibold text-[var(--foreground)]">Pick your first bike</p>
-            <p className="mt-1 text-[13px] text-[var(--r-muted)]">Search below to start comparing</p>
+            <p className="mt-4 text-[15px] font-semibold text-text">Pick your first bike</p>
+            <p className="mt-1 text-[13px] text-text-3">Search below to start comparing</p>
           </div>
           <div className="mx-auto mt-6 max-w-sm">
             <SearchDropdown onAdd={addBike} excluded={bikes.map((b) => b.id)} />
@@ -212,16 +212,16 @@ function ComparePageContent() {
                           <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
                         </svg>
                       </button>
-                      <div className="absolute left-2 top-2 rounded-full bg-surface-raised/90 px-2 py-0.5 text-[10px] font-bold text-[var(--r-match-text)] shadow">
+                      <div className="absolute left-2 top-2 rounded-full bg-surface-raised/90 px-2 py-0.5 text-[10px] font-bold text-danger shadow">
                         {matchPct}%
                       </div>
                     </div>
                     {/* Name + price */}
                     <div className="px-3 py-2.5">
-                      <p className="text-[9px] font-semibold uppercase tracking-widest text-[var(--r-muted)]">{bike.brand} · {bike.year}</p>
-                      <p className="mt-0.5 text-[13px] font-bold leading-snug text-[var(--foreground)]">{bike.model}</p>
+                      <p className="text-[9px] font-semibold uppercase tracking-widest text-text-3">{bike.brand} · {bike.year}</p>
+                      <p className="mt-0.5 text-[13px] font-bold leading-snug text-text">{bike.model}</p>
                       {price && (
-                        <p className="mt-1 text-[15px] font-bold text-[var(--r-price-green)]">{aud(price)}</p>
+                        <p className="mt-1 text-[15px] font-bold text-success">{aud(price)}</p>
                       )}
                       {bike.inStock.length > 0 && (
                         <p className="mt-0.5 text-[10px] text-success">{bike.inStock.length} retailer{bike.inStock.length !== 1 ? "s" : ""} in stock</p>
@@ -237,7 +237,7 @@ function ComparePageContent() {
               {/* Add bike column */}
               {canAdd && (
                 <div className="flex flex-col rounded-2xl border-2 border-dashed border-stroke bg-surface/50 p-3">
-                  <p className="mb-2 text-[12px] font-semibold text-[var(--r-muted)]">Add bike</p>
+                  <p className="mb-2 text-[12px] font-semibold text-text-3">Add bike</p>
                   <SearchDropdown onAdd={addBike} excluded={bikes.map((b) => b.id)} />
                 </div>
               )}
@@ -246,7 +246,7 @@ function ComparePageContent() {
             {/* One-bike preview: first few spec rows before full compare */}
             {bikes.length === 1 && (
               <div className="mt-4 overflow-hidden rounded-2xl border border-stroke bg-surface shadow-sm">
-                <p className="border-b border-stroke bg-surface/90 px-4 py-2.5 text-[11px] font-semibold leading-snug text-[var(--r-muted)]">
+                <p className="border-b border-stroke bg-surface/90 px-4 py-2.5 text-[11px] font-semibold leading-snug text-text-3">
                   Quick look — add another bike for a side-by-side spec table.
                 </p>
                 {SPEC_ROWS.slice(0, 4).map((row, i) => {
@@ -257,8 +257,8 @@ function ComparePageContent() {
                       key={row.key}
                       className={`grid grid-cols-[140px_1fr] items-start gap-3 px-4 py-2.5 ${i !== 0 ? "border-t border-stroke" : ""}`}
                     >
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--r-muted)]">{row.label}</p>
-                      <p className={`text-[13px] leading-snug ${val === "—" ? "text-text-3" : "text-[var(--foreground)]"}`}>{val}</p>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-text-3">{row.label}</p>
+                      <p className={`text-[13px] leading-snug ${val === "—" ? "text-text-3" : "text-text"}`}>{val}</p>
                     </div>
                   );
                 })}
@@ -278,7 +278,7 @@ function ComparePageContent() {
                       className={`grid items-start gap-3 px-4 py-3 ${i !== 0 ? "border-t border-stroke" : ""} ${i % 2 === 0 ? "" : "bg-surface-raised/50"}`}
                       style={{ gridTemplateColumns: `140px repeat(${bikes.length}, 1fr)` }}
                     >
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--r-muted)] pt-0.5">{row.label}</p>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-text-3 pt-0.5">{row.label}</p>
                       {vals.map((val, j) => (
                         <p
                           key={j}
@@ -286,13 +286,13 @@ function ComparePageContent() {
                             val === "—"
                               ? "text-text-3"
                               : allSame
-                                ? "text-[var(--foreground)]"
-                                : "font-semibold text-[var(--foreground)]"
+                                ? "text-text"
+                                : "font-semibold text-text"
                           }`}
                         >
                           {val}
                           {!allSame && val !== "—" && (
-                            <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-[var(--r-orange)] align-middle" />
+                            <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-brand align-middle" />
                           )}
                         </p>
                       ))}
@@ -306,11 +306,11 @@ function ComparePageContent() {
                     className="grid items-start gap-3 border-t border-stroke px-4 py-3"
                     style={{ gridTemplateColumns: `140px repeat(${bikes.length}, 1fr)` }}
                   >
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--r-muted)] pt-0.5">Sizes</p>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-text-3 pt-0.5">Sizes</p>
                     {bikes.map((b) => (
                       <div key={b.id} className="flex flex-wrap gap-1">
                         {b.sizes?.length ? b.sizes.map((s) => (
-                          <span key={s} className="rounded-md border border-stroke px-1.5 py-0.5 text-[11px] font-semibold text-[var(--foreground)]">{s}</span>
+                          <span key={s} className="rounded-md border border-stroke px-1.5 py-0.5 text-[11px] font-semibold text-text">{s}</span>
                         )) : <span className="text-[13px] text-text-3">—</span>}
                       </div>
                     ))}
@@ -321,15 +321,15 @@ function ComparePageContent() {
 
             {/* Nudge when only 1 bike added */}
             {bikes.length === 1 && (
-              <p className="mt-4 text-center text-[13px] text-[var(--r-muted)]">
+              <p className="mt-4 text-center text-[13px] text-text-3">
                 Add a second bike to see the comparison table ↑
               </p>
             )}
 
             {/* Diff legend */}
             {showTable && (
-              <p className="mt-3 text-[11px] text-[var(--r-muted)] px-1">
-                <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--r-orange)] align-middle mr-1" />
+              <p className="mt-3 text-[11px] text-text-3 px-1">
+                <span className="inline-block h-1.5 w-1.5 rounded-full bg-brand align-middle mr-1" />
                 Orange dot marks specs that differ between bikes
               </p>
             )}
@@ -345,7 +345,7 @@ export default function ComparePage() {
     <Suspense
       fallback={
         <main className="ios-shell-page mx-auto flex min-h-[40vh] w-full max-w-[80rem] items-center justify-center pb-24 md:px-8">
-          <p className="text-[14px] text-[var(--r-muted)]">Loading compare…</p>
+          <p className="text-[14px] text-text-3">Loading compare…</p>
         </main>
       }
     >

@@ -29,16 +29,16 @@ export function RiderContextPicker({
   return (
     <div className={`min-w-0 ${className}`.trim()}>
       {description ? (
-        <p className="mb-2 text-[11px] leading-snug text-[var(--r-muted)]">{description}</p>
+        <p className="mb-2 text-[11px] leading-snug text-text-3">{description}</p>
       ) : null}
-      <label className="block text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--r-muted)]" htmlFor={id}>
+      <label className="block text-[10px] font-bold uppercase tracking-[0.12em] text-text-3" htmlFor={id}>
         Active rider
       </label>
       <select
         id={id}
         value={activeRiderId}
         onChange={(e) => switchRider(e.target.value)}
-        className="r-field mt-1.5 w-full min-w-0 px-3 py-2.5 text-[14px] font-medium text-[var(--foreground)]"
+        className="r-field mt-1.5 w-full min-w-0 px-3 py-2.5 text-[14px] font-medium text-text"
       >
         {riders.map((r) => (
           <option key={r.id} value={r.id}>
@@ -47,10 +47,10 @@ export function RiderContextPicker({
         ))}
       </select>
       <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-        <Link href="/profile#profile-riders" className="text-[11px] font-semibold text-[var(--r-muted)] underline-offset-2 hover:text-[var(--foreground)] hover:underline">
+        <Link href="/profile#profile-riders" className="text-[11px] font-semibold text-text-3 underline-offset-2 hover:text-text hover:underline">
           My Family in Profile
         </Link>
-        <Link href={addHref} className="text-[11px] font-semibold text-[var(--r-orange)] no-underline hover:underline">
+        <Link href={addHref} className="text-[11px] font-semibold text-brand-text no-underline hover:underline">
           + Add rider
         </Link>
       </div>
@@ -71,11 +71,11 @@ export function RiderContextBanner({
   const name = profile.nickname.trim() || "This rider";
 
   return (
-    <p className={`text-[11px] leading-snug text-[var(--r-muted)] ${className}`.trim()}>
+    <p className={`text-[11px] leading-snug text-text-3 ${className}`.trim()}>
       Match scores, Watch, and trip tools use{" "}
-      <strong className="text-[var(--foreground)]">{name}</strong>
+      <strong className="text-text">{name}</strong>
       .{" "}
-      <Link href={addHref} className="font-semibold text-[var(--r-orange)] no-underline hover:underline">
+      <Link href={addHref} className="font-semibold text-brand-text no-underline hover:underline">
         Add another rider
       </Link>{" "}
       for a partner or junior on this device.

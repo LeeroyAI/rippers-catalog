@@ -77,19 +77,19 @@ export default function RippersBackupImporter({
         onClick={() => inputRef.current?.click()}
         className={
           isProfile
-            ? "w-full rounded-2xl border border-dashed border-stroke bg-surface px-4 py-3 text-left text-[13px] font-semibold text-[var(--foreground)] transition hover:border-[var(--r-orange)]/40 hover:bg-brand/5 disabled:opacity-60"
-            : "w-full rounded-[10px] border-2 border-dashed border-stroke bg-[var(--r-bg-well)] px-4 py-3.5 text-[14px] font-semibold text-[var(--foreground)] transition hover:border-[var(--r-orange)]/45 disabled:opacity-60"
+            ? "w-full rounded-2xl border border-dashed border-stroke bg-surface px-4 py-3 text-left text-[13px] font-semibold text-text transition hover:border-brand/40 hover:bg-brand/5 disabled:opacity-60"
+            : "w-full rounded-[10px] border-2 border-dashed border-stroke bg-surface px-4 py-3.5 text-[14px] font-semibold text-text transition hover:border-brand/45 disabled:opacity-60"
         }
       >
         {busy ? "Importing…" : "Import household backup"}
         <span
           className={
             isProfile
-              ? "mt-0.5 block text-[11px] font-normal text-[var(--r-muted)]"
-              : "mt-1 block text-[12px] font-normal leading-snug text-[var(--r-muted)]"
+              ? "mt-0.5 block text-[11px] font-normal text-text-3"
+              : "mt-1 block text-[12px] font-normal leading-snug text-text-3"
           }
         >
-          Use the JSON file from <strong className="font-semibold text-[var(--foreground)]">Export my data</strong>{" "}
+          Use the JSON file from <strong className="font-semibold text-text">Export my data</strong>{" "}
           on your other device. You stay in control — nothing is uploaded to a server.
         </span>
       </button>

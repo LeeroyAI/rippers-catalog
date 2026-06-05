@@ -86,28 +86,28 @@ export default function SizingPage() {
     <main className="mx-auto w-full max-w-2xl px-4 pb-20 pt-6 md:px-6">
       <div className="mb-2 flex items-center gap-2">
         <Link href="/" className="text-[12px] font-semibold text-brand-text no-underline">← Home</Link>
-        <span className="text-[12px] text-[var(--r-muted)]">/</span>
-        <span className="text-[12px] text-[var(--r-muted)]">Bike Sizing Guide</span>
+        <span className="text-[12px] text-text-3">/</span>
+        <span className="text-[12px] text-text-3">Bike Sizing Guide</span>
       </div>
 
-      <h1 className="text-[26px] font-bold tracking-tight text-[var(--foreground)]">Bike Sizing Guide</h1>
-      <p className="mt-2 text-[14px] leading-relaxed text-[var(--r-muted)]">
+      <h1 className="text-[26px] font-bold tracking-tight text-text">Bike Sizing Guide</h1>
+      <p className="mt-2 text-[14px] leading-relaxed text-text-3">
         Get the right frame size before you buy. Height is the primary driver — reach and inseam fine-tune the fit.
       </p>
 
       {profile && profile.heightCm > 0 ? (
-        <p className="mt-4 rounded-2xl border border-stroke bg-surface px-4 py-3 text-[13px] leading-relaxed text-[var(--r-muted)] shadow-sm">
+        <p className="mt-4 rounded-2xl border border-stroke bg-surface px-4 py-3 text-[13px] leading-relaxed text-text-3 shadow-sm">
           Your saved profile height is{" "}
-          <strong className="text-[var(--foreground)]">{profile.heightCm} cm</strong>. Match scores and sizing hints use
+          <strong className="text-text">{profile.heightCm} cm</strong>. Match scores and sizing hints use
           the same number —{" "}
-          <Link href="/profile" className="font-semibold text-brand-text underline decoration-[var(--r-orange)]/30 underline-offset-2">
+          <Link href="/profile" className="font-semibold text-brand-text underline decoration-brand/30 underline-offset-2">
             update it on Profile
           </Link>{" "}
           if it changes, or type below to experiment without saving.
         </p>
       ) : (
-        <p className="mt-4 rounded-2xl border border-dashed border-stroke bg-brand/5 px-4 py-3 text-[13px] leading-relaxed text-[var(--r-muted)]">
-          <Link href="/profile" className="font-semibold text-brand-text underline decoration-[var(--r-orange)]/30 underline-offset-2">
+        <p className="mt-4 rounded-2xl border border-dashed border-stroke bg-brand/5 px-4 py-3 text-[13px] leading-relaxed text-text-3">
+          <Link href="/profile" className="font-semibold text-brand-text underline decoration-brand/30 underline-offset-2">
             Save your height in Profile
           </Link>{" "}
           so match scores and this guide stay aligned across the app.
@@ -127,8 +127,8 @@ export default function SizingPage() {
               onClick={() => setMode(m)}
               className={`flex-1 rounded-lg py-2 text-[13px] font-semibold transition-all ${
                 mode === m
-                  ? "bg-surface text-[var(--foreground)] shadow-sm"
-                  : "text-[var(--r-muted)]"
+                  ? "bg-surface text-text shadow-sm"
+                  : "text-text-3"
               }`}
             >
               {m === "adult" ? "Adult / Teen" : "Kids (under 14)"}
@@ -138,7 +138,7 @@ export default function SizingPage() {
 
         <div className="mt-4 grid grid-cols-2 gap-3">
           <div>
-            <label className="text-[11px] font-semibold uppercase tracking-wide text-[var(--r-muted)]">
+            <label className="text-[11px] font-semibold uppercase tracking-wide text-text-3">
               Height (cm)
             </label>
             <input
@@ -152,7 +152,7 @@ export default function SizingPage() {
             />
           </div>
           <div>
-            <label className="text-[11px] font-semibold uppercase tracking-wide text-[var(--r-muted)]">
+            <label className="text-[11px] font-semibold uppercase tracking-wide text-text-3">
               {mode === "adult" ? "Weight (kg, optional)" : "Age (years)"}
             </label>
             {mode === "adult" ? (
@@ -184,17 +184,17 @@ export default function SizingPage() {
           <div className="mt-4 rounded-xl bg-brand/5 px-4 py-4">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--r-muted)]">Suggested frame size</p>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-text-3">Suggested frame size</p>
                 <p className="mt-0.5 text-[32px] font-bold tracking-tight text-brand">{adultResult.size}</p>
-                <p className="text-[13px] text-[var(--r-muted)]">{adultResult.label}</p>
+                <p className="text-[13px] text-text-3">{adultResult.label}</p>
               </div>
               <div className="text-right">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--r-muted)]">Est. reach</p>
-                <p className="mt-0.5 text-[20px] font-bold text-[var(--foreground)]">{reach}</p>
-                <p className="text-[11px] text-[var(--r-muted)]">inseam ~{inseam} cm</p>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-text-3">Est. reach</p>
+                <p className="mt-0.5 text-[20px] font-bold text-text">{reach}</p>
+                <p className="text-[11px] text-text-3">inseam ~{inseam} cm</p>
               </div>
             </div>
-            <p className="mt-3 text-[12px] leading-relaxed text-[var(--r-muted)]">
+            <p className="mt-3 text-[12px] leading-relaxed text-text-3">
               Based on your height of {heightCm} cm. Always confirm with the brand's geometry chart — reach varies
               significantly between enduro and XC frames at the same nominal size.
             </p>
@@ -210,10 +210,10 @@ export default function SizingPage() {
         {/* Kids result */}
         {mode === "kids" && kidsResult && (
           <div className="mt-4 rounded-xl bg-info/10 px-4 py-4">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--r-muted)]">Recommended wheel size</p>
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-text-3">Recommended wheel size</p>
             <p className="mt-0.5 text-[32px] font-bold tracking-tight text-info">{kidsResult.wheelSize}</p>
-            <p className="mt-0.5 text-[13px] text-[var(--r-muted)]">{kidsResult.note}</p>
-            <p className="mt-2 text-[12px] leading-relaxed text-[var(--r-muted)]">
+            <p className="mt-0.5 text-[13px] text-text-3">{kidsResult.note}</p>
+            <p className="mt-2 text-[12px] leading-relaxed text-text-3">
               For ages {kidsResult.ageMin}–{kidsResult.ageMax}, height {kidsResult.heightMin}–{kidsResult.heightMax} cm.
               Prioritise standover height — the child should be able to put both feet flat on the ground.
             </p>
@@ -222,7 +222,7 @@ export default function SizingPage() {
 
         {/* Prompt if no input */}
         {!height && (
-          <p className="mt-4 text-center text-[13px] text-[var(--r-muted)]">
+          <p className="mt-4 text-center text-[13px] text-text-3">
             Enter your height to get a size recommendation.
           </p>
         )}
@@ -230,10 +230,10 @@ export default function SizingPage() {
 
       {/* ── Adult size chart ── */}
       <section className="mt-6">
-        <h2 className="text-[17px] font-semibold text-[var(--foreground)]">MTB frame size chart</h2>
-        <p className="mt-1 text-[13px] text-[var(--r-muted)]">Based on rider height — always cross-check the brand's geometry PDF.</p>
+        <h2 className="text-[17px] font-semibold text-text">MTB frame size chart</h2>
+        <p className="mt-1 text-[13px] text-text-3">Based on rider height — always cross-check the brand's geometry PDF.</p>
         <div className="mt-3 overflow-hidden rounded-2xl border border-stroke">
-          <div className="grid grid-cols-4 bg-surface px-4 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--r-muted)]">
+          <div className="grid grid-cols-4 bg-surface px-4 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-text-3">
             <span>Size</span>
             <span>Rider height</span>
             <span>Inseam</span>
@@ -248,12 +248,12 @@ export default function SizingPage() {
                   i < MTB_SIZES.length - 1 ? "border-b border-stroke" : ""
                 } ${active ? "bg-brand/5" : ""}`}
               >
-                <span className={`font-bold ${active ? "text-brand-text" : "text-[var(--foreground)]"}`}>
+                <span className={`font-bold ${active ? "text-brand-text" : "text-text"}`}>
                   {s.size} {active && "←"}
                 </span>
-                <span className="text-[var(--r-muted)]">{s.heightMin}–{s.heightMax} cm</span>
-                <span className="text-[var(--r-muted)]">{s.inseamMin}–{s.inseamMax} cm</span>
-                <span className="text-[var(--r-muted)]">{REACH_GUIDE.find(r => height !== null ? (height >= r.heightMin && height < r.heightMax) : (s.heightMin >= r.heightMin && s.heightMin < r.heightMax))?.reach ?? "—"}</span>
+                <span className="text-text-3">{s.heightMin}–{s.heightMax} cm</span>
+                <span className="text-text-3">{s.inseamMin}–{s.inseamMax} cm</span>
+                <span className="text-text-3">{REACH_GUIDE.find(r => height !== null ? (height >= r.heightMin && height < r.heightMax) : (s.heightMin >= r.heightMin && s.heightMin < r.heightMax))?.reach ?? "—"}</span>
               </div>
             );
           })}
@@ -262,12 +262,12 @@ export default function SizingPage() {
 
       {/* ── Kids wheel size chart ── */}
       <section className="mt-8">
-        <h2 className="text-[17px] font-semibold text-[var(--foreground)]">Kids bike sizing</h2>
-        <p className="mt-1 text-[13px] text-[var(--r-muted)]">
+        <h2 className="text-[17px] font-semibold text-text">Kids bike sizing</h2>
+        <p className="mt-1 text-[13px] text-text-3">
           Wheel size is the primary spec for kids bikes. Height beats age — a tall 7-year-old may need a 24" wheel.
         </p>
         <div className="mt-3 overflow-hidden rounded-2xl border border-stroke">
-          <div className="grid grid-cols-4 bg-surface px-4 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--r-muted)]">
+          <div className="grid grid-cols-4 bg-surface px-4 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-text-3">
             <span>Wheel</span>
             <span>Age range</span>
             <span>Height</span>
@@ -283,25 +283,25 @@ export default function SizingPage() {
                   i < KIDS_SIZES.length - 1 ? "border-b border-stroke" : ""
                 } ${activeK ? "bg-info/10" : ""}`}
               >
-                <span className={`font-bold ${activeK ? "text-info" : "text-[var(--foreground)]"}`}>
+                <span className={`font-bold ${activeK ? "text-info" : "text-text"}`}>
                   {r.wheelSize}
                 </span>
-                <span className="text-[var(--r-muted)]">{r.ageMin === 99 ? "14+" : `${r.ageMin}–${r.ageMax}`} yrs</span>
-                <span className="text-[var(--r-muted)] whitespace-nowrap">{r.heightMin}–{r.heightMax === 999 ? "+" : r.heightMax} cm</span>
-                <span className="text-[11px] leading-snug text-[var(--r-muted)]">{r.note}</span>
+                <span className="text-text-3">{r.ageMin === 99 ? "14+" : `${r.ageMin}–${r.ageMax}`} yrs</span>
+                <span className="text-text-3 whitespace-nowrap">{r.heightMin}–{r.heightMax === 999 ? "+" : r.heightMax} cm</span>
+                <span className="text-[11px] leading-snug text-text-3">{r.note}</span>
               </div>
             );
           })}
         </div>
-        <p className="mt-2 text-[11px] text-[var(--r-muted)]">
+        <p className="mt-2 text-[11px] text-text-3">
           Always do a standover test in store — inseam clearance of 2–5 cm above the top tube is ideal.
         </p>
       </section>
 
       {/* ── Reach explainer ── */}
       <section className="mt-8">
-        <h2 className="text-[17px] font-semibold text-[var(--foreground)]">Understanding reach</h2>
-        <p className="mt-1 text-[13px] leading-relaxed text-[var(--r-muted)]">
+        <h2 className="text-[17px] font-semibold text-text">Understanding reach</h2>
+        <p className="mt-1 text-[13px] leading-relaxed text-text-3">
           Reach is the horizontal distance from the bottom bracket to the top of the head tube. Modern trail and enduro
           bikes run longer reach than older designs — two bikes with the same size label can feel very different.
         </p>
@@ -309,10 +309,10 @@ export default function SizingPage() {
           {REACH_GUIDE.map((r) => (
             <div key={r.reach} className="flex items-center justify-between gap-3 rounded-xl border border-stroke bg-surface px-4 py-3">
               <div>
-                <p className="text-[13px] font-semibold text-[var(--foreground)]">{r.reach}</p>
-                <p className="text-[11px] text-[var(--r-muted)]">{r.label}</p>
+                <p className="text-[13px] font-semibold text-text">{r.reach}</p>
+                <p className="text-[11px] text-text-3">{r.label}</p>
               </div>
-              <p className="text-[12px] text-[var(--r-muted)]">{r.heightMin}–{r.heightMax === 999 ? "+" : r.heightMax} cm</p>
+              <p className="text-[12px] text-text-3">{r.heightMin}–{r.heightMax === 999 ? "+" : r.heightMax} cm</p>
             </div>
           ))}
         </div>
@@ -320,7 +320,7 @@ export default function SizingPage() {
 
       {/* ── Fit tips ── */}
       <section className="mt-8">
-        <h2 className="text-[17px] font-semibold text-[var(--foreground)]">Fitting tips from the trail</h2>
+        <h2 className="text-[17px] font-semibold text-text">Fitting tips from the trail</h2>
         <div className="mt-3 grid gap-3 md:grid-cols-2">
           {[
             { icon: "📏", title: "Measure inseam accurately", body: "Stand barefoot, feet 15 cm apart, and measure crotch-to-floor. This is your inseam — not your trouser measurement." },
@@ -332,8 +332,8 @@ export default function SizingPage() {
           ].map((tip) => (
             <div key={tip.title} className="rounded-2xl border border-stroke bg-surface p-4 shadow-sm">
               <span className="text-2xl">{tip.icon}</span>
-              <h3 className="mt-2 text-[13px] font-semibold text-[var(--foreground)]">{tip.title}</h3>
-              <p className="mt-1 text-[12px] leading-relaxed text-[var(--r-muted)]">{tip.body}</p>
+              <h3 className="mt-2 text-[13px] font-semibold text-text">{tip.title}</h3>
+              <p className="mt-1 text-[12px] leading-relaxed text-text-3">{tip.body}</p>
             </div>
           ))}
         </div>
@@ -358,7 +358,7 @@ export default function SizingPage() {
         </Link>
         <Link
           href="/profile"
-          className="flex-1 rounded-2xl border border-stroke bg-surface py-3.5 text-center text-[14px] font-semibold text-[var(--foreground)] no-underline shadow-sm"
+          className="flex-1 rounded-2xl border border-stroke bg-surface py-3.5 text-center text-[14px] font-semibold text-text no-underline shadow-sm"
         >
           Update my profile
         </Link>

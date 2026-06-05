@@ -451,7 +451,7 @@ function HomePageContent() {
             {/* CTA if no profile */}
             {hydrated && !profile && (
               <div className="mt-7 flex flex-wrap gap-3">
-                <Link href="/welcome" className="inline-flex items-center gap-2 rounded-2xl bg-[var(--r-orange)] px-5 py-3 text-[14px] font-semibold text-white shadow-[0_8px_24px_rgba(229,71,26,0.45)] no-underline">
+                <Link href="/welcome" className="inline-flex items-center gap-2 rounded-2xl bg-brand px-5 py-3 text-[14px] font-semibold text-white shadow-[0_8px_24px_rgba(229,71,26,0.45)] no-underline">
                   Build your rider profile →
                 </Link>
                 <a href="#results" className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/[0.08] px-5 py-3 text-[14px] font-semibold text-white/85 no-underline">
@@ -530,7 +530,7 @@ function HomePageContent() {
                       ) : lu?.status === "loading" ? (
                         <div className="flex flex-col items-center gap-3 px-6 py-12 text-center">
                           <span
-                            className="h-10 w-10 animate-spin rounded-full border-2 border-white/25 border-t-[var(--r-orange)]"
+                            className="h-10 w-10 animate-spin rounded-full border-2 border-white/25 border-t-brand"
                             aria-hidden
                           />
                           <p className="text-[13px] font-semibold leading-snug text-white/70">Finding photo &amp; specs…</p>
@@ -577,7 +577,7 @@ function HomePageContent() {
                       <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
                         <Link
                           href="/profile#profile-ride"
-                          className="inline-block text-[11px] font-semibold text-[var(--r-orange)] no-underline hover:underline"
+                          className="inline-block text-[11px] font-semibold text-brand-text no-underline hover:underline"
                         >
                           Update in Profile →
                         </Link>
@@ -652,7 +652,7 @@ function HomePageContent() {
                     </div>
                     <div className="shrink-0 text-right">
                       {typeof price === "number" && (
-                        <p className="text-[20px] font-bold text-[var(--r-price-green)]">
+                        <p className="text-[20px] font-bold text-success">
                           {new Intl.NumberFormat("en-AU", {
                             style: "currency",
                             currency: "AUD",
@@ -665,7 +665,7 @@ function HomePageContent() {
                         onClick={() => {
                           router.replace(`/?openBike=${heroBike.id}`, { scroll: false });
                         }}
-                        className="mt-1 text-[11px] font-semibold text-[var(--r-orange)]"
+                        className="mt-1 text-[11px] font-semibold text-brand-text"
                       >
                         View full specs →
                       </button>
@@ -680,23 +680,23 @@ function HomePageContent() {
       </section>
 
       {/* ─── New visitor: value story (above the fold scroll) ─── */}
-      <section className="mx-4 mt-5 rounded-2xl border border-[var(--r-border)] bg-surface shadow-sm" aria-labelledby="home-value-heading">
-        <div className="border-b border-[var(--r-border)] px-4 py-3.5">
-          <h2 id="home-value-heading" className="text-[14px] font-bold tracking-tight text-[var(--foreground)]">
+      <section className="mx-4 mt-5 rounded-2xl border border-stroke bg-surface shadow-sm" aria-labelledby="home-value-heading">
+        <div className="border-b border-stroke px-4 py-3.5">
+          <h2 id="home-value-heading" className="text-[14px] font-bold tracking-tight text-text">
             What Rippers helps you do
           </h2>
-          <p className="mt-1 text-[12px] leading-snug text-[var(--r-muted)]">
+          <p className="mt-1 text-[12px] leading-snug text-text-3">
             One AU-focused workspace: research bikes, compare builds, and plan where to ride — without losing context in a dozen retailer tabs.
           </p>
         </div>
-        <ol className="divide-y divide-[var(--r-border)] text-[12px] leading-snug">
+        <ol className="divide-y divide-stroke text-[12px] leading-snug">
           <li className="flex gap-3 px-4 py-3">
             <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-[11px] font-bold text-brand-text" aria-hidden>
               1
             </span>
             <div>
-              <p className="font-semibold text-[var(--foreground)]">Find a bike for you or your child</p>
-              <p className="mt-0.5 text-[11px] text-[var(--r-muted)]">
+              <p className="font-semibold text-text">Find a bike for you or your child</p>
+              <p className="mt-0.5 text-[11px] text-text-3">
                 Filters, sizing, and (with a profile) match scores help you narrow junior or adult bikes from the same catalogue snapshot.
               </p>
             </div>
@@ -706,10 +706,10 @@ function HomePageContent() {
               2
             </span>
             <div>
-              <p className="font-semibold text-[var(--foreground)]">Family &amp; multi-rider profiles</p>
-              <p className="mt-0.5 text-[11px] text-[var(--r-muted)]">
+              <p className="font-semibold text-text">Family &amp; multi-rider profiles</p>
+              <p className="mt-0.5 text-[11px] text-text-3">
                 Add household riders on this device — each gets their own Watch list, current ride, and match scores. Switch the active rider from{" "}
-                <Link href="/profile#profile-riders" className="font-semibold text-brand-text underline decoration-[var(--r-orange)]/30 underline-offset-2">
+                <Link href="/profile#profile-riders" className="font-semibold text-brand-text underline decoration-brand/30 underline-offset-2">
                   Profile → Family
                 </Link>
                 {" "}before you shop or compare.
@@ -721,10 +721,10 @@ function HomePageContent() {
               3
             </span>
             <div>
-              <p className="font-semibold text-[var(--foreground)]">Plan a trip around where you want to ride</p>
-              <p className="mt-0.5 text-[11px] text-[var(--r-muted)]">
+              <p className="font-semibold text-text">Plan a trip around where you want to ride</p>
+              <p className="mt-0.5 text-[11px] text-text-3">
                 Search a town or trail head, see OSM trails and nearby shops. Full trip dossiers, saved routes, and verified hire intel are planned as{" "}
-                <span className="font-semibold text-[var(--foreground)]">Premium</span> — the map preview stays free while we build that layer.
+                <span className="font-semibold text-text">Premium</span> — the map preview stays free while we build that layer.
               </p>
             </div>
           </li>
@@ -733,8 +733,8 @@ function HomePageContent() {
               4
             </span>
             <div>
-              <p className="font-semibold text-[var(--foreground)]">Premium ideas we&apos;re exploring</p>
-              <p className="mt-0.5 text-[11px] text-[var(--r-muted)]">
+              <p className="font-semibold text-text">Premium ideas we&apos;re exploring</p>
+              <p className="mt-0.5 text-[11px] text-text-3">
                 Stock alerts on saved bikes, retailer deep-links with your size pre-filled, curated trail packs per region, and family plan billing — tell us what you&apos;d pay for first.
               </p>
             </div>
@@ -747,7 +747,7 @@ function HomePageContent() {
         <Link
           href="/trip"
           title="Ride map — free preview; saved routes and deeper trip intel planned as Premium"
-          className="relative flex flex-col items-start gap-2 rounded-2xl border border-[var(--r-border)] bg-surface p-3.5 pr-14 no-underline shadow-sm"
+          className="relative flex flex-col items-start gap-2 rounded-2xl border border-stroke bg-surface p-3.5 pr-14 no-underline shadow-sm"
         >
           <span className="absolute right-2 top-2 rounded-full bg-warning px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-bg shadow-sm">
             Premium
@@ -760,14 +760,14 @@ function HomePageContent() {
             </svg>
           </span>
           <div>
-            <p className="text-[12px] font-bold leading-tight text-[var(--foreground)]">Plan a ride</p>
-            <p className="mt-0.5 text-[10px] leading-snug text-[var(--r-muted)]">Shops near the trail · preview</p>
+            <p className="text-[12px] font-bold leading-tight text-text">Plan a ride</p>
+            <p className="mt-0.5 text-[10px] leading-snug text-text-3">Shops near the trail · preview</p>
           </div>
         </Link>
 
         <Link
           href="/compare"
-          className="flex flex-col items-start gap-2 rounded-2xl border border-[var(--r-border)] bg-surface p-3.5 no-underline shadow-sm"
+          className="flex flex-col items-start gap-2 rounded-2xl border border-stroke bg-surface p-3.5 no-underline shadow-sm"
         >
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand/10 text-brand-text">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -776,14 +776,14 @@ function HomePageContent() {
             </svg>
           </span>
           <div>
-            <p className="text-[12px] font-bold leading-tight text-[var(--foreground)]">Compare</p>
-            <p className="mt-0.5 text-[10px] leading-snug text-[var(--r-muted)]">Side-by-side specs</p>
+            <p className="text-[12px] font-bold leading-tight text-text">Compare</p>
+            <p className="mt-0.5 text-[10px] leading-snug text-text-3">Side-by-side specs</p>
           </div>
         </Link>
 
         <Link
           href="/profile"
-          className="flex flex-col items-start gap-2 rounded-2xl border border-[var(--r-border)] bg-surface p-3.5 no-underline shadow-sm"
+          className="flex flex-col items-start gap-2 rounded-2xl border border-stroke bg-surface p-3.5 no-underline shadow-sm"
         >
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand/10 text-brand-text">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -792,14 +792,14 @@ function HomePageContent() {
             </svg>
           </span>
           <div>
-            <p className="text-[12px] font-bold leading-tight text-[var(--foreground)]">Profile</p>
-            <p className="mt-0.5 text-[10px] leading-snug text-[var(--r-muted)]">Match tuning · one rider today</p>
+            <p className="text-[12px] font-bold leading-tight text-text">Profile</p>
+            <p className="mt-0.5 text-[10px] leading-snug text-text-3">Match tuning · one rider today</p>
           </div>
         </Link>
 
         <Link
           href="/sizing"
-          className="flex flex-col items-start gap-2 rounded-2xl border border-[var(--r-border)] bg-surface p-3.5 no-underline shadow-sm"
+          className="flex flex-col items-start gap-2 rounded-2xl border border-stroke bg-surface p-3.5 no-underline shadow-sm"
         >
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand/10 text-brand-text">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -809,15 +809,15 @@ function HomePageContent() {
             </svg>
           </span>
           <div>
-            <p className="text-[12px] font-bold leading-tight text-[var(--foreground)]">Sizing</p>
-            <p className="mt-0.5 text-[10px] leading-snug text-[var(--r-muted)]">Reach & bike fit</p>
+            <p className="text-[12px] font-bold leading-tight text-text">Sizing</p>
+            <p className="mt-0.5 text-[10px] leading-snug text-text-3">Reach & bike fit</p>
           </div>
         </Link>
       </section>
 
       {/* ─── What is Rippers (collapsible after first dismiss) ─── */}
       <details
-        className="group mx-4 mt-5 rounded-2xl border border-[var(--r-border)] bg-surface px-5 py-3 shadow-sm open:pb-4"
+        className="group mx-4 mt-5 rounded-2xl border border-stroke bg-surface px-5 py-3 shadow-sm open:pb-4"
         open={whatIsOpen}
         onToggle={(e) => {
           const el = e.currentTarget;
@@ -832,38 +832,38 @@ function HomePageContent() {
       >
         <summary className="flex cursor-pointer list-none items-center justify-between gap-2 marker:content-none [&::-webkit-details-marker]:hidden">
           <p className="text-[10px] font-bold uppercase tracking-[0.17em] text-brand-text">What is Rippers?</p>
-          <span className="text-[11px] font-semibold text-[var(--r-muted)] group-open:text-brand-text">
+          <span className="text-[11px] font-semibold text-text-3 group-open:text-brand-text">
             {whatIsOpen ? "Hide" : "Show"}
           </span>
         </summary>
-        <div className="mt-3 border-t border-[var(--r-border)] pt-3">
-          <p className="text-[13px] leading-relaxed text-[var(--r-muted)]">
+        <div className="mt-3 border-t border-stroke pt-3">
+          <p className="text-[13px] leading-relaxed text-text-3">
             Rippers is an Australian MTB research companion: one catalogue snapshot, real prices from major AU retailers,
             and match scoring once we know how you ride. Use it to shop for yourself, a teenager, or anyone you&apos;re
             helping into their first proper bike — then jump to Compare, Watch, or the ride map when you&apos;re ready to
             leave the spreadsheet behind.
           </p>
-          <div className="mt-4 grid grid-cols-3 divide-x divide-[var(--r-border)] text-center">
+          <div className="mt-4 grid grid-cols-3 divide-x divide-stroke text-center">
             <div className="pr-2">
-              <p className="text-[22px] font-bold tracking-tight text-[var(--foreground)]">{catalog.length}</p>
-              <p className="mt-0.5 text-[10px] font-medium leading-tight text-[var(--r-muted)]">models in snapshot</p>
+              <p className="text-[22px] font-bold tracking-tight text-text">{catalog.length}</p>
+              <p className="mt-0.5 text-[10px] font-medium leading-tight text-text-3">models in snapshot</p>
             </div>
             <div className="px-2">
-              <p className="text-[22px] font-bold tracking-tight text-[var(--foreground)]">20+</p>
-              <p className="mt-0.5 text-[10px] font-medium leading-tight text-[var(--r-muted)]">AU retailers</p>
+              <p className="text-[22px] font-bold tracking-tight text-text">20+</p>
+              <p className="mt-0.5 text-[10px] font-medium leading-tight text-text-3">AU retailers</p>
             </div>
             <div className="pl-2">
-              <p className="text-[22px] font-bold tracking-tight text-[var(--r-price-green)]">
+              <p className="text-[22px] font-bold tracking-tight text-success">
                 {bestFiltered != null
                   ? new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD", maximumFractionDigits: 0 }).format(bestFiltered)
                   : "AU$—"}
               </p>
-              <p className="mt-0.5 text-[10px] font-medium leading-tight text-[var(--r-muted)]">best in match set</p>
+              <p className="mt-0.5 text-[10px] font-medium leading-tight text-text-3">best in match set</p>
             </div>
           </div>
-          <p className="mt-3 text-[11px] leading-snug text-[var(--r-muted)]">
+          <p className="mt-3 text-[11px] leading-snug text-text-3">
             Snapshot = every model in this build ({catalog.length}). Below you see{" "}
-            <span className="font-semibold text-[var(--foreground)]">{homeListBikes.length}</span>
+            <span className="font-semibold text-text">{homeListBikes.length}</span>
             {profile && !searchActive && shortlistIsTruncated
               ? ` top profile matches (${filteredBikes.length} match your filters — open full list for the rest).`
               : profile && searchActive
@@ -878,7 +878,7 @@ function HomePageContent() {
       {/* ─── Top picks carousel ─── */}
       <section className="px-4 pt-7">
         <div className="flex items-baseline justify-between gap-2">
-          <p className="text-[13px] font-bold uppercase tracking-[0.14em] text-[var(--foreground)]">
+          <p className="text-[13px] font-bold uppercase tracking-[0.14em] text-text">
             {profile ? "Your top picks" : "Top bikes right now"}
           </p>
           <Link href="/#results" className="text-[12px] font-semibold text-brand-text no-underline">
@@ -894,7 +894,7 @@ function HomePageContent() {
             <HomeCarouselCard key={bike.id} bike={bike} matchPct={m} onMatchClick={setMatchBike} />
           ))}
         </div>
-        <p className="mt-1 px-4 text-center text-[10px] font-medium text-[var(--r-muted)]">Swipe for more picks →</p>
+        <p className="mt-1 px-4 text-center text-[10px] font-medium text-text-3">Swipe for more picks →</p>
       </section>
 
       {/* ─── Search + filters ─── */}
@@ -917,13 +917,13 @@ function HomePageContent() {
             placeholder="Brand, model, or type…"
             value={filters.query}
             onChange={(e) => updateFilters({ query: e.target.value })}
-            className="r-field-ios w-full px-4 py-3.5 text-[15px] text-[var(--foreground)] outline-none placeholder:text-text-3"
+            className="r-field-ios w-full px-4 py-3.5 text-[15px] text-text outline-none placeholder:text-text-3"
           />
         </div>
         <details className="r-glass-well group mt-2 px-4 py-0.5">
-          <summary className="flex cursor-pointer list-none items-center gap-2 py-3.5 text-[13px] font-semibold text-[var(--foreground)] marker:content-none [&::-webkit-details-marker]:hidden">
+          <summary className="flex cursor-pointer list-none items-center gap-2 py-3.5 text-[13px] font-semibold text-text marker:content-none [&::-webkit-details-marker]:hidden">
             <span className="shrink-0">Category &amp; budget</span>
-            <span className="min-w-0 flex-1 truncate text-right text-[11px] font-medium text-[var(--r-muted)] group-open:hidden">
+            <span className="min-w-0 flex-1 truncate text-right text-[11px] font-medium text-text-3 group-open:hidden">
               {filtersSummaryLine(filters)}
             </span>
             <span className="shrink-0 text-text-3 transition-transform group-open:rotate-90 group-open:text-brand-text">›</span>
@@ -956,7 +956,7 @@ function HomePageContent() {
       <section id="results" className="scroll-mt-6 px-4 pt-8">
         <div className="flex flex-wrap items-end justify-between gap-2">
           <div>
-            <h2 className="text-[17px] font-semibold text-[var(--foreground)]">
+            <h2 className="text-[17px] font-semibold text-text">
               {searchActive
                 ? "Search results"
                 : profile
@@ -965,7 +965,7 @@ function HomePageContent() {
                     : "Your best profile matches"
                   : "Browse catalogue"}
             </h2>
-            <p className="mt-0.5 text-[11px] leading-snug text-[var(--r-muted)]">
+            <p className="mt-0.5 text-[11px] leading-snug text-text-3">
               {searchActive
                 ? `Text search on the ${catalog.length}-bike snapshot — ${filteredBikes.length} hit${filteredBikes.length !== 1 ? "s" : ""}.`
                 : profile
@@ -975,17 +975,17 @@ function HomePageContent() {
                   : "Filter by category and budget, or search — data is the bundled AU snapshot in this build."}
             </p>
             {profile && currentRideLabel ? (
-              <p className="mt-2 text-[11px] leading-snug text-[var(--r-muted)]">
-                <span className="font-semibold text-[var(--foreground)]">How results compare to your current ride:</span>{" "}
-                tap a bike, then scroll to <span className="font-semibold text-[var(--foreground)]">Compared to your current ride</span> for spec lines next to{" "}
-                <span className="font-semibold text-[var(--foreground)]">{currentRideLabel}</span>
+              <p className="mt-2 text-[11px] leading-snug text-text-3">
+                <span className="font-semibold text-text">How results compare to your current ride:</span>{" "}
+                tap a bike, then scroll to <span className="font-semibold text-text">Compared to your current ride</span> for spec lines next to{" "}
+                <span className="font-semibold text-text">{currentRideLabel}</span>
                 {currentBikeEntry?.type === "custom" && currentBikeEntry.lookup?.status === "loading"
                   ? " (we’re loading web specs for your bike now)."
                   : "."}
               </p>
             ) : profile ? (
-              <p className="mt-2 text-[11px] leading-snug text-[var(--r-muted)]">
-                <span className="font-semibold text-[var(--foreground)]">Vs your current bike:</span>{" "}
+              <p className="mt-2 text-[11px] leading-snug text-text-3">
+                <span className="font-semibold text-text">Vs your current bike:</span>{" "}
                 add what you ride today in{" "}
                 <Link href="/profile#profile-ride" className="font-semibold text-brand-text underline-offset-2 hover:underline">
                   Profile → Ride
@@ -996,7 +996,7 @@ function HomePageContent() {
             <p className="mt-2 text-[11px] font-semibold leading-snug text-brand-text">{viewModeLine}</p>
           </div>
           <div className="flex shrink-0 flex-col items-end gap-1">
-            <span className="text-[12px] text-[var(--r-muted)]">
+            <span className="text-[12px] text-text-3">
               {homeListBikes.length} shown
               {profile && filteredBikes.length !== homeListBikes.length ? ` · ${filteredBikes.length} match filters` : ""}
             </span>
@@ -1004,7 +1004,7 @@ function HomePageContent() {
               <button
                 type="button"
                 onClick={() => setListScope("full")}
-                className="text-[12px] font-semibold text-brand-text underline decoration-[var(--r-orange)]/30 underline-offset-2"
+                className="text-[12px] font-semibold text-brand-text underline decoration-brand/30 underline-offset-2"
               >
                 Show all {filteredBikes.length} →
               </button>
@@ -1013,7 +1013,7 @@ function HomePageContent() {
               <button
                 type="button"
                 onClick={() => setListScope("personalised")}
-                className="text-[12px] font-semibold text-brand-text underline decoration-[var(--r-orange)]/30 underline-offset-2"
+                className="text-[12px] font-semibold text-brand-text underline decoration-brand/30 underline-offset-2"
               >
                 Top {HOME_MATCH_SHORTLIST} matches only
               </button>
@@ -1021,15 +1021,15 @@ function HomePageContent() {
           </div>
         </div>
         {filteredBikes.length === 0 ? (
-          <div className="mt-6 rounded-2xl border border-dashed border-[var(--r-border)] bg-surface/80 px-6 py-10 text-center shadow-sm">
-            <p className="text-[15px] font-semibold text-[var(--foreground)]">No bikes match those filters</p>
-            <p className="mt-2 text-[13px] leading-relaxed text-[var(--r-muted)]">
+          <div className="mt-6 rounded-2xl border border-dashed border-stroke bg-surface/80 px-6 py-10 text-center shadow-sm">
+            <p className="text-[15px] font-semibold text-text">No bikes match those filters</p>
+            <p className="mt-2 text-[13px] leading-relaxed text-text-3">
               Try clearing search text, widening the budget, or picking a different category.
             </p>
             <button
               type="button"
               onClick={() => resetFiltersAndList()}
-              className="mt-5 inline-flex items-center justify-center rounded-full bg-[var(--r-orange)] px-5 py-2.5 text-[13px] font-semibold text-white shadow-[0_8px_20px_rgba(229,71,26,0.35)]"
+              className="mt-5 inline-flex items-center justify-center rounded-full bg-brand px-5 py-2.5 text-[13px] font-semibold text-white shadow-[0_8px_20px_rgba(229,71,26,0.35)]"
             >
               Clear all filters
             </button>
@@ -1045,12 +1045,12 @@ function HomePageContent() {
             return (
               <article
                 key={bike.id}
-                className="group relative flex flex-col overflow-hidden rounded-2xl border border-[var(--r-border)] bg-surface shadow-sm transition-shadow hover:shadow-md"
+                className="group relative flex flex-col overflow-hidden rounded-2xl border border-stroke bg-surface shadow-sm transition-shadow hover:shadow-md"
               >
                 <Link
                   href={`/?openBike=${bike.id}`}
                   scroll={false}
-                  className="absolute inset-0 z-[1] rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--r-orange)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--r-bg-canvas)]"
+                  className="absolute inset-0 z-[1] rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
                   aria-label={`View ${bike.brand} ${bike.model} specs`}
                 />
                 {/* Image — pointer-events-none so the underlying Link receives taps; buttons opt back in */}
@@ -1065,7 +1065,7 @@ function HomePageContent() {
                     type="button"
                     onClick={(e) => { e.stopPropagation(); setMatchBike(bike); }}
                     aria-label={`${matchPct}% match — tap for breakdown`}
-                    className="pointer-events-auto absolute right-2.5 top-2.5 z-[3] rounded-full bg-surface-raised/95 px-2.5 py-1 text-[11px] font-bold tracking-tight text-[var(--r-match-text)] shadow ring-1 ring-stroke backdrop-blur-[2px] transition-transform active:scale-95"
+                    className="pointer-events-auto absolute right-2.5 top-2.5 z-[3] rounded-full bg-surface-raised/95 px-2.5 py-1 text-[11px] font-bold tracking-tight text-danger shadow ring-1 ring-stroke backdrop-blur-[2px] transition-transform active:scale-95"
                   >
                     {matchPct}%
                   </button>
@@ -1086,16 +1086,16 @@ function HomePageContent() {
                   </button>
                   {/* eBike tag */}
                   {bike.isEbike && (
-                    <span className="absolute bottom-2.5 left-2.5 rounded-full bg-[var(--r-orange)] px-2.5 py-0.5 text-[10px] font-bold text-white">
+                    <span className="absolute bottom-2.5 left-2.5 rounded-full bg-brand px-2.5 py-0.5 text-[10px] font-bold text-white">
                       eBike
                     </span>
                   )}
                 </div>
                 {/* Info — same pass-through pattern as image row */}
                 <div className="relative z-[2] flex flex-1 flex-col px-4 pb-4 pt-3 pointer-events-none">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--r-muted)]">{bike.brand}</p>
-                  <h3 className="mt-1 text-[15px] font-semibold leading-snug text-[var(--foreground)]">{bike.model}</h3>
-                  <p className="mt-1 text-[12px] text-[var(--r-muted)]">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-text-3">{bike.brand}</p>
+                  <h3 className="mt-1 text-[15px] font-semibold leading-snug text-text">{bike.model}</h3>
+                  <p className="mt-1 text-[12px] text-text-3">
                     {[bike.category, bike.travel, bike.wheel].filter(Boolean).join(" · ")}
                   </p>
 
@@ -1103,7 +1103,7 @@ function HomePageContent() {
                   {whyItems.length > 0 && profile && (
                     <div className="mt-3 rounded-xl bg-surface-raised px-3 py-2.5">
                       <div className="mb-1.5 flex items-center justify-between">
-                        <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--r-muted)]">Why this bike</p>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-text-3">Why this bike</p>
                         <button
                           type="button"
                           onClick={(e) => {
@@ -1117,13 +1117,13 @@ function HomePageContent() {
                       </div>
                       <ul className="space-y-1">
                         {whyItems.map((f) => (
-                          <li key={f.label} className="flex items-start gap-1.5 text-[11px] leading-snug text-[var(--r-muted)]">
+                          <li key={f.label} className="flex items-start gap-1.5 text-[11px] leading-snug text-text-3">
                             <span className="mt-px shrink-0 text-brand-text">·</span>
                             {f.detail}
                           </li>
                         ))}
                         {bestPrice && (
-                          <li className="flex items-start gap-1.5 text-[11px] leading-snug text-[var(--r-muted)]">
+                          <li className="flex items-start gap-1.5 text-[11px] leading-snug text-text-3">
                             <span className="mt-px shrink-0 text-brand-text">·</span>
                             Best price: {new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD", maximumFractionDigits: 0 }).format(bestPrice)} AUD
                           </li>
@@ -1133,10 +1133,10 @@ function HomePageContent() {
                   )}
 
                   <div className="mt-auto flex items-end justify-between gap-2 pt-3">
-                    <p className="text-[17px] font-bold tracking-tight text-[var(--r-price-green)]">
+                    <p className="text-[17px] font-bold tracking-tight text-success">
                       {getDisplayPrice(bike)}
                     </p>
-                    <p className="text-[11px] font-medium text-[var(--r-muted)]">
+                    <p className="text-[11px] font-medium text-text-3">
                       {bike.inStock.length > 0 ? `${bike.inStock.length} in stock` : "check availability"}
                     </p>
                   </div>
@@ -1158,7 +1158,7 @@ export default function Home() {
     <Suspense
       fallback={
         <main className="mx-auto w-full max-w-none pb-20">
-          <div className="flex min-h-[40vh] items-center justify-center px-6 text-[14px] text-[var(--r-muted)]">
+          <div className="flex min-h-[40vh] items-center justify-center px-6 text-[14px] text-text-3">
             Loading catalogue…
           </div>
         </main>

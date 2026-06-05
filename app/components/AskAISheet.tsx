@@ -105,12 +105,12 @@ export default function AskAISheet({ bike, profile, onClose }: Props) {
             <div className="flex items-center gap-2.5">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand/10">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z" fill="var(--r-orange)"/>
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z" fill="rgb(var(--c-brand))"/>
                 </svg>
               </div>
               <div>
-                <p className="text-[14px] font-bold text-[var(--foreground)]">Ask about this bike</p>
-                <p className="text-[11px] text-[var(--r-muted)]">{bike.brand} {bike.model}</p>
+                <p className="text-[14px] font-bold text-text">Ask about this bike</p>
+                <p className="text-[11px] text-text-3">{bike.brand} {bike.model}</p>
               </div>
             </div>
             <button
@@ -130,14 +130,14 @@ export default function AskAISheet({ bike, profile, onClose }: Props) {
         <div className="flex-1 overflow-y-auto px-4 pb-2">
           {showSuggestions && (
             <div>
-              <p className="mb-3 text-[12px] text-[var(--r-muted)]">Try asking:</p>
+              <p className="mb-3 text-[12px] text-text-3">Try asking:</p>
               <div className="flex flex-wrap gap-2">
                 {SUGGESTED_QUESTIONS.map((q) => (
                   <button
                     key={q}
                     type="button"
                     onClick={() => ask(q)}
-                    className="rounded-full border border-stroke bg-surface px-3 py-1.5 text-[12px] font-medium text-[var(--foreground)] transition-colors hover:border-[var(--r-orange)]/40 hover:bg-brand/10 active:scale-95"
+                    className="rounded-full border border-stroke bg-surface px-3 py-1.5 text-[12px] font-medium text-text transition-colors hover:border-brand/40 hover:bg-brand/10 active:scale-95"
                   >
                     {q}
                   </button>
@@ -155,8 +155,8 @@ export default function AskAISheet({ bike, profile, onClose }: Props) {
                 <div
                   className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-[13px] leading-relaxed ${
                     msg.role === "user"
-                      ? "rounded-br-md bg-[var(--r-orange)] text-brand-fg"
-                      : "rounded-bl-md border border-stroke bg-surface text-[var(--foreground)]"
+                      ? "rounded-br-md bg-brand text-brand-fg"
+                      : "rounded-bl-md border border-stroke bg-surface text-text"
                   }`}
                 >
                   {msg.text}
@@ -198,7 +198,7 @@ export default function AskAISheet({ bike, profile, onClose }: Props) {
             <button
               type="submit"
               disabled={!input.trim() || loading}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--r-orange)] text-brand-fg shadow transition-opacity disabled:opacity-40"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand text-brand-fg shadow transition-opacity disabled:opacity-40"
               aria-label="Send"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>

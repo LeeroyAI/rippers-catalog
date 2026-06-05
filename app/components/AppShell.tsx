@@ -172,7 +172,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                   sizes="40px"
                 />
               </span>
-              <span className="text-sm font-semibold tracking-tight text-[var(--foreground)]">Rippers</span>
+              <span className="text-sm font-semibold tracking-tight text-text">Rippers</span>
             </Link>
             {profile ? (
               riders.length > 1 ? (
@@ -181,12 +181,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                   className="inline-block min-w-0 max-w-[9rem] truncate rounded-full border border-stroke bg-surface/90 px-2.5 py-1 text-[11px] font-semibold text-text no-underline shadow-sm transition hover:border-brand/35 hover:bg-brand/10 sm:max-w-[10rem]"
                   title="Switch household rider"
                 >
-                  <span className="font-normal text-[var(--r-muted)]">As </span>
+                  <span className="font-normal text-text-3">As </span>
                   {profile.nickname.trim() || "Rider"}
                 </Link>
               ) : (
                 <span
-                  className="inline-block min-w-0 max-w-[9rem] truncate rounded-full border border-transparent px-2.5 py-1 text-[11px] text-[var(--r-muted)] sm:max-w-[10rem]"
+                  className="inline-block min-w-0 max-w-[9rem] truncate rounded-full border border-transparent px-2.5 py-1 text-[11px] text-text-3 sm:max-w-[10rem]"
                   title="Active rider on this device"
                 >
                   {profile.nickname.trim() || "Rider"}
@@ -201,8 +201,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             title="Jump to search and filters on Home"
             className="r-desktop-search-chip max-[1099px]:min-w-0 max-[1099px]:max-w-[10.5rem] max-[1099px]:gap-1.5 max-[1099px]:px-2.5 no-underline"
           >
-            <span className="text-[var(--foreground)]/75 max-[1099px]:hidden">Jump to search &amp; filters on Home</span>
-            <span className="hidden max-[1099px]:inline text-[12px] font-semibold text-[var(--foreground)]/80" aria-hidden>
+            <span className="text-text/75 max-[1099px]:hidden">Jump to search &amp; filters on Home</span>
+            <span className="hidden max-[1099px]:inline text-[12px] font-semibold text-text/80" aria-hidden>
               Search
             </span>
             <span className="r-desktop-search-chip-cta">Go</span>

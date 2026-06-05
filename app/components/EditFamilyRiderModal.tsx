@@ -164,7 +164,7 @@ export default function EditFamilyRiderModal({ rider, open, onClose, onViewCatal
         role="dialog"
         aria-modal="true"
         aria-labelledby="edit-rider-title"
-        className="relative flex max-h-[min(94dvh,900px)] w-full max-w-lg flex-col rounded-t-3xl border border-[var(--r-border)] bg-[var(--background)] shadow-[0_-12px_48px_rgba(0,0,0,0.18)] sm:rounded-3xl sm:shadow-2xl"
+        className="relative flex max-h-[min(94dvh,900px)] w-full max-w-lg flex-col rounded-t-3xl border border-stroke bg-bg shadow-[0_-12px_48px_rgba(0,0,0,0.18)] sm:rounded-3xl sm:shadow-2xl"
       >
         <div className="order-2 min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-4 pt-3 sm:px-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
@@ -174,12 +174,12 @@ export default function EditFamilyRiderModal({ rider, open, onClose, onViewCatal
               className="group relative shrink-0 self-start"
               aria-label="Change rider photo"
             >
-              <div className="h-20 w-20 overflow-hidden rounded-2xl shadow-md ring-2 ring-[var(--r-border)]">
+              <div className="h-20 w-20 overflow-hidden rounded-2xl shadow-md ring-2 ring-stroke">
                 {photo ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={photo} alt="" className="h-full w-full object-cover" />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-brand via-[var(--r-orange)] to-brand-hover text-2xl font-bold text-brand-fg">
+                  <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-brand via-brand to-brand-hover text-2xl font-bold text-brand-fg">
                     {initial}
                   </div>
                 )}
@@ -195,7 +195,7 @@ export default function EditFamilyRiderModal({ rider, open, onClose, onViewCatal
               onChange={handlePhotoChange}
             />
             <div className="min-w-0 flex-1">
-              <p className="text-[12px] text-[var(--r-muted)]">Square photos work best. Stored only on this device.</p>
+              <p className="text-[12px] text-text-3">Square photos work best. Stored only on this device.</p>
               {photo ? (
                 <button
                   type="button"
@@ -210,8 +210,8 @@ export default function EditFamilyRiderModal({ rider, open, onClose, onViewCatal
           </div>
 
           {entry ? (
-            <div className="mt-4 rounded-xl border border-[var(--r-border)] bg-surface px-3 py-3">
-              <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--r-muted)]">Current ride</p>
+            <div className="mt-4 rounded-xl border border-stroke bg-surface px-3 py-3">
+              <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-text-3">Current ride</p>
               <div className="mt-2 flex items-center gap-3">
                 <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-surface">
                   {entry.type === "catalog" && catBike ? (
@@ -224,7 +224,7 @@ export default function EditFamilyRiderModal({ rider, open, onClose, onViewCatal
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[13px] font-semibold text-[var(--foreground)]">
+                  <p className="text-[13px] font-semibold text-text">
                     {entry.type === "catalog" && catBike
                       ? `${catBike.brand} ${catBike.model}`
                       : entry.type === "custom"
@@ -254,8 +254,8 @@ export default function EditFamilyRiderModal({ rider, open, onClose, onViewCatal
             </div>
           ) : null}
 
-          <p className="mt-4 text-[12px] leading-relaxed text-[var(--r-muted)]">
-            Pick a bike from <strong className="text-[var(--foreground)]">catalogue search</strong> below when possible
+          <p className="mt-4 text-[12px] leading-relaxed text-text-3">
+            Pick a bike from <strong className="text-text">catalogue search</strong> below when possible
             — we match it to specs and the product image automatically.
           </p>
 
@@ -284,14 +284,14 @@ export default function EditFamilyRiderModal({ rider, open, onClose, onViewCatal
           ) : null}
         </div>
 
-        <div className="order-1 flex shrink-0 items-center justify-between gap-3 border-b border-[var(--r-border)] px-5 py-3 sm:px-6">
-          <h2 id="edit-rider-title" className="text-lg font-semibold tracking-tight text-[var(--foreground)]">
+        <div className="order-1 flex shrink-0 items-center justify-between gap-3 border-b border-stroke px-5 py-3 sm:px-6">
+          <h2 id="edit-rider-title" className="text-lg font-semibold tracking-tight text-text">
             Edit {name}
           </h2>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full p-2 text-[var(--r-muted)] transition hover:bg-surface-raised hover:text-[var(--foreground)]"
+            className="rounded-full p-2 text-text-3 transition hover:bg-surface-raised hover:text-text"
             aria-label="Close"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -300,11 +300,11 @@ export default function EditFamilyRiderModal({ rider, open, onClose, onViewCatal
           </button>
         </div>
 
-        <div className="order-3 flex shrink-0 gap-2 border-t border-[var(--r-border)] bg-[var(--background)] px-5 py-3 sm:px-6">
+        <div className="order-3 flex shrink-0 gap-2 border-t border-stroke bg-bg px-5 py-3 sm:px-6">
           <button
             type="button"
             onClick={onClose}
-            className="w-full rounded-2xl border border-[var(--r-border)] bg-surface py-3 text-[14px] font-semibold text-[var(--foreground)] transition hover:bg-surface"
+            className="w-full rounded-2xl border border-stroke bg-surface py-3 text-[14px] font-semibold text-text transition hover:bg-surface"
           >
             Close
           </button>
