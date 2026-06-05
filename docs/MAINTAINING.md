@@ -57,7 +57,7 @@ Keep these files in sync:
 - `AGENTS.md` — Codex-facing
 - `CLAUDE.md` — Claude-facing
 
-Both should describe the same app architecture and team roster. The Frankie/team section is a conversational persona layer; it should not block coding agents from making repo changes when Leeroy asks for implementation work.
+Both should describe the same app architecture and team roster. The Alan/team section (formerly Frankie, renamed in the single-orchestrator migration on 2026-05-28) is a conversational persona layer; it should not block coding agents from making repo changes when Leeroy asks for implementation work.
 
 ## Legacy Swift
 
