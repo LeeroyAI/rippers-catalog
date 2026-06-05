@@ -744,3 +744,62 @@ summary:focus-visible {
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
   animation: r-trip-load-shine 1.35s ease-in-out infinite;
 }
+
+/* ---- Shared motion + loading primitives (consistent across pages) ---- */
+
+/* Standard entrance: content settles up + in. Used for page sections / cards. */
+@keyframes r-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.r-anim-in {
+  animation: r-fade-up 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Standard interactive transition token — pair with hover/active utilities. */
+.r-transition {
+  transition:
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease,
+    box-shadow 200ms ease;
+}
+
+/* Skeleton shimmer (Skeleton.tsx). Themed surfaces, so it works light + dark. */
+@keyframes r-skeleton-shine {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.r-skeleton {
+  background: linear-gradient(
+    90deg,
+    rgb(var(--c-surface-raised)) 0%,
+    rgb(var(--c-surface)) 50%,
+    rgb(var(--c-surface-raised)) 100%
+  );
+  background-size: 200% 100%;
+  animation: r-skeleton-shine 1.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .r-anim-in,
+  .r-skeleton {
+    animation: none;
+  }
+  .r-transition {
+    transition: none;
+  }
+}
