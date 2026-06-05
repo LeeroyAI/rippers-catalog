@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Suspense, startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, startTransition, useCallback, useEffect, useMemo, useState } from "react";
 
 import BikeDetailSheet from "@/app/components/BikeDetailSheet";
 import MatchBreakdownSheet from "@/app/components/MatchBreakdownSheet";
@@ -257,6 +257,7 @@ function HomePageContent() {
       sessionSet(HOME_LAST_INTENT_KEY, intentSig);
       updateFilters({ category: cat });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- re-sync only when preferEbike/style change, not on every profile edit
   }, [hydrated, activeRiderId, profile?.preferEbike, profile?.style, updateFilters]);
 
   const searchActive = Boolean(filters.query?.trim());
