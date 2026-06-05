@@ -1,5 +1,6 @@
 import { getBestPrice, getSearchBlob } from "./bike-helpers";
 import { matchPercentForBike } from "./match-score";
+import { profileAllowsBikeInResults } from "./profile-bike-fit";
 import type { RiderProfileV1 } from "./rider-profile";
 import type { Bike, FilterState } from "./types";
 
@@ -71,7 +72,8 @@ export function applyFilters(
     (bike) =>
       textMatches(bike, filters.query) &&
       categoryMatches(bike, filters.category) &&
-      budgetMatches(bike, filters.budgetMax)
+      budgetMatches(bike, filters.budgetMax) &&
+      (profile === null || profileAllowsBikeInResults(bike, profile))
   );
 
   return sortBikes(filtered, filters, profile);
