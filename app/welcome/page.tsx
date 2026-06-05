@@ -212,7 +212,7 @@ export default function WelcomePage() {
               </span>
               <span>
                 <strong className="text-text">Tell us who rides.</strong> Nickname (optional), height,
-                weight, style, and whether e-bikes matter — that's the engine behind match scores and trip relevance.
+                weight, style, and whether e-bikes matter. That’s the engine behind match scores and trip relevance.
               </span>
             </li>
             <li className="flex gap-3">
@@ -221,7 +221,7 @@ export default function WelcomePage() {
               </span>
               <span>
                 <strong className="text-text">Explore with confidence.</strong> Open bikes, compare
-                builds, save favourites, and lean on match breakdowns when you're shortlisting for yourself or someone
+                builds, save favourites, and lean on match breakdowns when you’re shortlisting for yourself or someone
                 else in the crew.
               </span>
             </li>

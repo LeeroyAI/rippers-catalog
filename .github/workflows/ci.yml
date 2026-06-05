@@ -33,8 +33,8 @@ jobs:
       - name: Build
         run: npm run build
 
-      # Non-blocking for now: the codebase has known lint debt (21 errors).
-      # Reported in the run log but not failing CI until that debt is cleared.
-      - name: Lint (report-only)
+      # Blocking: lint debt is cleared (0 errors). eslint exits non-zero on any
+      # error-level rule, so new errors now fail CI. Warnings (e.g. the
+      # documented set-state-in-effect cases) are reported but do not block.
+      - name: Lint
         run: npm run lint
-        continue-on-error: true

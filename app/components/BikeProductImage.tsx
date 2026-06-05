@@ -19,7 +19,7 @@ export default function BikeProductImage({ bikeId, alt, className }: Props) {
   useEffect(() => {
     setSrc(proxySrc);
     setFailed(false);
-  }, [bikeId]);
+  }, [proxySrc]);
 
   if (failed) {
     return (

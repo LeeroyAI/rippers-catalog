@@ -12,13 +12,11 @@ import { catalog } from "@/src/data/catalog";
 import { getBestPrice } from "@/src/domain/bike-helpers";
 import {
   approximateFrameReachCm,
-  RIDER_PROFILE_STORAGE_KEY,
   suggestedBikeCategory,
 } from "@/src/domain/rider-profile";
 import {
   LEGACY_PROFILE_PHOTO_KEY,
   readRiderPhoto,
-  riderPhotoStorageKey,
   writeRiderPhoto,
 } from "@/src/domain/rider-photo";
 import RippersBackupImporter from "@/app/components/RippersBackupImporter";
@@ -27,7 +25,6 @@ import { collectRippersBackupPayload, downloadRippersBackupJson } from "@/src/li
 import { householdAddRiderHref } from "@/src/lib/welcome-add-mode";
 import { notifyRiderPhotoUpdated, RIDER_PHOTO_UPDATED_EVENT } from "@/src/lib/rider-photo-events";
 import { resizePhotoToDataUrl } from "@/src/lib/resize-photo-to-data-url";
-import { RIDERS_STORAGE_KEY } from "@/src/domain/riders-storage";
 import { RIDING_STYLE_OPTIONS, ridingStyleLabels, type RidingStyle } from "@/src/domain/riding-style";
 import { useFavourites } from "@/src/state/favourites-store";
 import { useCurrentBike } from "@/src/state/current-bike-store";

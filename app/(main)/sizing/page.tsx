@@ -197,7 +197,7 @@ export default function SizingPage() {
               </div>
             </div>
             <p className="mt-3 text-[12px] leading-relaxed text-text-3">
-              Based on your height of {heightCm} cm. Always confirm with the brand's geometry chart — reach varies
+              Based on your height of {heightCm} cm. Always confirm with the brand’s geometry chart, reach varies
               significantly between enduro and XC frames at the same nominal size.
             </p>
             <Link
@@ -233,7 +233,7 @@ export default function SizingPage() {
       {/* ── Adult size chart ── */}
       <section className="mt-6">
         <h2 className="r-section-title">MTB frame size chart</h2>
-        <p className="mt-1 text-[13px] text-text-3">Based on rider height — always cross-check the brand's geometry PDF.</p>
+        <p className="mt-1 text-[13px] text-text-3">Based on rider height. Always cross-check the brand’s geometry PDF.</p>
         <div className="mt-3 overflow-hidden rounded-2xl border border-stroke">
           <div className="grid grid-cols-4 bg-surface px-4 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-text-3">
             <span>Size</span>
@@ -266,7 +266,7 @@ export default function SizingPage() {
       <section className="mt-8">
         <h2 className="r-section-title">Kids bike sizing</h2>
         <p className="mt-1 text-[13px] text-text-3">
-          Wheel size is the primary spec for kids bikes. Height beats age — a tall 7-year-old may need a 24" wheel.
+          Wheel size is the primary spec for kids bikes. Height beats age: a tall 7-year-old may need a 24-inch wheel.
         </p>
         <div className="mt-3 overflow-hidden rounded-2xl border border-stroke">
           <div className="grid grid-cols-4 bg-surface px-4 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] text-text-3">
