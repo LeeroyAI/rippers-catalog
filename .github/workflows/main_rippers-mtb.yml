@@ -27,15 +27,30 @@ jobs:
           ref: ${{ github.event.workflow_run.head_sha || github.ref }}
 
       - name: Set up Node.js version
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '22.x'
+          cache: 'npm'
 
-      - name: Upload artifact for deployment job
+      - name: Install dependencies
+        run: npm ci
+
+      # Produces the self-contained server at .next/standalone/server.js.
+      - name: Build (Next standalone)
+        run: npm run build
+
+      # Standalone does not include static assets or /public; copy them in so the
+      # deployed bundle is complete and runs with `node server.js`.
+      - name: Assemble standalone bundle
+        run: |
+          cp -r .next/static .next/standalone/.next/static
+          if [ -d public ]; then cp -r public .next/standalone/public; fi
+
+      - name: Upload standalone bundle for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: node-app
-          path: .
+          path: .next/standalone
 
   deploy:
     runs-on: ubuntu-latest
@@ -45,17 +60,28 @@ jobs:
       contents: read #This is required for actions/checkout
 
     steps:
-      - name: Download artifact from build job
+      - name: Download standalone bundle from build job
         uses: actions/download-artifact@v4
         with:
           name: node-app
-      
+
       - name: Login to Azure
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_988D18DAEB0A46AB901C334E297A85AE }}
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_5DF74410192B4D7FABEA47A5D4773535 }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_7C9B3CC268574CD99B1DD5B597664741 }}
+
+      # We ship a fully built bundle, so the host must NOT try to rebuild, and the
+      # startup command must launch the standalone server. If the deploy principal
+      # lacks rights for these, this step fails before any deploy — the live app is
+      # left untouched — and the startup command can be set once in the portal:
+      # Configuration > General settings > Startup Command: node server.js
+      - name: Configure App Service for the prebuilt standalone bundle
+        run: |
+          az webapp config appsettings set -g rippers-rg -n rippers-mtb \
+            --settings SCM_DO_BUILD_DURING_DEPLOYMENT=false ENABLE_ORYX_BUILD=false 1>/dev/null
+          az webapp config set -g rippers-rg -n rippers-mtb --startup-file "node server.js" 1>/dev/null
 
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
@@ -64,4 +90,3 @@ jobs:
           app-name: 'rippers-mtb'
           slot-name: 'Production'
           package: .
-          
