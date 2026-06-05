@@ -1,0 +1,40 @@
+# Gate every push to main and every PR on typecheck + tests + build.
+# This is the check the Azure deploy workflow does NOT do — it exists so a
+# broken build (e.g. a type error) cannot reach production unnoticed.
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.x"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      # Non-blocking for now: the codebase has known lint debt (21 errors).
+      # Reported in the run log but not failing CI until that debt is cleared.
+      - name: Lint (report-only)
+        run: npm run lint
+        continue-on-error: true
