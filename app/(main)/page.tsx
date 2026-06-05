@@ -351,7 +351,7 @@ function HomePageContent() {
     <main className="mx-auto w-full max-w-none pb-20">
 
       {/* ─── Hero ─── */}
-      <section className="relative overflow-hidden bg-[#0f0d0b] pt-[max(3.5rem,calc(env(safe-area-inset-top)+2.5rem))] md:min-h-[420px] md:pt-0">
+      <section className="relative overflow-hidden bg-bg pt-[max(3.5rem,calc(env(safe-area-inset-top)+2.5rem))] md:min-h-[420px] md:pt-0">
         {/* Ambient glows */}
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_65%_80%_at_78%_55%,rgba(229,71,26,0.20),transparent_70%)]" />
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_45%_55%_at_12%_40%,rgba(229,71,26,0.10),transparent_65%)]" />
@@ -367,14 +367,14 @@ function HomePageContent() {
                 <div className="overflow-hidden rounded-[0.65rem] shadow-md">
                   <Image src="/icons/icon-512.png" alt="Rippers" width={40} height={40} className="h-10 w-10" priority />
                 </div>
-                <span className="text-[17px] font-bold tracking-tight text-white">Rippers</span>
+                <span className="text-[17px] font-bold tracking-tight text-text">Rippers</span>
               </div>
-              <Link href="/profile" className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-white/[0.1] ring-1 ring-white/[0.12]" aria-label="Your profile">
+              <Link href="/profile" className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-surface/70 ring-1 ring-stroke" aria-label="Your profile">
                 {profilePhoto ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={profilePhoto} alt="Profile" className="h-full w-full object-cover" />
                 ) : profile?.nickname ? (
-                  <span className="text-[15px] font-bold text-white">{profile.nickname.charAt(0).toUpperCase()}</span>
+                  <span className="text-[15px] font-bold text-text">{profile.nickname.charAt(0).toUpperCase()}</span>
                 ) : (
                   <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden>
                     <circle cx="12" cy="8" r="4" stroke="white" strokeWidth="1.6" />
@@ -384,38 +384,38 @@ function HomePageContent() {
               </Link>
             </div>
 
-            <h1 className="whitespace-pre-line text-[2.15rem] font-bold leading-[1.15] tracking-tight text-white md:text-[3.25rem]">
+            <h1 className="whitespace-pre-line text-[2.15rem] font-bold leading-[1.15] tracking-tight text-text md:text-[3.25rem]">
               {title}
             </h1>
-            <p className="mt-3 max-w-[22rem] text-[14px] leading-relaxed text-white/65 md:text-[15px]">{sub}</p>
+            <p className="mt-3 max-w-[22rem] text-[14px] leading-relaxed text-text-2 md:text-[15px]">{sub}</p>
 
             {hydrated && profile ? (
-              <div className="mt-4 max-w-[26rem] rounded-2xl border border-white/[0.12] bg-white/[0.06] px-4 py-3.5 backdrop-blur-sm">
-                <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-[13px] text-white/85">
-                  <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/45">Active rider</span>
-                  <span className="font-semibold text-white">{profile.nickname.trim() || "Rider"}</span>
-                  <span className="text-white/35">·</span>
-                  <span className="text-white/70">{ridingStyleLabels(profile.style)}</span>
+              <div className="mt-4 max-w-[26rem] rounded-2xl border border-stroke bg-surface/70 px-4 py-3.5 backdrop-blur-sm">
+                <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-[13px] text-text">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-text-3">Active rider</span>
+                  <span className="font-semibold text-text">{profile.nickname.trim() || "Rider"}</span>
+                  <span className="text-text-3">·</span>
+                  <span className="text-text-2">{ridingStyleLabels(profile.style)}</span>
                   {riders.length > 1 ? (
                     <>
-                      <span className="text-white/35">·</span>
+                      <span className="text-text-3">·</span>
                       <Link
                         href="/profile#profile-riders"
-                        className="font-semibold text-[#ff9a7a] no-underline underline-offset-2 hover:underline"
+                        className="font-semibold text-brand-text no-underline underline-offset-2 hover:underline"
                       >
                         Switch
                       </Link>
                     </>
                   ) : null}
                 </div>
-                <div className="mt-2 border-t border-white/[0.08] pt-2.5">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/45">Current bike</p>
+                <div className="mt-2 border-t border-stroke pt-2.5">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-text-3">Current bike</p>
                   {currentRideLabel ? (
-                    <p className="mt-1 text-[13px] font-medium leading-snug text-white/90">{currentRideLabel}</p>
+                    <p className="mt-1 text-[13px] font-medium leading-snug text-text">{currentRideLabel}</p>
                   ) : (
-                    <p className="mt-1 text-[12px] leading-snug text-white/55">
+                    <p className="mt-1 text-[12px] leading-snug text-text-3">
                       None on file —{" "}
-                      <Link href="/profile#profile-ride" className="font-semibold text-[#ff9a7a] no-underline hover:underline">
+                      <Link href="/profile#profile-ride" className="font-semibold text-brand-text no-underline hover:underline">
                         add in Profile
                       </Link>{" "}
                       or when you add a rider.
@@ -427,7 +427,7 @@ function HomePageContent() {
 
             {/* Stat pills — with a profile, lead with care (ranking) not a bare catalogue count */}
             <div className="mt-5 flex flex-wrap gap-2">
-              <span className="rounded-full border border-white/[0.14] bg-white/[0.07] px-3 py-1.5 text-[11px] font-semibold text-white/75">
+              <span className="rounded-full border border-stroke bg-surface/70 px-3 py-1.5 text-[11px] font-semibold text-text-2">
                 {!profile
                   ? `${catalog.length} bikes to explore`
                   : searchActive
@@ -438,11 +438,11 @@ function HomePageContent() {
                         ? `${filteredBikes.length} listed · full match list`
                         : `${homeListBikes.length} match${homeListBikes.length !== 1 ? "es" : ""} · your filters`}
               </span>
-              <span className="rounded-full border border-white/[0.14] bg-white/[0.07] px-3 py-1.5 text-[11px] font-semibold text-white/75">
+              <span className="rounded-full border border-stroke bg-surface/70 px-3 py-1.5 text-[11px] font-semibold text-text-2">
                 Prices from 20+ AU stores
               </span>
               {hydrated && profile && (
-                <span className="rounded-full border border-[#e5471a]/40 bg-[#e5471a]/[0.15] px-3 py-1.5 text-[11px] font-semibold text-[#ff7b58]">
+                <span className="rounded-full border border-brand/40 bg-brand/12 px-3 py-1.5 text-[11px] font-semibold text-brand-text">
                   {ridingStyleLabels(profile.style)}
                 </span>
               )}
@@ -451,10 +451,10 @@ function HomePageContent() {
             {/* CTA if no profile */}
             {hydrated && !profile && (
               <div className="mt-7 flex flex-wrap gap-3">
-                <Link href="/welcome" className="inline-flex items-center gap-2 rounded-2xl bg-brand px-5 py-3 text-[14px] font-semibold text-white shadow-[0_8px_24px_rgba(229,71,26,0.45)] no-underline">
+                <Link href="/welcome" className="inline-flex items-center gap-2 rounded-2xl bg-brand px-5 py-3 text-[14px] font-semibold text-brand-fg shadow-[0_8px_24px_rgba(229,71,26,0.45)] no-underline">
                   Build your rider profile →
                 </Link>
-                <a href="#results" className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/[0.08] px-5 py-3 text-[14px] font-semibold text-white/85 no-underline">
+                <a href="#results" className="inline-flex items-center gap-2 rounded-2xl border border-stroke bg-surface/70 px-5 py-3 text-[14px] font-semibold text-text no-underline">
                   Browse bikes ↓
                 </a>
               </div>
@@ -468,10 +468,10 @@ function HomePageContent() {
                 return (
                   <div className="flex flex-col items-center gap-4 text-center">
                     <div className="text-6xl opacity-20">🚵</div>
-                    <p className="text-[13px] text-white/30">Add a bike to your profile to see it here</p>
+                    <p className="text-[13px] text-text-3">Add a bike to your profile to see it here</p>
                     <Link
                       href="/profile"
-                      className="rounded-full border border-white/20 px-4 py-2 text-[12px] font-semibold text-white/60 no-underline hover:text-white/90"
+                      className="rounded-full border border-stroke px-4 py-2 text-[12px] font-semibold text-text-3 no-underline hover:text-text"
                     >
                       Set up profile →
                     </Link>
@@ -493,18 +493,18 @@ function HomePageContent() {
                     <div className="pointer-events-none absolute inset-0 rounded-3xl bg-[radial-gradient(ellipse_80%_60%_at_50%_60%,rgba(229,71,26,0.22),transparent_70%)]" />
                     <div className="relative z-10 mb-2 flex flex-col items-center gap-1.5">
                       <div className="flex flex-wrap items-center justify-center gap-2">
-                        <span className="rounded-full border border-white/20 bg-white/[0.08] px-3 py-1 text-[11px] font-semibold text-white/70">
+                        <span className="rounded-full border border-stroke bg-surface/70 px-3 py-1 text-[11px] font-semibold text-text-2">
                           My current ride
                         </span>
                       </div>
                       {profile ? (
-                        <p className="max-w-[20rem] text-center text-[10px] leading-snug text-white/45">
+                        <p className="max-w-[20rem] text-center text-[10px] leading-snug text-text-3">
                           Matches for{" "}
-                          <span className="font-semibold text-white/70">{profile.nickname.trim() || "Rider"}</span>
+                          <span className="font-semibold text-text-2">{profile.nickname.trim() || "Rider"}</span>
                           {currentRideLabel ? (
                             <>
                               {" "}
-                              · current bike: <span className="text-white/65">{currentRideLabel}</span>
+                              · current bike: <span className="text-text-2">{currentRideLabel}</span>
                             </>
                           ) : (
                             <> · no current bike on file</>
@@ -512,7 +512,7 @@ function HomePageContent() {
                         </p>
                       ) : null}
                     </div>
-                    <div className="relative z-10 flex aspect-[4/3] w-full items-center justify-center overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.04]">
+                    <div className="relative z-10 flex aspect-[4/3] w-full items-center justify-center overflow-hidden rounded-2xl border border-stroke bg-surface/70">
                       {ce.photo ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
@@ -530,13 +530,13 @@ function HomePageContent() {
                       ) : lu?.status === "loading" ? (
                         <div className="flex flex-col items-center gap-3 px-6 py-12 text-center">
                           <span
-                            className="h-10 w-10 animate-spin rounded-full border-2 border-white/25 border-t-brand"
+                            className="h-10 w-10 animate-spin rounded-full border-2 border-stroke border-t-brand"
                             aria-hidden
                           />
-                          <p className="text-[13px] font-semibold leading-snug text-white/70">Finding photo &amp; specs…</p>
-                          <p className="max-w-[16rem] text-[11px] leading-snug text-white/45">
+                          <p className="text-[13px] font-semibold leading-snug text-text-2">Finding photo &amp; specs…</p>
+                          <p className="max-w-[16rem] text-[11px] leading-snug text-text-3">
                             Pulling retailer / editorial matches for{" "}
-                            <span className="text-white/65">{`${ce.brand} ${ce.name}`.trim() || "your bike"}</span>.
+                            <span className="text-text-2">{`${ce.brand} ${ce.name}`.trim() || "your bike"}</span>.
                           </p>
                         </div>
                       ) : (
@@ -544,10 +544,10 @@ function HomePageContent() {
                           <span className="text-6xl opacity-85" aria-hidden>
                             🚵
                           </span>
-                          <p className="text-[13px] font-semibold leading-snug text-white/70">
+                          <p className="text-[13px] font-semibold leading-snug text-text-2">
                             {`${ce.brand} ${ce.name}`.trim() || "Custom bike"}
                           </p>
-                          <p className="max-w-[16rem] text-[11px] leading-snug text-white/45">
+                          <p className="max-w-[16rem] text-[11px] leading-snug text-text-3">
                             {lu?.status === "failed"
                               ? "We couldn't find a confident image or spec sheet online — try Refresh below or tweak brand / model / year in Profile."
                               : "Save your bike in Profile to look up product photos and specs from the web."}
@@ -555,21 +555,21 @@ function HomePageContent() {
                         </div>
                       )}
                     </div>
-                    <div className="relative z-10 mt-2 w-full rounded-2xl border border-white/[0.10] bg-white/[0.06] px-5 py-3.5 text-left backdrop-blur-sm">
-                      <p className="text-[11px] font-semibold uppercase tracking-wide text-white/40">Your bike</p>
-                      <p className="mt-1 text-[17px] font-bold leading-tight text-white">
+                    <div className="relative z-10 mt-2 w-full rounded-2xl border border-stroke bg-surface/70 px-5 py-3.5 text-left backdrop-blur-sm">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-text-3">Your bike</p>
+                      <p className="mt-1 text-[17px] font-bold leading-tight text-text">
                         {`${ce.brand} ${ce.name}`.trim() || "Custom"}
                       </p>
-                      {line ? <p className="mt-1 text-[12px] text-white/50">{line}</p> : null}
+                      {line ? <p className="mt-1 text-[12px] text-text-3">{line}</p> : null}
                       {webSpecLine ? (
-                        <p className="mt-1 text-[12px] leading-snug text-white/55">{webSpecLine}</p>
+                        <p className="mt-1 text-[12px] leading-snug text-text-3">{webSpecLine}</p>
                       ) : null}
                       {lu?.status === "ok" && lu.sourceUrl ? (
                         <a
                           href={lu.sourceUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="mt-1 inline-block text-[10px] font-semibold text-white/45 underline-offset-2 hover:text-white/70 hover:underline"
+                          className="mt-1 inline-block text-[10px] font-semibold text-text-3 underline-offset-2 hover:text-text-2 hover:underline"
                         >
                           Found via source ↗
                         </a>
@@ -584,7 +584,7 @@ function HomePageContent() {
                         <button
                           type="button"
                           onClick={() => forceWebBikeLookupRefresh(currentBikeStorageKey)}
-                          className="text-[11px] font-semibold text-white/55 underline-offset-2 hover:text-white/85 hover:underline"
+                          className="text-[11px] font-semibold text-text-3 underline-offset-2 hover:text-text hover:underline"
                         >
                           Refresh image &amp; specs
                         </button>
@@ -607,23 +607,23 @@ function HomePageContent() {
                   {/* Badge */}
                   <div className="relative z-10 mb-2 flex flex-col items-center gap-1.5">
                     <div className="flex flex-wrap items-center justify-center gap-2">
-                      <span className="rounded-full border border-white/20 bg-white/[0.08] px-3 py-1 text-[11px] font-semibold text-white/70">
+                      <span className="rounded-full border border-stroke bg-surface/70 px-3 py-1 text-[11px] font-semibold text-text-2">
                         {badgeLabel}
                       </span>
                       {mode === "topPick" && matchPct !== null ? (
-                        <span className="rounded-full bg-[rgba(229,71,26,0.25)] px-2.5 py-1 text-[11px] font-bold text-[#ff8060]">
+                        <span className="rounded-full bg-brand/25 px-2.5 py-1 text-[11px] font-bold text-brand-text">
                           {matchPct}% match
                         </span>
                       ) : null}
                     </div>
                     {profile ? (
-                      <p className="max-w-[20rem] text-center text-[10px] leading-snug text-white/45">
+                      <p className="max-w-[20rem] text-center text-[10px] leading-snug text-text-3">
                         Matches for{" "}
-                        <span className="font-semibold text-white/70">{profile.nickname.trim() || "Rider"}</span>
+                        <span className="font-semibold text-text-2">{profile.nickname.trim() || "Rider"}</span>
                         {currentRideLabel ? (
                           <>
                             {" "}
-                            · current bike: <span className="text-white/65">{currentRideLabel}</span>
+                            · current bike: <span className="text-text-2">{currentRideLabel}</span>
                           </>
                         ) : (
                           <> · no current bike on file</>
@@ -642,11 +642,11 @@ function HomePageContent() {
                   </div>
 
                   {/* Floating info card */}
-                  <div className="relative z-10 mt-2 flex w-full items-end justify-between gap-3 rounded-2xl border border-white/[0.10] bg-white/[0.06] px-5 py-3.5 backdrop-blur-sm">
+                  <div className="relative z-10 mt-2 flex w-full items-end justify-between gap-3 rounded-2xl border border-stroke bg-surface/70 px-5 py-3.5 backdrop-blur-sm">
                     <div>
-                      <p className="text-[11px] font-semibold uppercase tracking-wide text-white/40">{heroBike.brand}</p>
-                      <p className="mt-0.5 text-[17px] font-bold leading-tight text-white">{heroBike.model}</p>
-                      <p className="mt-0.5 text-[12px] text-white/50">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-text-3">{heroBike.brand}</p>
+                      <p className="mt-0.5 text-[17px] font-bold leading-tight text-text">{heroBike.model}</p>
+                      <p className="mt-0.5 text-[12px] text-text-3">
                         {[heroBike.category, heroBike.travel, heroBike.wheel].filter(Boolean).join(" · ")}
                       </p>
                     </div>
@@ -1029,7 +1029,7 @@ function HomePageContent() {
             <button
               type="button"
               onClick={() => resetFiltersAndList()}
-              className="mt-5 inline-flex items-center justify-center rounded-full bg-brand px-5 py-2.5 text-[13px] font-semibold text-white shadow-[0_8px_20px_rgba(229,71,26,0.35)]"
+              className="mt-5 inline-flex items-center justify-center rounded-full bg-brand px-5 py-2.5 text-[13px] font-semibold text-brand-fg shadow-[0_8px_20px_rgba(229,71,26,0.35)]"
             >
               Clear all filters
             </button>
@@ -1086,7 +1086,7 @@ function HomePageContent() {
                   </button>
                   {/* eBike tag */}
                   {bike.isEbike && (
-                    <span className="absolute bottom-2.5 left-2.5 rounded-full bg-brand px-2.5 py-0.5 text-[10px] font-bold text-white">
+                    <span className="absolute bottom-2.5 left-2.5 rounded-full bg-brand px-2.5 py-0.5 text-[10px] font-bold text-brand-fg">
                       eBike
                     </span>
                   )}
