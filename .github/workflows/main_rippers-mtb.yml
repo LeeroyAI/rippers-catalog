@@ -79,13 +79,14 @@ jobs:
       # Configuration > General settings > Startup Command: node server.js
       - name: Configure App Service for the prebuilt standalone bundle
         run: |
+          # Force everything onto port 8080 so there is no probe/listen mismatch:
+          # Azure probes WEBSITES_PORT (8080) and the standalone listens on
+          # 0.0.0.0:8080. HOSTNAME must be 0.0.0.0 or Next binds to the container
+          # name and the probe times out.
           az webapp config appsettings set -g rippers-rg -n rippers-mtb \
-            --settings SCM_DO_BUILD_DURING_DEPLOYMENT=false ENABLE_ORYX_BUILD=false 1>/dev/null
-          # Next.js standalone binds to process.env.HOSTNAME, which Azure sets to
-          # the container name -> the server binds to the wrong interface and the
-          # health probe times out (ContainerTimeout). Force 0.0.0.0.
+            --settings SCM_DO_BUILD_DURING_DEPLOYMENT=false ENABLE_ORYX_BUILD=false WEBSITES_PORT=8080 1>/dev/null
           az webapp config set -g rippers-rg -n rippers-mtb \
-            --startup-file "HOSTNAME=0.0.0.0 node server.js" --linux-fx-version "NODE|22-lts" 1>/dev/null
+            --startup-file "HOSTNAME=0.0.0.0 PORT=8080 node server.js" --linux-fx-version "NODE|22-lts" 1>/dev/null
           echo "Startup command is now: $(az webapp config show -g rippers-rg -n rippers-mtb --query appCommandLine -o tsv)"
 
       # Root cause: the default (incremental) deploy left the OLD build's files
@@ -113,3 +114,13 @@ jobs:
             echo "attempt $i: not flipped yet..."
           done
           echo "FAILED: live site did not flip to the new build after deploy."; exit 1
+
+      # If anything above failed (e.g. the container would not boot), print the
+      # actual container startup log so we stop guessing about the cause.
+      - name: Show container startup log (on failure)
+        if: failure()
+        run: |
+          az webapp log download -g rippers-rg -n rippers-mtb --log-file /tmp/logs.zip 1>/dev/null 2>&1 || true
+          mkdir -p /tmp/logs && unzip -o /tmp/logs.zip -d /tmp/logs 1>/dev/null 2>&1 || true
+          echo "===== CONTAINER STARTUP LOG (last 80 lines) ====="
+          ( cat /tmp/logs/LogFiles/*docker*.log 2>/dev/null || find /tmp/logs -name '*.log' -exec cat {} + 2>/dev/null ) | tail -80 || echo "(no logs retrieved)"
