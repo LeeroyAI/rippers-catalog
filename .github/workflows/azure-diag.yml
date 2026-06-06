@@ -1,0 +1,34 @@
+name: Azure Diag (manual)
+
+# Read-only diagnostic: dump the App Service runtime config so we can see why a
+# deploy is not taking effect. Manual trigger only; does not deploy anything.
+on:
+  workflow_dispatch:
+
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_988D18DAEB0A46AB901C334E297A85AE }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_5DF74410192B4D7FABEA47A5D4773535 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_7C9B3CC268574CD99B1DD5B597664741 }}
+
+      - name: Dump runtime config
+        run: |
+          echo "===== general config (startup command + runtime) ====="
+          az webapp config show -g rippers-rg -n rippers-mtb \
+            --query "{appCommandLine:appCommandLine, linuxFxVersion:linuxFxVersion, alwaysOn:alwaysOn}" -o json
+          echo "===== relevant app settings ====="
+          az webapp config appsettings list -g rippers-rg -n rippers-mtb \
+            --query "[?contains(name,'RUN_FROM_PACKAGE') || contains(name,'SCM_DO_BUILD') || contains(name,'ENABLE_ORYX') || contains(name,'WEBSITES_PORT') || name=='PORT'].{name:name, value:value}" -o json
+          echo "===== wwwroot top-level (is it the standalone bundle?) ====="
+          TOKEN=$(az account get-access-token --resource https://management.azure.com --query accessToken -o tsv)
+          curl -s -H "Authorization: Bearer $TOKEN" \
+            "https://rippers-mtb.scm.azurewebsites.net/api/vfs/site/wwwroot/" 2>/dev/null \
+            | tr ',' '\n' | grep -iE '"name"' | head -30 || echo "(kudu vfs listing unavailable)"
