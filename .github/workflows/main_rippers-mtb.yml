@@ -81,8 +81,11 @@ jobs:
         run: |
           az webapp config appsettings set -g rippers-rg -n rippers-mtb \
             --settings SCM_DO_BUILD_DURING_DEPLOYMENT=false ENABLE_ORYX_BUILD=false 1>/dev/null
+          # Next.js standalone binds to process.env.HOSTNAME, which Azure sets to
+          # the container name -> the server binds to the wrong interface and the
+          # health probe times out (ContainerTimeout). Force 0.0.0.0.
           az webapp config set -g rippers-rg -n rippers-mtb \
-            --startup-file "node server.js" --linux-fx-version "NODE|22-lts" 1>/dev/null
+            --startup-file "HOSTNAME=0.0.0.0 node server.js" --linux-fx-version "NODE|22-lts" 1>/dev/null
           echo "Startup command is now: $(az webapp config show -g rippers-rg -n rippers-mtb --query appCommandLine -o tsv)"
 
       # Root cause: the default (incremental) deploy left the OLD build's files
