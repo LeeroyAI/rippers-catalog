@@ -81,7 +81,15 @@ jobs:
         run: |
           az webapp config appsettings set -g rippers-rg -n rippers-mtb \
             --settings SCM_DO_BUILD_DURING_DEPLOYMENT=false ENABLE_ORYX_BUILD=false 1>/dev/null
-          az webapp config set -g rippers-rg -n rippers-mtb --startup-file "node server.js" 1>/dev/null
+          az webapp config set -g rippers-rg -n rippers-mtb \
+            --startup-file "node server.js" --linux-fx-version "NODE|22-lts" 1>/dev/null
+          echo "Startup command is now: $(az webapp config show -g rippers-rg -n rippers-mtb --query appCommandLine -o tsv)"
+
+      # Microsoft's documented cure for "deploy succeeds but the app never
+      # updates": stop the app so files are not locked / partially updated,
+      # deploy a clean copy, then start it.
+      - name: Stop App Service (clean cutover)
+        run: az webapp stop -g rippers-rg -n rippers-mtb 1>/dev/null
 
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
@@ -91,8 +99,19 @@ jobs:
           slot-name: 'Production'
           package: .
 
-      # Force a restart so the app launches the new `node server.js` standalone
-      # bundle with the updated startup command. Without this, App Service keeps
-      # running the old process and serves a stale build.
-      - name: Restart App Service to load the new build
-        run: az webapp restart -g rippers-rg -n rippers-mtb 1>/dev/null
+      - name: Start App Service
+        run: az webapp start -g rippers-rg -n rippers-mtb 1>/dev/null
+
+      # Prove it worked: the home page (public) must now serve the new build.
+      # Fails the job if the live site is still the old build.
+      - name: Verify the live site flipped to the new build
+        run: |
+          for i in $(seq 1 12); do
+            sleep 15
+            body=$(curl -s --max-time 20 "https://rippers-mtb.azurewebsites.net/" -H "Cookie: rippers_onboarded=1" -L || true)
+            if echo "$body" | grep -q "Find the right MTB"; then
+              echo "SUCCESS: live site is serving the new build."; exit 0
+            fi
+            echo "attempt $i: not flipped yet..."
+          done
+          echo "FAILED: live site did not flip to the new build after deploy."; exit 1
