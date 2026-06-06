@@ -1028,7 +1028,7 @@ function HomePageContent() {
                   aria-label={`View ${bike.brand} ${bike.model} specs`}
                 />
                 {/* Image, pointer-events-none so the underlying Link receives taps; buttons opt back in */}
-                <div className="relative z-[2] aspect-[16/10] overflow-hidden bg-surface pointer-events-none">
+                <div className="relative z-[2] aspect-[16/10] overflow-hidden pointer-events-none">
                   <BikeProductImage
                     bikeId={bike.id}
                     alt={`${bike.brand} ${bike.model}`}

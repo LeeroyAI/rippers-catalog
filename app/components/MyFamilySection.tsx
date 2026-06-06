@@ -81,7 +81,7 @@ function FamilyRiderCard({
             <div className="flex h-full w-full items-center justify-center">{initial}</div>
           )}
         </div>
-        <div className="h-14 w-20 shrink-0 overflow-hidden rounded-xl bg-surface sm:h-16 sm:w-full sm:max-w-[5.5rem]">
+        <div className="h-14 w-20 shrink-0 overflow-hidden rounded-xl sm:h-16 sm:w-full sm:max-w-[5.5rem]">
           {entry?.type === "catalog" && catBike ? (
             <BikeProductImage
               bikeId={catBike.id}

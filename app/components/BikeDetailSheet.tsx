@@ -288,7 +288,7 @@ export default function BikeDetailSheet({ bike, onClose }: Props) {
           }}
         >
         {/* Hero image */}
-        <div className="relative mx-4 mt-1 aspect-[16/9] overflow-hidden rounded-2xl bg-surface ring-1 ring-stroke">
+        <div className="relative mx-4 mt-1 aspect-[16/9] overflow-hidden rounded-2xl ring-1 ring-stroke">
           <BikeProductImage
             bikeId={bike.id}
             alt={`${bike.brand} ${bike.model}`}

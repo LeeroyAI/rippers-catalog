@@ -47,7 +47,7 @@ export default function BikeProductImage({ bikeId, alt, className }: Props) {
     <img
       src={src}
       alt={alt}
-      className={className}
+      className={`r-bike-img ${className ?? ""}`}
       loading="lazy"
       decoding="async"
       referrerPolicy="no-referrer"

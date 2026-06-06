@@ -156,7 +156,7 @@ export default function WatchlistPage() {
                 aria-label={`View ${bike.brand} ${bike.model}`}
               >
                 {/* Image */}
-                <div className="relative aspect-[16/10] overflow-hidden bg-surface">
+                <div className="relative aspect-[16/10] overflow-hidden">
                   <BikeProductImage
                     bikeId={bike.id}
                     alt={`${bike.brand} ${bike.model}`}

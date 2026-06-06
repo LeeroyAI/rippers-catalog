@@ -85,7 +85,7 @@ export default function SizingPage() {
   const inseam = height && height >= 140 ? estimateInseam(height) : null;
 
   return (
-    <PageContainer width="narrow">
+    <PageContainer width="wide">
       <div className="mb-3 flex items-center gap-2">
         <Link href="/" className="text-[12px] font-semibold text-brand-text no-underline">← Home</Link>
         <span className="text-[12px] text-text-3">/</span>
