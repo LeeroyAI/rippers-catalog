@@ -94,7 +94,7 @@ function SearchDropdown({
                   className="flex w-full items-center gap-3 px-3 py-2.5 text-left hover:bg-brand/10"
                   onClick={() => { onAdd(b); setQuery(""); setOpen(false); }}
                 >
-                  <div className="h-10 w-14 shrink-0 overflow-hidden rounded-lg bg-surface">
+                  <div className="h-10 w-14 shrink-0 overflow-hidden rounded-lg">
                     <BikeProductImage bikeId={b.id} alt="" className="h-full w-full object-contain p-1" />
                   </div>
                   <div className="min-w-0 flex-1">
@@ -198,7 +198,7 @@ function ComparePageContent() {
                 return (
                   <div key={bike.id} className="flex flex-col rounded-2xl border border-stroke bg-surface shadow-sm overflow-hidden">
                     {/* Image */}
-                    <div className="relative aspect-[4/3] bg-surface">
+                    <div className="relative aspect-[4/3]">
                       <BikeProductImage bikeId={bike.id} alt={`${bike.brand} ${bike.model}`} className="h-full w-full object-contain p-2" />
                       <button
                         type="button"

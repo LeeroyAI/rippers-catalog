@@ -213,7 +213,7 @@ export default function EditFamilyRiderModal({ rider, open, onClose, onViewCatal
             <div className="mt-4 rounded-xl border border-stroke bg-surface px-3 py-3">
               <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-text-3">Current ride</p>
               <div className="mt-2 flex items-center gap-3">
-                <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-surface">
+                <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg">
                   {entry.type === "catalog" && catBike ? (
                     <BikeProductImage bikeId={catBike.id} alt="" className="h-full w-full object-contain p-0.5" />
                   ) : entry.type === "custom" && entry.photo ? (

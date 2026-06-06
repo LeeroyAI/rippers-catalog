@@ -26,7 +26,7 @@ export default function HomeCarouselCard({ bike, matchPct, onMatchClick }: Props
         className="absolute inset-0 z-[1] rounded-[1.125rem] focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
         aria-label={`View ${bike.brand} ${bike.model} specs`}
       />
-      <div className="r-carousel-thumb relative z-[2] aspect-[3/4] w-full overflow-hidden pointer-events-none">
+      <div className="relative z-[2] aspect-[3/4] w-full overflow-hidden pointer-events-none">
         <BikeProductImage
           bikeId={bike.id}
           alt={`${bike.brand} ${bike.model}`}

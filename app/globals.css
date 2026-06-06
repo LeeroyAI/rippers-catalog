@@ -819,3 +819,11 @@ summary:focus-visible {
   font-weight: 600;
   color: rgb(var(--c-text));
 }
+
+/* Bike product images: many come from retailers as white-background JPEG/WebP.
+   In light mode, `multiply` blends the white into the surface so the bike reads
+   as having a transparent background. Scoped to light only: on dark surfaces
+   multiply would darken the whole image, so dark mode is left untouched. */
+html.light .r-bike-img {
+  mix-blend-mode: multiply;
+}

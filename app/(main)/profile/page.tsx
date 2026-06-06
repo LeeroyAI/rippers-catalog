@@ -507,7 +507,7 @@ export default function ProfilePage() {
   return (
     <div className="r-home-bg w-full">
       <CreateFamilyModal open={familyModalOpen} onClose={() => setFamilyModalOpen(false)} />
-      <PageContainer width="default">
+      <PageContainer width="wide">
         <nav
           className="sticky top-0 z-30 -mx-4 mb-4 flex flex-wrap gap-1 border-b border-stroke bg-bg/95 px-2 py-2 backdrop-blur-md md:-mx-6 md:px-4"
           aria-label="Profile sections"
@@ -892,7 +892,7 @@ export default function ProfilePage() {
           {/* Current bike display */}
           {currentBikeEntry ? (
             <div className="r-glass-well flex items-center gap-4 px-4 py-4">
-              <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-surface">
+              <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl">
                 {currentBikeEntry.type === "catalog" && currentCatalogBike ? (
                   <BikeProductImage
                     bikeId={currentCatalogBike.id}
@@ -1033,7 +1033,7 @@ export default function ProfilePage() {
                               setBikeSearchOpen(false);
                             }}
                           >
-                            <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-surface">
+                            <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg">
                               <BikeProductImage bikeId={b.id} alt={b.model} className="h-full w-full object-contain p-0.5" />
                             </div>
                             <div>
@@ -1151,7 +1151,7 @@ export default function ProfilePage() {
                       className="absolute inset-0 z-[1] rounded-2xl border-0 bg-transparent p-0 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
                     />
                     <div className="relative z-[2] flex flex-col pointer-events-none">
-                      <div className="relative aspect-[4/3] w-full overflow-hidden bg-surface">
+                      <div className="relative aspect-[4/3] w-full overflow-hidden">
                         <BikeProductImage
                           bikeId={bike.id}
                           alt={bike.model}
