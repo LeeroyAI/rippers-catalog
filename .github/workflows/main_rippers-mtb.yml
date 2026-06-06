@@ -85,22 +85,17 @@ jobs:
             --startup-file "node server.js" --linux-fx-version "NODE|22-lts" 1>/dev/null
           echo "Startup command is now: $(az webapp config show -g rippers-rg -n rippers-mtb --query appCommandLine -o tsv)"
 
-      # Microsoft's documented cure for "deploy succeeds but the app never
-      # updates": stop the app so files are not locked / partially updated,
-      # deploy a clean copy, then start it.
-      - name: Stop App Service (clean cutover)
-        run: az webapp stop -g rippers-rg -n rippers-mtb 1>/dev/null
+      # Root cause: the default (incremental) deploy left the OLD build's files
+      # in /home/site/wwwroot, so the app kept running the old server.js. Package
+      # the bundle and deploy with --clean, which WIPES wwwroot first so only the
+      # new build remains, then restarts.
+      - name: Package the standalone bundle
+        run: cd "$GITHUB_WORKSPACE" && zip -r -q /tmp/app.zip . -x '*.git*'
 
-      - name: 'Deploy to Azure Web App'
-        id: deploy-to-webapp
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: 'rippers-mtb'
-          slot-name: 'Production'
-          package: .
-
-      - name: Start App Service
-        run: az webapp start -g rippers-rg -n rippers-mtb 1>/dev/null
+      - name: Deploy (clean) to Azure Web App
+        run: |
+          az webapp deploy -g rippers-rg -n rippers-mtb \
+            --src-path /tmp/app.zip --type zip --clean true --restart true 1>/dev/null
 
       # Prove it worked: the home page (public) must now serve the new build.
       # Fails the job if the live site is still the old build.
