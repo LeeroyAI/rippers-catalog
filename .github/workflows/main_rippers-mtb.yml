@@ -90,3 +90,9 @@ jobs:
           app-name: 'rippers-mtb'
           slot-name: 'Production'
           package: .
+
+      # Force a restart so the app launches the new `node server.js` standalone
+      # bundle with the updated startup command. Without this, App Service keeps
+      # running the old process and serves a stale build.
+      - name: Restart App Service to load the new build
+        run: az webapp restart -g rippers-rg -n rippers-mtb 1>/dev/null
