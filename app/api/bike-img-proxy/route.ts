@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import {
+  getMemoized,
+  setMemoized,
+  transparentizeWhiteBackground,
+} from "@/app/api/_image/transparentize";
+
 export const runtime = "nodejs";
+
+const CACHE_CONTROL =
+  "public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800";
 
 /**
  * Host suffixes allowed for dynamic hero images (retailer CDNs + editorial).
@@ -90,6 +99,20 @@ export async function GET(req: NextRequest) {
     return new NextResponse(null, { status: 403 });
   }
 
+  // `?raw=1` opts out of the white-background knockout (serve upstream as-is).
+  const rawPassthrough = req.nextUrl.searchParams.get("raw") === "1";
+  const memoKey = `url:${url.toString()}`;
+
+  if (!rawPassthrough) {
+    const memo = getMemoized(memoKey);
+    if (memo) {
+      return new NextResponse(memo.buffer as unknown as BodyInit, {
+        status: 200,
+        headers: { "Content-Type": memo.contentType, "Cache-Control": CACHE_CONTROL },
+      });
+    }
+  }
+
   const origin = url.origin;
 
   try {
@@ -116,11 +139,23 @@ export async function GET(req: NextRequest) {
 
     const body = Buffer.from(await upstream.arrayBuffer());
 
-    return new NextResponse(body, {
+    // Knock out a white product-photo background. `null` => serve original.
+    if (!rawPassthrough) {
+      const transparent = await transparentizeWhiteBackground(body);
+      setMemoized(memoKey, transparent);
+      if (transparent) {
+        return new NextResponse(transparent.buffer as unknown as BodyInit, {
+          status: 200,
+          headers: { "Content-Type": transparent.contentType, "Cache-Control": CACHE_CONTROL },
+        });
+      }
+    }
+
+    return new NextResponse(body as unknown as BodyInit, {
       status: 200,
       headers: {
         "Content-Type": contentType,
-        "Cache-Control": "public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800",
+        "Cache-Control": CACHE_CONTROL,
       },
     });
   } catch {
