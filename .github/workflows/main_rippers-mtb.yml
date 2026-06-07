@@ -108,14 +108,31 @@ jobs:
 
       - name: Deploy (clean) to Azure Web App
         run: |
-          # Pure file copy now (no build), so this returns well within the SCM
-          # timeout. --clean wipes wwwroot so stale files never linger.
-          az webapp deploy -g rippers-rg -n rippers-mtb \
-            --src-path app.zip --type zip --clean true --restart false 1>/dev/null
+          # The app is stopped, so OneDeploy's --clean fully wipes wwwroot. The
+          # file copy completes server-side in 1-2 min, but the CLI then blocks
+          # waiting for the STOPPED site to start (it never will until the next
+          # step), so bound it with `timeout` and tolerate the non-zero exit.
+          # The next step confirms the deployment actually reached status 4.
+          timeout 240 az webapp deploy -g rippers-rg -n rippers-mtb \
+            --src-path app.zip --type zip --clean true --restart false \
+            --track-status false 1>/dev/null 2>&1 || true
+
+      - name: Confirm deployment succeeded server-side
+        run: |
+          for i in $(seq 1 24); do
+            st=$(az rest --method GET \
+              --url "https://rippers-mtb.scm.azurewebsites.net/api/deployments?\$top=1" \
+              --resource "https://management.azure.com" \
+              --query "[0].status" -o tsv 2>/dev/null || echo "")
+            echo "deployment status: ${st:-?} (4=success, 3=failed)"
+            [ "$st" = "4" ] && exit 0
+            [ "$st" = "3" ] && { echo "deployment failed"; exit 1; }
+            sleep 10
+          done
+          echo "timed out waiting for deployment to finish"; exit 1
 
       - name: Start the app
-        run: |
-          az webapp start -g rippers-rg -n rippers-mtb 1>/dev/null
+        run: az webapp start -g rippers-rg -n rippers-mtb 1>/dev/null
 
       - name: Verify the live site is serving the new build
         run: |
