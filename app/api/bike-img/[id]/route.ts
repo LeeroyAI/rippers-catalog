@@ -1,8 +1,16 @@
 import { NextResponse } from "next/server";
 
 import { bikeImageUrlForId } from "@/src/data/bike-images";
+import {
+  getMemoized,
+  setMemoized,
+  transparentizeWhiteBackground,
+} from "@/app/api/_image/transparentize";
 
 export const runtime = "nodejs";
+
+const CACHE_CONTROL =
+  "public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800";
 
 /**
  * Proxies authenticated-looking server fetches so retailer CDNs deliver hero art
@@ -21,6 +29,20 @@ export async function GET(
   const url = bikeImageUrlForId(id);
   if (!url) {
     return new NextResponse(null, { status: 404 });
+  }
+
+  // `?raw=1` opts out of the white-background knockout (serve upstream as-is).
+  const rawPassthrough = new URL(_req.url).searchParams.get("raw") === "1";
+
+  // Fast path: a previously-produced transparent WebP for this id.
+  if (!rawPassthrough) {
+    const memo = getMemoized(`id:${id}`);
+    if (memo) {
+      return new NextResponse(memo.buffer as unknown as BodyInit, {
+        status: 200,
+        headers: { "Content-Type": memo.contentType, "Cache-Control": CACHE_CONTROL },
+      });
+    }
   }
 
   const origin = new URL(url).origin;
@@ -46,12 +68,25 @@ export async function GET(
 
     const body = Buffer.from(await upstream.arrayBuffer());
 
+    // Knock out a white product-photo background so the hero sits cleanly on
+    // any surface (dark mode especially). `null` => no white border, serve original.
+    if (!rawPassthrough) {
+      const transparent = await transparentizeWhiteBackground(body);
+      setMemoized(`id:${id}`, transparent);
+      if (transparent) {
+        return new NextResponse(transparent.buffer as unknown as BodyInit, {
+          status: 200,
+          headers: { "Content-Type": transparent.contentType, "Cache-Control": CACHE_CONTROL },
+        });
+      }
+    }
+
     /* Stream nothing unusual — CDN responses are modest hero sizes */
-    return new NextResponse(body, {
+    return new NextResponse(body as unknown as BodyInit, {
       status: 200,
       headers: {
         "Content-Type": contentType,
-        "Cache-Control": "public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800",
+        "Cache-Control": CACHE_CONTROL,
       },
     });
   } catch {
