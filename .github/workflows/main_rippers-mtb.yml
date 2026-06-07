@@ -96,12 +96,26 @@ jobs:
           az webapp config set -g rippers-rg -n rippers-mtb \
             --startup-file "node server.js" --linux-fx-version "NODE|22-lts" 1>/dev/null
 
+      - name: Stop the app so --clean can fully wipe wwwroot
+        run: |
+          # A running container locks node_modules and any leftover
+          # node_modules.tar.gz, so OneDeploy's --clean silently skips them and
+          # stale files survive. A stale node_modules.tar.gz is fatal: the
+          # appsvc Node image extracts it over the real node_modules on boot,
+          # so `node server.js` exits 1. Stop first => nothing locked => clean.
+          az webapp stop -g rippers-rg -n rippers-mtb 1>/dev/null
+          sleep 5
+
       - name: Deploy (clean) to Azure Web App
         run: |
           # Pure file copy now (no build), so this returns well within the SCM
           # timeout. --clean wipes wwwroot so stale files never linger.
           az webapp deploy -g rippers-rg -n rippers-mtb \
-            --src-path app.zip --type zip --clean true --restart true 1>/dev/null
+            --src-path app.zip --type zip --clean true --restart false 1>/dev/null
+
+      - name: Start the app
+        run: |
+          az webapp start -g rippers-rg -n rippers-mtb 1>/dev/null
 
       - name: Verify the live site is serving the new build
         run: |
