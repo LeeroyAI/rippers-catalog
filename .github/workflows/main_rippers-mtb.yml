@@ -12,6 +12,13 @@ on:
       - main
   workflow_dispatch:
 
+# Serialize deploys. Two overlapping `az webapp deploy` runs restart the SCM
+# container out from under each other ("Deployment has been stopped due to SCM
+# container restart"). Queue, never cancel mid-deploy.
+concurrency:
+  group: azure-deploy-rippers-mtb
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -24,19 +31,39 @@ jobs:
         with:
           ref: ${{ github.event.workflow_run.head_sha || github.ref }}
 
-      # Ship the SOURCE (no node_modules / .next). Azure's own build system
-      # (Oryx) runs `npm install` + `npm run build`, then starts the app with
-      # `next start`, which binds 0.0.0.0:$PORT correctly. This is the
-      # platform-native path and avoids the Next "standalone" server's Azure
-      # startup problems (HOSTNAME binding, exit-code-1 on boot).
-      - name: Package source for Oryx build
-        run: zip -r -q /tmp/src.zip . -x '*.git*' 'node_modules/*' '.next/*'
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.x"
+          cache: "npm"
 
-      - name: Upload source artifact
+      - name: Install dependencies
+        run: npm ci
+
+      # Build the self-contained server bundle HERE (Linux x64 runner, plenty of
+      # RAM + correct native binaries). The B1 App Service instance cannot run
+      # `next build` (OOM), so we never build on Azure.
+      - name: Build standalone bundle
+        run: npm run build
+
+      # Assemble the deploy root. `next build` puts the traced server +
+      # node_modules in .next/standalone, but NOT the static assets or /public,
+      # so copy those in alongside server.js.
+      - name: Assemble standalone deploy directory
+        run: |
+          mkdir -p deploy
+          cp -r .next/standalone/. deploy/
+          mkdir -p deploy/.next
+          cp -r .next/static deploy/.next/static
+          if [ -d public ]; then cp -r public deploy/public; fi
+          ( cd deploy && zip -r -q /tmp/app.zip . )
+          ls -lh /tmp/app.zip
+
+      - name: Upload deploy artifact
         uses: actions/upload-artifact@v4
         with:
-          name: src
-          path: /tmp/src.zip
+          name: app
+          path: /tmp/app.zip
 
   deploy:
     runs-on: ubuntu-latest
@@ -46,10 +73,10 @@ jobs:
       contents: read
 
     steps:
-      - name: Download source artifact
+      - name: Download deploy artifact
         uses: actions/download-artifact@v4
         with:
-          name: src
+          name: app
 
       - name: Login to Azure
         uses: azure/login@v2
@@ -58,39 +85,43 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_5DF74410192B4D7FABEA47A5D4773535 }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_7C9B3CC268574CD99B1DD5B597664741 }}
 
-      - name: Configure App Service to build with Oryx and start Next
+      - name: Configure App Service to RUN the prebuilt bundle (no Oryx build)
         run: |
-          # Azure builds the deployed source (npm install + next build) and runs
-          # `npm start` (= next start). Clear the standalone-era custom startup
-          # and the non-standard port so the platform uses its defaults.
+          # The zip is already built. Tell Kudu NOT to build (no npm install /
+          # next build on the B1 box), and start the Next standalone server.
           az webapp config appsettings set -g rippers-rg -n rippers-mtb \
-            --settings SCM_DO_BUILD_DURING_DEPLOYMENT=true ENABLE_ORYX_BUILD=true 1>/dev/null
+            --settings SCM_DO_BUILD_DURING_DEPLOYMENT=false ENABLE_ORYX_BUILD=false 1>/dev/null
           az webapp config appsettings delete -g rippers-rg -n rippers-mtb \
             --setting-names WEBSITES_PORT 1>/dev/null 2>&1 || true
           az webapp config set -g rippers-rg -n rippers-mtb \
-            --startup-file "npm run start" --linux-fx-version "NODE|22-lts" 1>/dev/null
+            --startup-file "node server.js" --linux-fx-version "NODE|22-lts" 1>/dev/null
 
       - name: Deploy (clean) to Azure Web App
         run: |
+          # Pure file copy now (no build), so this returns well within the SCM
+          # timeout. --clean wipes wwwroot so stale files never linger.
           az webapp deploy -g rippers-rg -n rippers-mtb \
-            --src-path src.zip --type zip --clean true --restart true 1>/dev/null
+            --src-path app.zip --type zip --clean true --restart true 1>/dev/null
 
-      - name: Verify the live site flipped to the new build
+      - name: Verify the live site is serving the new build
         run: |
+          # Check a SERVER-rendered marker. The hero headline is client-rendered
+          # so curl never sees it; the <title> is in the SSR HTML head.
           for i in $(seq 1 18); do
-            sleep 20
-            body=$(curl -s --max-time 20 "https://rippers-mtb.azurewebsites.net/" -H "Cookie: rippers_onboarded=1" -L || true)
-            if echo "$body" | grep -q "Find the right MTB"; then
-              echo "SUCCESS: live site is serving the new build."; exit 0
+            sleep 15
+            code=$(curl -s -o /tmp/body.html -w '%{http_code}' --max-time 20 \
+              "https://rippers-mtb.azurewebsites.net/" -H "Cookie: rippers_onboarded=1" -L || true)
+            if [ "$code" = "200" ] && grep -q "Rippers App" /tmp/body.html; then
+              echo "SUCCESS: live site is up (HTTP 200, app shell served)."; exit 0
             fi
-            echo "attempt $i: not flipped yet..."
+            echo "attempt $i: HTTP $code, not ready yet..."
           done
-          echo "FAILED: live site did not flip after deploy."; exit 1
+          echo "FAILED: live site did not come up after deploy."; exit 1
 
-      - name: Show container startup log (on failure)
+      - name: Show container log (on failure)
         if: failure()
         run: |
           az webapp log download -g rippers-rg -n rippers-mtb --log-file /tmp/logs.zip 1>/dev/null 2>&1 || true
           mkdir -p /tmp/logs && unzip -o /tmp/logs.zip -d /tmp/logs 1>/dev/null 2>&1 || true
-          echo "===== CONTAINER / BUILD LOG (last 120 lines) ====="
+          echo "===== CONTAINER LOG (last 120 lines) ====="
           ( find /tmp/logs -name '*.log' -exec cat {} + 2>/dev/null ) | tail -120 || echo "(no logs retrieved)"
