@@ -90,6 +90,28 @@ describe("whiteToAlpha", () => {
     expect(res.changed).toBe(false);
   });
 
+  it("clears a soft grey drop-shadow that is connected to the white background", () => {
+    const w = 24;
+    const h = 24;
+    // White everywhere, a light-grey shadow band along the bottom (connected to
+    // the white), and a dark subject block floating above it.
+    const data = makeImage(w, h, (x, y) => {
+      const inSubject = x >= 8 && x < 16 && y >= 6 && y < 12;
+      if (inSubject) return [25, 25, 28, 255];
+      const inShadow = y >= 18 && y < 21; // neutral light grey, below pure-white
+      if (inShadow) return [210, 210, 210, 255];
+      return [255, 255, 255, 255];
+    });
+
+    const res = whiteToAlpha(data, w, h);
+
+    expect(res.changed).toBe(true);
+    // The soft grey shadow is background -> cleared, not left as a smudge.
+    expect(alphaAt(data, w, 12, 19)).toBe(0);
+    // Dark subject stays fully opaque.
+    expect(alphaAt(data, w, 12, 9)).toBe(255);
+  });
+
   it("is a no-op for degenerate dimensions", () => {
     const data = new Uint8Array(0);
     expect(whiteToAlpha(data, 0, 0).changed).toBe(false);

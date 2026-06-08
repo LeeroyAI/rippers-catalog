@@ -80,6 +80,9 @@ export default function TripMapExplorer() {
   const [saveProfilePickerOpen, setSaveProfilePickerOpen] = useState(false);
   const [saveTargetRiderId, setSaveTargetRiderId] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
+  const [autoLocating, setAutoLocating] = useState(false);
+  const [locationDenied, setLocationDenied] = useState(false);
+  const autoLocateTriedRef = useRef(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
@@ -373,40 +376,95 @@ export default function TripMapExplorer() {
     setSelectOpen(false);
   }
 
-  function useMyLocation() {
-    if (!navigator.geolocation) {
-      setNotice("Geolocation not supported in this browser.");
+  /** Set a located fix as the active stop so the map zooms in and OSM data loads. */
+  function applyLocatedPosition(lat: number, lon: number, label: string) {
+    const me: GeocodeHit = { id: `me-${lat}-${lon}`, lat, lon, label };
+    setUserLocation({ lat, lon });
+    setLocationDenied(false);
+    geocodeGenRef.current += 1;
+    setLoadingPlaces(false);
+
+    let nextLegs: GeocodeHit[];
+    let nextActive: number;
+    const currentLegs = itineraryRef.current;
+    if (appendNextStopRef.current && isPremiumRidePlannerUnlocked()) {
+      nextLegs = [...currentLegs, me];
+      nextActive = nextLegs.length - 1;
+      setAppendMode(false);
+    } else {
+      nextLegs = [me];
+      nextActive = 0;
+    }
+    committedQueryRef.current = label.toLowerCase();
+    setItinerary(nextLegs);
+    setActiveStopIdx(nextActive);
+    setQuery(label);
+    setNotice(null);
+  }
+
+  /** Ask the browser for a fix, name the area, and focus it. `auto` keeps it quiet on failure. */
+  function locateMe(opts: { auto: boolean }) {
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      if (!opts.auto) setNotice("Geolocation not supported in this browser.");
       return;
     }
+    setAutoLocating(true);
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
+      async (pos) => {
         const { latitude: lat, longitude: lon } = pos.coords;
-        const me: GeocodeHit = { id: `me-${lat}-${lon}`, lat, lon, label: "My location" };
-        setUserLocation({ lat, lon });
-        geocodeGenRef.current += 1;
-        setLoadingPlaces(false);
-
-        let nextLegs: GeocodeHit[];
-        let nextActive: number;
-        const currentLegs = itineraryRef.current;
-        if (appendNextStopRef.current && isPremiumRidePlannerUnlocked()) {
-          nextLegs = [...currentLegs, me];
-          nextActive = nextLegs.length - 1;
-          setAppendMode(false);
-        } else {
-          nextLegs = [me];
-          nextActive = 0;
+        let label = "My location";
+        try {
+          const res = await fetch(`/api/geocode?lat=${lat}&lon=${lon}`);
+          const json = (await res.json()) as { results?: GeocodeHit[] };
+          label = json.results?.[0]?.label || "My location";
+        } catch {
+          /* keep the generic label if reverse geocoding fails */
         }
-        committedQueryRef.current = "my location";
-        setItinerary(nextLegs);
-        setActiveStopIdx(nextActive);
-        setQuery("My location");
-        setNotice(null);
+        applyLocatedPosition(lat, lon, label);
+        setAutoLocating(false);
       },
-      () => setNotice("Location denied — search a suburb instead."),
-      { enableHighAccuracy: true, maximumAge: 60_000, timeout: 20_000 }
+      () => {
+        setAutoLocating(false);
+        if (opts.auto) {
+          setLocationDenied(true);
+        } else {
+          setNotice("Location denied — search a suburb instead.");
+        }
+      },
+      { enableHighAccuracy: true, maximumAge: 300_000, timeout: 15_000 }
     );
   }
+
+  function useMyLocation() {
+    locateMe({ auto: false });
+  }
+
+  /** On first visit, locate the rider and zoom to their area so trails/shops load straight away. */
+  useEffect(() => {
+    if (autoLocateTriedRef.current) return;
+    autoLocateTriedRef.current = true;
+    if (itineraryRef.current.length > 0) return; // already focused (e.g. navigated back)
+    if (typeof navigator === "undefined" || !navigator.geolocation) return;
+
+    const start = () => locateMe({ auto: true });
+    const perms = navigator.permissions;
+    if (perms?.query) {
+      perms
+        .query({ name: "geolocation" as PermissionName })
+        .then((status) => {
+          // Don't re-prompt someone who already said no; let them search instead.
+          if (status.state === "denied") {
+            setLocationDenied(true);
+            return;
+          }
+          start();
+        })
+        .catch(() => start());
+    } else {
+      start();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run exactly once on mount
+  }, []);
 
   function selectStop(i: number) {
     if (!itinerary[i]) return;
@@ -654,6 +712,22 @@ export default function TripMapExplorer() {
               </ul>
             )}
           </div>
+
+          {autoLocating && !place ? (
+            <div className="flex items-center gap-2.5 border-t border-stroke bg-brand/5 px-4 py-2.5" role="status" aria-live="polite">
+              <span className="h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-brand border-t-transparent" aria-hidden />
+              <p className="text-[12px] font-medium text-text-2">Finding rides near you…</p>
+            </div>
+          ) : null}
+
+          {locationDenied && !place ? (
+            <div className="border-t border-stroke bg-surface/70 px-4 py-2.5">
+              <p className="text-[11px] leading-snug text-text-3">
+                Location is off, so we&apos;re showing a preview. Search a town or suburb above, or tap the{" "}
+                <span className="font-semibold text-brand-text">pin</span> to use your location.
+              </p>
+            </div>
+          ) : null}
 
           {profile && riders.length > 0 ? (
             <div className="border-t border-stroke px-4 py-4 sm:px-5 sm:py-4">
