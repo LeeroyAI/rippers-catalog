@@ -8,6 +8,9 @@ export const RIDING_STYLE_OPTIONS: { value: RidingStyle; label: string; hint: st
   { value: "other", label: "Still figuring it out", hint: "We keep suggestions broad" },
 ];
 
+/** Runtime list of valid style values (for validating untrusted input). */
+export const RIDING_STYLES: RidingStyle[] = RIDING_STYLE_OPTIONS.map((o) => o.value);
+
 export function ridingStyleLabels(style: RidingStyle): string {
   return RIDING_STYLE_OPTIONS.find((o) => o.value === style)?.label ?? style;
 }
