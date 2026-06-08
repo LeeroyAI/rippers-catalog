@@ -12,6 +12,7 @@ export async function GET() {
   if (!user) return NextResponse.json({ user: null });
   return NextResponse.json({
     user: {
+      uid: user.id,
       handle: user.handle,
       isLocalGuide: user.isLocalGuide,
       guideAreas: user.guideAreas,

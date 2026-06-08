@@ -32,6 +32,6 @@ export async function POST(req: Request) {
   const user = await getOrCreateUser(email, now);
   await setSessionCookie({ uid: user.id, email: user.email, handle: user.handle });
   return NextResponse.json({
-    user: { handle: user.handle, isLocalGuide: user.isLocalGuide },
+    user: { uid: user.id, handle: user.handle, isLocalGuide: user.isLocalGuide },
   });
 }

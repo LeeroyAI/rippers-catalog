@@ -11,8 +11,12 @@ import {
 import {
   presenceTtlSeconds,
   type PresenceType,
+  type PublicPresence,
   type ValidatedPresence,
 } from "@/src/domain/community/presence";
+import type { RidingStyle } from "@/src/domain/riding-style";
+
+export type { PublicPresence };
 
 export type PresenceDoc = {
   id: string;
@@ -23,15 +27,12 @@ export type PresenceDoc = {
   lat: number;
   lon: number;
   note: string;
-  style: string | null;
+  style: RidingStyle | null;
   isLocalGuide: boolean;
   plannedAt: string | null;
   createdAtMs: number;
   ttl: number;
 };
-
-/** Public shape sent to clients — already free of any private fields (no email, snapped coords). */
-export type PublicPresence = Omit<PresenceDoc, "ttl">;
 
 function toPublic(d: PresenceDoc): PublicPresence {
   return {

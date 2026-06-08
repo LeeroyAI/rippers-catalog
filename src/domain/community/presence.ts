@@ -36,6 +36,22 @@ export type ValidatedPresence = {
   plannedAt: string | null;
 };
 
+/** Public, client-facing presence shape (no private fields; coords already snapped). */
+export type PublicPresence = {
+  id: string;
+  geoPartition: string;
+  userId: string;
+  handle: string;
+  type: PresenceType;
+  lat: number;
+  lon: number;
+  note: string;
+  style: RidingStyle | null;
+  isLocalGuide: boolean;
+  plannedAt: string | null;
+  createdAtMs: number;
+};
+
 export type Validation<T> = { ok: true; value: T } | { ok: false; error: string };
 
 function isFiniteLat(n: unknown): n is number {

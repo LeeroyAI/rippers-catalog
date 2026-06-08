@@ -19,6 +19,8 @@ import {
   googleMapsSearchUrl,
   trailforksTrailsMapUrl,
 } from "@/src/domain/map-links";
+import type { PublicPresence } from "@/src/domain/community/presence";
+import { ridingStyleLabels } from "@/src/domain/riding-style";
 
 import "leaflet/dist/leaflet.css";
 
@@ -111,6 +113,67 @@ function serviceLine(sales: boolean, repair: boolean, rental: boolean): string {
   return bits.length ? bits.join(" · ") : "shop (mapper detail missing)";
 }
 
+/** Compact "riding now" vs "planned for <when>" line for a presence popup. */
+function presenceWhen(p: PublicPresence): string {
+  if (p.type === "now") return "Riding now";
+  if (!p.plannedAt) return "Planned";
+  const d = new Date(p.plannedAt);
+  return `Planned · ${d.toLocaleString([], { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}`;
+}
+
+function PresenceMarkers({
+  presences,
+  currentUserId,
+  onRemovePresence,
+}: {
+  presences: PublicPresence[];
+  currentUserId?: string | null;
+  onRemovePresence?: (id: string) => void;
+}) {
+  return (
+    <>
+      {presences.map((p) => {
+        const mine = currentUserId != null && p.userId === currentUserId;
+        const icon = L.divIcon({
+          className: "r-rider-marker",
+          html: `<span class="r-rider-marker__badge${p.isLocalGuide ? " r-rider-marker__badge--guide" : ""}${mine ? " r-rider-marker__badge--mine" : ""}">${p.isLocalGuide ? "★" : "●"}</span>`,
+          iconSize: [26, 26],
+          iconAnchor: [13, 24],
+        });
+        return (
+          <Marker key={p.id} position={[p.lat, p.lon]} icon={icon}>
+            <Popup>
+              <div className="min-w-[12rem] text-sm leading-snug">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <strong>{mine ? "You" : p.handle}</strong>
+                  {p.isLocalGuide && (
+                    <span className="rounded bg-accent-subtle/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-accent">
+                      Local guide
+                    </span>
+                  )}
+                </div>
+                <div className="mt-1 text-[11px] font-semibold text-brand-text">{presenceWhen(p)}</div>
+                {p.style && <div className="mt-0.5 text-[11px] text-text-2">{ridingStyleLabels(p.style)}</div>}
+                {p.note && <div className="mt-1.5 text-[12px] text-text-2">{p.note}</div>}
+                <div className="mt-1.5 text-[10px] text-text-2">Shown as a rough area (~1km), not an exact spot.</div>
+                {mine && onRemovePresence && (
+                  <button
+                    type="button"
+                    onClick={() => onRemovePresence(p.id)}
+                    className="mt-2 rounded-full bg-danger/10 px-2.5 py-1 text-[11px] font-bold text-danger"
+                  >
+                    Remove my post
+                  </button>
+                )}
+              </div>
+            </Popup>
+          </Marker>
+        );
+      })}
+    </>
+  );
+}
+
 type Props = {
   center: [number, number];
   zoom: number;
@@ -121,6 +184,10 @@ type Props = {
   /** Multi-stop itinerary: numbered pins + optional dashed leg line. */
   itineraryPins?: TripItineraryPin[];
   itineraryRoute?: [number, number][];
+  /** Community presence pins. */
+  presences?: PublicPresence[];
+  currentUserId?: string | null;
+  onRemovePresence?: (id: string) => void;
 };
 
 export default function TripMapInner({
@@ -132,6 +199,9 @@ export default function TripMapInner({
   userLocation,
   itineraryPins,
   itineraryRoute,
+  presences,
+  currentUserId,
+  onRemovePresence,
 }: Props) {
   const fitRoute = Boolean(itineraryRoute && itineraryRoute.length >= 2);
   const showMultiItinerary = Boolean(itineraryPins && itineraryPins.length >= 2);
@@ -291,6 +361,14 @@ export default function TripMapInner({
           </Popup>
         </Polyline>
       ))}
+
+      {presences && presences.length > 0 ? (
+        <PresenceMarkers
+          presences={presences}
+          currentUserId={currentUserId}
+          onRemovePresence={onRemovePresence}
+        />
+      ) : null}
     </MapContainer>
   );
 }
