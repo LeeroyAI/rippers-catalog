@@ -214,9 +214,12 @@ export default function TripMapInner({
       scrollWheelZoom
     >
       {fitRoute && itineraryRoute ? <FitItineraryRoute route={itineraryRoute} /> : <MapFocus center={center} zoom={zoom} />}
+      {/* CyclOSM: a cycling-focused base map that renders MTB trails, tracks,
+          paths and bike routes far more prominently than standard OSM tiles. */}
       <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> · <a href="https://www.cyclosm.org/">CyclOSM</a>'
+        url="https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png"
+        maxZoom={20}
       />
       {itineraryRoute && itineraryRoute.length >= 2 ? (
         <Polyline
@@ -329,11 +332,20 @@ export default function TripMapInner({
         </CircleMarker>
       ))}
 
+      {/* Dark casing under every trail so the bright line reads on any terrain. */}
+      {trails.map((trail) => (
+        <Polyline
+          key={`${trail.id}-casing`}
+          positions={trail.points as LatLngExpression[]}
+          pathOptions={{ color: "#0A2E14", weight: 7, opacity: 0.45, lineCap: "round", lineJoin: "round" }}
+          interactive={false}
+        />
+      ))}
       {trails.map((trail) => (
         <Polyline
           key={trail.id}
           positions={trail.points as LatLngExpression[]}
-          pathOptions={{ color: "#2EA84C", weight: 4, opacity: 0.72 }}
+          pathOptions={{ color: "#16C75A", weight: 4, opacity: 0.95, lineCap: "round", lineJoin: "round" }}
         >
           <Popup>
             <div className="text-sm leading-snug">
