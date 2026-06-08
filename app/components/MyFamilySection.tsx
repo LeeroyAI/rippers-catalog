@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { IMAGE_KNOCKOUT_VERSION } from "@/src/lib/image-version";
 import { useEffect, useMemo, useState } from "react";
 
 import BikeProductImage from "@/app/components/BikeProductImage";
@@ -94,7 +95,7 @@ function FamilyRiderCard({
           ) : entry?.type === "custom" && entry.lookup?.status === "ok" && entry.lookup.imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={`/api/bike-img-proxy?url=${encodeURIComponent(entry.lookup.imageUrl)}`}
+              src={`/api/bike-img-proxy?url=${encodeURIComponent(entry.lookup.imageUrl)}&v=${IMAGE_KNOCKOUT_VERSION}`}
               alt=""
               className="h-full w-full object-contain p-0.5"
             />

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { IMAGE_KNOCKOUT_VERSION } from "@/src/lib/image-version";
 import { startTransition, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -907,7 +908,7 @@ export default function ProfilePage() {
                   currentBikeEntry.lookup.imageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src={`/api/bike-img-proxy?url=${encodeURIComponent(currentBikeEntry.lookup.imageUrl)}`}
+                    src={`/api/bike-img-proxy?url=${encodeURIComponent(currentBikeEntry.lookup.imageUrl)}&v=${IMAGE_KNOCKOUT_VERSION}`}
                     alt=""
                     className="h-full w-full object-contain p-0.5"
                   />

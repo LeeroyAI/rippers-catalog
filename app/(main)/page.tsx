@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { IMAGE_KNOCKOUT_VERSION } from "@/src/lib/image-version";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, startTransition, useCallback, useEffect, useMemo, useState } from "react";
@@ -459,7 +460,7 @@ function HomePageContent() {
                 const lu = ce.lookup;
                 const webImg =
                   lu?.status === "ok" && lu.imageUrl
-                    ? `/api/bike-img-proxy?url=${encodeURIComponent(lu.imageUrl)}`
+                    ? `/api/bike-img-proxy?url=${encodeURIComponent(lu.imageUrl)}&v=${IMAGE_KNOCKOUT_VERSION}`
                     : null;
                 const webSpecLine = lu?.status === "ok" ? webLookupSpecSummary(lu.specs) : "";
                 return (
