@@ -9,6 +9,7 @@ import { Suspense, startTransition, useCallback, useEffect, useMemo, useState } 
 import BikeDetailSheet from "@/app/components/BikeDetailSheet";
 import MatchBreakdownSheet from "@/app/components/MatchBreakdownSheet";
 import BikeProductImage from "@/app/components/BikeProductImage";
+import HeroRideHook from "@/app/(main)/HeroRideHook";
 import HomeCarouselCard from "@/app/components/HomeCarouselCard";
 import { RiderContextBanner, RiderContextPicker } from "@/app/components/RiderSurfaceContext";
 import { householdAddRiderHref } from "@/src/lib/welcome-add-mode";
@@ -16,7 +17,7 @@ import { catalog } from "@/src/data/catalog";
 import { getBestPrice, getDisplayPrice } from "@/src/domain/bike-helpers";
 import { matchBreakdownForBike, matchPercentForBike } from "@/src/domain/match-score";
 import { ridingStyleLabels } from "@/src/domain/riding-style";
-import { suggestedBikeCategory, type RiderProfileV1 } from "@/src/domain/rider-profile";
+import { suggestedBikeCategory } from "@/src/domain/rider-profile";
 import type { Bike, FilterState } from "@/src/domain/types";
 import { useFilterStore } from "@/src/state/filter-store";
 import { useFavourites } from "@/src/state/favourites-store";
@@ -67,41 +68,6 @@ function filtersSummaryLine(filters: FilterState): string {
     parts.push(`Search “${short}”`);
   }
   return parts.length > 0 ? parts.join(" · ") : "All categories · any budget";
-}
-
-function heroLines(
-  profile: RiderProfileV1 | null,
-  name: string,
-  catalogSize: number
-): { title: string; sub: string } {
-  if (!profile) {
-    return {
-      title: "Find the right MTB\nfor you or your family.",
-      sub: `The fastest way to choose your next mountain bike in Australia: compare ${catalogSize} bikes on real retailer prices, get picks matched to how you ride, and plan where to ride them.`,
-    };
-  }
-  switch (profile.style) {
-    case "gravity":
-      return {
-        title: `Hey ${name}!\nReady to rip?`,
-        sub: "Enduro & gravity builds, sorted with your match scores, nothing hidden, you choose where to look.",
-      };
-    case "jump":
-      return {
-        title: `Hey ${name}!\nPark sessions incoming.`,
-        sub: "Playful bikes first in the list, same full catalogue, ordered for how you ride.",
-      };
-    case "crossCountry":
-      return {
-        title: `Hey ${name}!\nLong days ahead.`,
-        sub: "XC-friendly picks rise to the top; budget and height still steer what you see.",
-      };
-    default:
-      return {
-        title: `Hey ${name}!\nReady to rip?`,
-        sub: "Your best profile matches surface first, handy when you’re buying for yourself or shortlisting bikes for someone else in the family.",
-      };
-  }
 }
 
 const HOME_MATCH_SHORTLIST = 24;
@@ -347,7 +313,6 @@ function HomePageContent() {
   }, [filteredBikes]);
 
   const greetName = profile?.nickname?.trim() || "there";
-  const { title, sub } = heroLines(profile ?? null, greetName, catalog.length);
 
   return (
     <main className="mx-auto w-full max-w-none">
@@ -386,22 +351,25 @@ function HomePageContent() {
 
             <span className="r-hero-rise inline-flex items-center gap-2 self-start rounded-full border border-brand/30 bg-brand/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-brand-text">
               <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-brand" aria-hidden />
-              AU mountain bike finder
+              {hydrated && profile ? `Welcome back, ${greetName}` : "Ride with Rippers"}
             </span>
-            <h1 className="r-hero-rise-2 mt-4 whitespace-pre-line text-[34px] font-black leading-[1.03] tracking-tight text-text md:text-[52px]">
-              {title}
+            <h1 className="r-hero-rise-2 mt-4 text-[36px] font-black leading-[1.0] tracking-tight text-text md:text-[58px]">
+              Your bike.
+              <br />
+              Your trails.
+              <br />
+              <span className="text-brand-text">Your crew.</span>
             </h1>
-            <p className="r-hero-rise-3 mt-3 max-w-prose text-[15px] leading-relaxed text-text-2 md:text-[16px]">{sub}</p>
+            <p className="r-hero-rise-3 mt-4 max-w-prose text-[15px] leading-relaxed text-text-2 md:text-[17px]">
+              Find the right MTB at the best AU price, plan where to ride it, and link up with riders near you.
+              The whole ride, sorted — {catalog.length} bikes in one place.
+            </p>
 
-            <div className="r-hero-rise-4 mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-[12px] font-semibold text-text-3">
-              <span>
-                <span className="text-[15px] font-black tabular-nums text-text">{catalog.length}</span> bikes
-              </span>
-              <span className="text-stroke" aria-hidden>·</span>
-              <span>live AU pricing</span>
-              <span className="text-stroke" aria-hidden>·</span>
-              <span>family profiles</span>
-            </div>
+            <HeroRideHook
+              onSeeMatches={() => {
+                document.getElementById("results")?.scrollIntoView({ behavior: "smooth", block: "start" });
+              }}
+            />
 
             {hydrated && profile ? (
               <div className="mt-4 max-w-[26rem] rounded-2xl border border-stroke bg-surface/70 px-4 py-3.5 backdrop-blur-sm">
