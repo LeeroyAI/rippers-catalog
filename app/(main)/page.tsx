@@ -352,8 +352,10 @@ function HomePageContent() {
   return (
     <main className="mx-auto w-full max-w-none">
 
-      {/* ─── Header (restrained to match inner pages: no poster gradient) ─── */}
-      <section className="mx-auto w-full max-w-[80rem] px-4 pt-4 md:px-6 md:pt-8">
+      {/* ─── Hero (high-impact: animated aurora, oversized type, floating bike) ─── */}
+      <section className="r-hero mx-auto w-full max-w-[80rem] px-4 pt-6 md:px-6 md:pt-12">
+        <div className="r-hero-aurora" aria-hidden />
+        <div className="r-hero-grid" aria-hidden />
         <div className="flex flex-col md:flex-row md:items-center md:gap-10">
 
           {/* ── Left column ── */}
@@ -382,10 +384,24 @@ function HomePageContent() {
               </Link>
             </div>
 
-            <h1 className="whitespace-pre-line text-2xl font-bold leading-tight tracking-tight text-text md:text-[28px]">
+            <span className="r-hero-rise inline-flex items-center gap-2 self-start rounded-full border border-brand/30 bg-brand/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-brand-text">
+              <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-brand" aria-hidden />
+              AU mountain bike finder
+            </span>
+            <h1 className="r-hero-rise-2 mt-4 whitespace-pre-line text-[34px] font-black leading-[1.03] tracking-tight text-text md:text-[52px]">
               {title}
             </h1>
-            <p className="mt-2 max-w-prose text-[14px] leading-relaxed text-text-2">{sub}</p>
+            <p className="r-hero-rise-3 mt-3 max-w-prose text-[15px] leading-relaxed text-text-2 md:text-[16px]">{sub}</p>
+
+            <div className="r-hero-rise-4 mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-[12px] font-semibold text-text-3">
+              <span>
+                <span className="text-[15px] font-black tabular-nums text-text">{catalog.length}</span> bikes
+              </span>
+              <span className="text-stroke" aria-hidden>·</span>
+              <span>live AU pricing</span>
+              <span className="text-stroke" aria-hidden>·</span>
+              <span>family profiles</span>
+            </div>
 
             {hydrated && profile ? (
               <div className="mt-4 max-w-[26rem] rounded-2xl border border-stroke bg-surface/70 px-4 py-3.5 backdrop-blur-sm">
@@ -499,7 +515,7 @@ function HomePageContent() {
                         <img
                           src={webImg}
                           alt=""
-                          className="max-h-[min(100%,320px)] w-full max-w-full object-contain object-center drop-shadow-[0_24px_48px_rgba(0,0,0,0.55)]"
+                          className="r-hero-float relative z-10 max-h-[min(100%,320px)] w-full max-w-full object-contain object-center drop-shadow-[0_28px_55px_rgba(0,0,0,0.55)]"
                         />
                       ) : lu?.status === "loading" ? (
                         <div className="flex flex-col items-center gap-3 px-6 py-12 text-center">
@@ -607,10 +623,11 @@ function HomePageContent() {
 
                   {/* Bike image */}
                   <div className="relative z-10 aspect-[4/3] w-full overflow-visible">
+                    <div className="r-hero-glow" aria-hidden />
                     <BikeProductImage
                       bikeId={heroBike.id}
                       alt={`${heroBike.brand} ${heroBike.model}`}
-                      className="h-full w-full object-contain drop-shadow-[0_24px_48px_rgba(0,0,0,0.6)]"
+                      className="r-hero-float relative z-10 h-full w-full object-contain drop-shadow-[0_28px_55px_rgba(0,0,0,0.55)]"
                     />
                   </div>
 
