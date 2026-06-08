@@ -77,7 +77,7 @@ function heroLines(
   if (!profile) {
     return {
       title: "Find the right MTB\nfor you or your family.",
-      sub: `${catalogSize} Australian bikes in one snapshot, search, filters, and sizing help you shop for yourself or a junior rider. Add a profile to unlock match-ranked picks.`,
+      sub: `The fastest way to choose your next mountain bike in Australia: compare ${catalogSize} bikes on real retailer prices, get picks matched to how you ride, and plan where to ride them.`,
     };
   }
   switch (profile.style) {
@@ -671,6 +671,69 @@ function HomePageContent() {
 
       {/* Content below the full-bleed hero is capped to the wide tier (hero stays edge-to-edge). */}
       <div className="mx-auto w-full max-w-[80rem]">
+      {/* ─── Value pillars: why you're here / what's in it for you ─── */}
+      <section className="mx-4 mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="What you get with Rippers">
+        {[
+          {
+            title: "Matched to you",
+            copy: "Every bike ranked for your riding style, budget and height — and for each rider in your family.",
+            icon: (
+              <>
+                <circle cx="12" cy="12" r="8.5" stroke="currentColor" strokeWidth="1.8" />
+                <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.8" />
+                <circle cx="12" cy="12" r="1.3" fill="currentColor" />
+              </>
+            ),
+          },
+          {
+            title: "Real AU prices",
+            copy: "Live pricing across Australian retailers in one place. No more juggling a dozen browser tabs.",
+            icon: (
+              <>
+                <path d="M3 7.5 11 3l8 4.5v9L11 21l-8-4.5v-9Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+                <path d="M9.5 13.5c0 1 .9 1.6 2 1.6s2-.5 2-1.5-1-1.3-2-1.6-2-.6-2-1.5.9-1.5 2-1.5 2 .6 2 1.5M11.5 9v7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              </>
+            ),
+          },
+          {
+            title: "Trails & rides",
+            copy: "Find trails, tracks and bike shops, and plan multi-stop rides anywhere in Australia.",
+            icon: (
+              <>
+                <path d="M3 17c3-5 5-9 9-9s6 4 9 9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                <circle cx="6" cy="19" r="2.4" stroke="currentColor" strokeWidth="1.6" />
+                <circle cx="18" cy="19" r="2.4" stroke="currentColor" strokeWidth="1.6" />
+              </>
+            ),
+          },
+          {
+            title: "Local riders",
+            copy: "See who's riding nearby, post where you're heading, and link up with locals who know the trails.",
+            icon: (
+              <>
+                <circle cx="9" cy="8" r="3.2" stroke="currentColor" strokeWidth="1.8" />
+                <path d="M3.5 19c0-3 2.6-5 5.5-5s5.5 2 5.5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                <circle cx="17.5" cy="9" r="2.4" stroke="currentColor" strokeWidth="1.6" />
+                <path d="M16 19c0-2.4 1.5-4 3.6-4.2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+              </>
+            ),
+          },
+        ].map((p) => (
+          <div
+            key={p.title}
+            className="group rounded-2xl border border-stroke bg-surface px-4 py-4 transition-colors hover:border-brand/40"
+          >
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand/10 text-brand-text transition-colors group-hover:bg-brand/15">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
+                {p.icon}
+              </svg>
+            </div>
+            <p className="mt-3 text-[14px] font-bold tracking-tight text-text">{p.title}</p>
+            <p className="mt-1 text-[12px] leading-snug text-text-3">{p.copy}</p>
+          </div>
+        ))}
+      </section>
+
       {/* ─── New visitor: value story (above the fold scroll) ─── */}
       <section className="mx-4 mt-5 rounded-2xl border border-stroke bg-surface shadow-sm" aria-labelledby="home-value-heading">
         <div className="border-b border-stroke px-4 py-3.5">
