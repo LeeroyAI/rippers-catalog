@@ -5,6 +5,9 @@ import Link from "next/link";
 import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { RiderContextBanner, RiderContextPicker } from "@/app/components/RiderSurfaceContext";
+import CommunitySignInModal from "@/app/trip/CommunitySignInModal";
+import RideHereSheet from "@/app/trip/RideHereSheet";
+import { useCommunity } from "@/app/trip/useCommunity";
 import { householdAddRiderHref } from "@/src/lib/welcome-add-mode";
 import { groupTrailsForDisplay } from "@/app/trip/groupTrails";
 import type { TripShopPin, TripTrailLine } from "@/app/trip/TripMapInner";
@@ -57,6 +60,14 @@ type LoadLeg = "idle" | "loading" | "done" | "error";
 export default function TripMapExplorer() {
   const { profile, riders } = useRiderProfile();
   const { trips: savedTrips } = useSavedTrips();
+  const community = useCommunity();
+  const {
+    loadPresences: loadCommunityPresences,
+    clearPresences: clearCommunityPresences,
+  } = community;
+  const [communityOn, setCommunityOn] = useState(false);
+  const [signInOpen, setSignInOpen] = useState(false);
+  const [rideHereOpen, setRideHereOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [hits, setHits] = useState<GeocodeHit[]>([]);
   const [selectOpen, setSelectOpen] = useState(false);
@@ -343,6 +354,25 @@ export default function TripMapExplorer() {
     };
   }, [place, loadFeatures]);
 
+  /** Load community presence for the focused area whenever the layer is on. */
+  useEffect(() => {
+    if (!communityOn || !place) {
+      clearCommunityPresences();
+      return;
+    }
+    void loadCommunityPresences(bboxFromCenter(place.lat, place.lon, radiusKm));
+  }, [communityOn, place, radiusKm, loadCommunityPresences, clearCommunityPresences]);
+
+  /** "Ride here" — gate behind sign-in, then open the post sheet. */
+  function openRideHere() {
+    if (!place) return;
+    if (!community.user) {
+      setSignInOpen(true);
+      return;
+    }
+    setRideHereOpen(true);
+  }
+
   function pickHit(hit: GeocodeHit) {
     geocodeGenRef.current += 1;
     setLoadingPlaces(false);
@@ -620,6 +650,9 @@ export default function TripMapExplorer() {
           }
           itineraryPins={itineraryPins}
           itineraryRoute={itineraryRouteCoords}
+          presences={communityOn ? community.presences : undefined}
+          currentUserId={community.user?.uid ?? null}
+          onRemovePresence={(id) => void community.deletePresence(id)}
         />
       </div>
 
@@ -994,6 +1027,71 @@ export default function TripMapExplorer() {
                 </>
               )}
             </div>
+          </div>
+
+          {/* Community — riders here now / planned */}
+          <div className="border-t border-stroke px-4 py-3">
+            <div className="flex items-center justify-between gap-2">
+              <button
+                type="button"
+                onClick={() => setCommunityOn((v) => !v)}
+                className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide transition-colors ${
+                  communityOn
+                    ? "border-info/45 bg-info/10 text-info"
+                    : "border-stroke bg-surface text-text-3"
+                }`}
+                aria-pressed={communityOn}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden>
+                  <circle cx="9" cy="8" r="3.2" stroke="currentColor" strokeWidth="1.8" />
+                  <path d="M3.5 19c0-3 2.6-5 5.5-5s5.5 2 5.5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                  <circle cx="17" cy="9" r="2.4" stroke="currentColor" strokeWidth="1.6" />
+                  <path d="M15.5 19c0-2.2 1.4-3.8 3.4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                </svg>
+                Community {communityOn ? "on" : "off"}
+              </button>
+              <div className="flex items-center gap-2">
+                {community.user ? (
+                  <span className="truncate text-[11px] text-text-3" title={`Signed in as ${community.user.handle}`}>
+                    @{community.user.handle}
+                  </span>
+                ) : community.authReady ? (
+                  <button
+                    type="button"
+                    onClick={() => setSignInOpen(true)}
+                    className="text-[11px] font-semibold text-brand-text underline underline-offset-2"
+                  >
+                    Sign in
+                  </button>
+                ) : null}
+              </div>
+            </div>
+
+            {communityOn && place ? (
+              <div className="mt-2.5 flex items-center justify-between gap-2 rounded-xl border border-info/25 bg-info/5 px-3 py-2.5">
+                <div className="min-w-0">
+                  <p className="text-[12px] font-semibold text-text">
+                    {community.loadingPresences
+                      ? "Finding riders…"
+                      : `${community.presences.length} ${community.presences.length === 1 ? "rider" : "riders"} here`}
+                  </p>
+                  <p className="mt-0.5 text-[10px] text-text-3">Riding now or planned · areas only</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={openRideHere}
+                  className="shrink-0 rounded-full bg-brand px-3 py-1.5 text-[11px] font-bold text-brand-fg shadow-[0_4px_12px_rgba(229,71,26,0.32)]"
+                >
+                  Ride here
+                </button>
+              </div>
+            ) : null}
+
+            {communityOn && !place ? (
+              <p className="mt-2 text-[11px] leading-snug text-text-3">
+                Search a spot or use your location to see who&apos;s riding nearby.
+              </p>
+            ) : null}
           </div>
 
           {loadingMap && place && (
@@ -1458,6 +1556,30 @@ export default function TripMapExplorer() {
             </div>
           </div>
         </div>
+      )}
+
+      {signInOpen && (
+        <CommunitySignInModal
+          requestCode={community.requestCode}
+          verifyCode={community.verifyCode}
+          onClose={() => setSignInOpen(false)}
+          onSignedIn={() => {
+            setSignInOpen(false);
+            if (place) setRideHereOpen(true);
+          }}
+        />
+      )}
+
+      {rideHereOpen && place && (
+        <RideHereSheet
+          areaLabel={shortDestinationLabel(place)}
+          lat={place.lat}
+          lon={place.lon}
+          defaultStyle={profile?.style ?? null}
+          onPost={community.postPresence}
+          onPosted={() => setRideHereOpen(false)}
+          onClose={() => setRideHereOpen(false)}
+        />
       )}
     </div>
   );
