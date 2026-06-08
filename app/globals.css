@@ -686,6 +686,88 @@ summary:focus-visible {
   box-shadow: 0 0 0 2px rgb(var(--c-brand) / 0.35), 0 2px 8px rgba(18, 16, 12, 0.25);
 }
 
+/* ─── Home hero: high-impact "WOW" treatment ─── */
+@keyframes r-aurora-drift {
+  0%   { transform: translate3d(0, 0, 0) scale(1); }
+  33%  { transform: translate3d(6%, -4%, 0) scale(1.15); }
+  66%  { transform: translate3d(-5%, 5%, 0) scale(1.06); }
+  100% { transform: translate3d(0, 0, 0) scale(1); }
+}
+@keyframes r-hero-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-14px); }
+}
+@keyframes r-hero-rise {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.r-hero { position: relative; isolation: isolate; overflow: clip; }
+
+.r-hero-aurora {
+  position: absolute;
+  inset: -25% -12% auto -12%;
+  height: 145%;
+  z-index: -2;
+  pointer-events: none;
+  filter: blur(64px);
+  opacity: 0.6;
+}
+.r-hero-aurora::before,
+.r-hero-aurora::after {
+  content: "";
+  position: absolute;
+  border-radius: 9999px;
+  will-change: transform;
+}
+.r-hero-aurora::before {
+  width: 40rem; height: 40rem; left: 4%; top: -8%;
+  background: radial-gradient(circle at 30% 30%, rgb(var(--c-brand) / 0.6), transparent 60%);
+  animation: r-aurora-drift 19s ease-in-out infinite;
+}
+.r-hero-aurora::after {
+  width: 34rem; height: 34rem; right: 2%; top: 2%;
+  background: radial-gradient(circle at 60% 40%, rgb(var(--c-info) / 0.5), transparent 62%);
+  animation: r-aurora-drift 24s ease-in-out infinite reverse;
+}
+
+.r-hero-grid {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgb(var(--c-text) / 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(var(--c-text) / 0.04) 1px, transparent 1px);
+  background-size: 46px 46px;
+  -webkit-mask-image: radial-gradient(ellipse 85% 75% at 50% 28%, #000 38%, transparent 80%);
+  mask-image: radial-gradient(ellipse 85% 75% at 50% 28%, #000 38%, transparent 80%);
+}
+
+.r-hero-glow {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(ellipse 58% 52% at 50% 54%, rgb(var(--c-brand) / 0.3), transparent 70%);
+}
+
+.r-hero-float { animation: r-hero-float 6.5s ease-in-out infinite; }
+.r-hero-rise   { animation: r-hero-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.r-hero-rise-2 { animation: r-hero-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both; }
+.r-hero-rise-3 { animation: r-hero-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both; }
+.r-hero-rise-4 { animation: r-hero-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.3s both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .r-hero-aurora::before,
+  .r-hero-aurora::after,
+  .r-hero-float,
+  .r-hero-rise,
+  .r-hero-rise-2,
+  .r-hero-rise-3,
+  .r-hero-rise-4 { animation: none; }
+}
+
 /* Community rider presence markers */
 .trip-leaflet .leaflet-marker-icon.r-rider-marker {
   border: none;
