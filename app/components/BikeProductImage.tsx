@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+import { IMAGE_KNOCKOUT_VERSION } from "@/src/lib/image-version";
+
 const FALLBACK = "/bike-placeholder.svg";
 
 type Props = {
@@ -12,7 +14,7 @@ type Props = {
 
 /** Same-origin proxy fixes retailer hotlink blocks; Unsplash fallback on double-fault. */
 export default function BikeProductImage({ bikeId, alt, className }: Props) {
-  const proxySrc = `/api/bike-img/${bikeId}`;
+  const proxySrc = `/api/bike-img/${bikeId}?v=${IMAGE_KNOCKOUT_VERSION}`;
   const [src, setSrc] = useState(proxySrc);
   const [failed, setFailed] = useState(false);
 
