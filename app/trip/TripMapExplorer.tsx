@@ -23,6 +23,9 @@ import type { BicycleShopServices } from "@/src/domain/shop-profile-fit";
 import { describeShopServicesForRider, profileShopBoost } from "@/src/domain/shop-profile-fit";
 import { ridingStyleLabels } from "@/src/domain/riding-style";
 import { bboxFromCenter } from "@/src/domain/trip-bbox";
+import { bikesForTrails } from "@/src/domain/trail-bike-fit";
+import { catalog } from "@/src/data/catalog";
+import { getBestPrice } from "@/src/domain/bike-helpers";
 import { isPremiumRidePlannerUnlocked, isPremiumTripSaveUnlocked } from "@/src/lib/premium";
 import { useRiderProfile } from "@/src/state/rider-profile-context";
 import { useSavedTrips } from "@/src/state/saved-trips-store";
@@ -183,6 +186,15 @@ export default function TripMapExplorer() {
   }, [shops, profile]);
 
   const groupedTrails = useMemo(() => groupTrailsForDisplay(trails), [trails]);
+
+  /** Trail-aware bike picks: infer the area's archetype from trail difficulty, rank the catalogue. */
+  const trailFit = useMemo(
+    () =>
+      place && trails.length > 0
+        ? bikesForTrails(trails, catalog, { preferEbike: profile?.preferEbike, limit: 4 })
+        : null,
+    [place, trails, profile]
+  );
 
   const loadProgressPct = useMemo(() => {
     let n = 0;
@@ -1224,6 +1236,55 @@ export default function TripMapExplorer() {
                   Only named or MTB-tagged OpenStreetMap ways — fewer anonymous paths, more rideable lines on the map.
                 </p>
               </details>
+            </div>
+          )}
+
+          {/* Bikes for these trails — trail-aware recommendations */}
+          {trailFit && !loadingMap && place && trailFit.bikes.length > 0 && (
+            <div className="border-t border-stroke px-4 py-3">
+              <div className="flex items-center gap-2">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" className="text-brand-text" aria-hidden>
+                  <circle cx="6" cy="17" r="3.4" stroke="currentColor" strokeWidth="1.8" />
+                  <circle cx="18" cy="17" r="3.4" stroke="currentColor" strokeWidth="1.8" />
+                  <path d="M6 17l5-7h5l-3 7M9 10h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <p className="text-[11px] font-bold uppercase tracking-wide text-text-3">Bikes for these trails</p>
+              </div>
+              <p className="mt-1 text-[12px] leading-snug text-text-2">
+                <span className="font-semibold text-brand-text">{trailFit.label}</span> — {trailFit.rationale}
+              </p>
+              <div className="mt-2 space-y-1.5">
+                {trailFit.bikes.map(({ bike, score }) => {
+                  const price = getBestPrice(bike);
+                  return (
+                    <Link
+                      key={bike.id}
+                      href={`/?openBike=${bike.id}`}
+                      className="flex items-center justify-between gap-2 rounded-xl border border-stroke bg-surface px-3 py-2 no-underline transition-colors hover:border-brand/45"
+                    >
+                      <span className="min-w-0">
+                        <span className="block truncate text-[12px] font-semibold text-text">
+                          {bike.brand} {bike.model}
+                        </span>
+                        <span className="block truncate text-[10px] text-text-3">
+                          {[bike.category, bike.travel, bike.wheel].filter(Boolean).join(" · ")}
+                        </span>
+                      </span>
+                      <span className="shrink-0 text-right">
+                        {typeof price === "number" ? (
+                          <span className="block text-[12px] font-bold text-success">
+                            {new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD", maximumFractionDigits: 0 }).format(price)}
+                          </span>
+                        ) : null}
+                        <span className="block text-[10px] font-bold text-brand-text">{score}% fit</span>
+                      </span>
+                    </Link>
+                  );
+                })}
+              </div>
+              <p className="mt-1.5 text-[10px] leading-snug text-text-3">
+                Matched to the area&apos;s trails{profile?.preferEbike ? " · e-bikes prioritised" : ""}. Tap a bike for specs and price.
+              </p>
             </div>
           )}
 
