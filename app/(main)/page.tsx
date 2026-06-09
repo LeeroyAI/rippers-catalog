@@ -499,7 +499,7 @@ function HomePageContent() {
                         <img
                           src={webImg}
                           alt=""
-                          className="r-hero-float relative z-10 max-h-[min(100%,320px)] w-full max-w-full object-contain object-center drop-shadow-[0_28px_55px_rgba(0,0,0,0.55)]"
+                          className="relative z-10 max-h-[min(100%,340px)] w-full max-w-full object-contain object-center drop-shadow-[0_30px_60px_rgba(0,0,0,0.5)]"
                         />
                       ) : lu?.status === "loading" ? (
                         <div className="flex flex-col items-center gap-3 px-6 py-12 text-center">
@@ -605,13 +605,13 @@ function HomePageContent() {
                     ) : null}
                   </div>
 
-                  {/* Bike image */}
+                  {/* Bike image — still (no float), rich + mode-aware via the transparent knockout */}
                   <div className="relative z-10 aspect-[4/3] w-full overflow-visible">
                     <div className="r-hero-glow" aria-hidden />
                     <BikeProductImage
                       bikeId={heroBike.id}
                       alt={`${heroBike.brand} ${heroBike.model}`}
-                      className="r-hero-float relative z-10 h-full w-full object-contain drop-shadow-[0_28px_55px_rgba(0,0,0,0.55)]"
+                      className="relative z-10 h-full w-full object-contain drop-shadow-[0_30px_60px_rgba(0,0,0,0.5)]"
                     />
                   </div>
 

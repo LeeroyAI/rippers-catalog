@@ -34,6 +34,7 @@ import type { Bike } from "@/src/domain/types";
 import { currentBikeStorageKeyForRider } from "@/src/domain/current-bike-entry";
 import { webLookupSpecSummary } from "@/src/domain/bike-lookup";
 import { resolveCatalogBikeForCurrentRide } from "@/src/domain/current-ride-versus";
+import { gearForRide } from "@/src/domain/gear-fit";
 import { forceWebBikeLookupRefresh } from "@/src/lib/bike-web-lookup-client";
 import PageContainer from "@/app/components/ui/PageContainer";
 
@@ -41,8 +42,6 @@ const PROFILE_PHOTO_CHANGED = "rippers:profile-photo-changed";
 const LEGACY_CURRENT_BIKE_KEY = "rippers:current-bike:v2";
 
 // Gear recommendations per riding style
-type GearItem = { icon: string; name: string; desc: string; url: string };
-type GearSet = { protection: GearItem[]; clothing: GearItem[]; tools: GearItem[] };
 
 function GearIcon({ id }: { id: string }) {
   const icons: Record<string, React.ReactNode> = {
@@ -173,91 +172,6 @@ function GearIcon({ id }: { id: string }) {
   );
 }
 
-const GEAR: Record<string, GearSet> = {
-  gravity: {
-    protection: [
-      { icon: "helmet", name: "Full-face helmet", desc: "Fox Rampage Pro Carbon · Bell Full-9 GPS · Troy Lee D4", url: "https://www.99bikes.com.au/search?q=full+face+mtb+helmet" },
-      { icon: "knee", name: "Knee & shin guards", desc: "Fox Launch Pro · G-Form Pro-X3 · POI Joint VPD", url: "https://www.99bikes.com.au/search?q=mtb+knee+shin+guards" },
-      { icon: "elbow", name: "Elbow pads", desc: "Fox Launch · Leatt 3DF · POI Elbow VPD Air", url: "https://www.99bikes.com.au/search?q=mtb+elbow+pads" },
-      { icon: "back", name: "Back protector", desc: "POI Spine VPD Air Vest · Fox Baseframe Pro", url: "https://www.99bikes.com.au/search?q=mtb+back+protector" },
-    ],
-    clothing: [
-      { icon: "jersey", name: "DH jersey", desc: "Fox Ranger · Leatt MTB Enduro · Troy Lee Ruckus", url: "https://www.99bikes.com.au/search?q=dh+mtb+jersey" },
-      { icon: "shorts", name: "MTB shorts", desc: "Fox Ranger · 100% Airmatic · Endura MT500", url: "https://www.99bikes.com.au/search?q=mtb+shorts" },
-      { icon: "gloves", name: "Full-finger gloves", desc: "Fox Ranger · Troy Lee Ace · 100% Airmatic", url: "https://www.99bikes.com.au/search?q=mtb+full+finger+gloves" },
-    ],
-    tools: [
-      { icon: "tool", name: "Multi-tool + chain breaker", desc: "Crankbrothers M19 · Topeak Alien III", url: "https://www.99bikes.com.au/search?q=mtb+multi+tool" },
-      { icon: "firstaid", name: "First aid kit", desc: "Adventure Medical Kit · basic trail first aid", url: "https://www.99bikes.com.au/search?q=first+aid+kit+outdoor" },
-      { icon: "pack", name: "Hip/waist pack", desc: "Fox 3L · Dakine Hot Laps · Evoc Hip Pack", url: "https://www.99bikes.com.au/search?q=mtb+hip+pack" },
-    ],
-  },
-  trail: {
-    protection: [
-      { icon: "helmet", name: "Trail helmet", desc: "Fox Speedframe Pro · Bell Super DH MIPS · Giro Manifest", url: "https://www.99bikes.com.au/search?q=trail+mtb+helmet" },
-      { icon: "knee", name: "Knee pads", desc: "Fox Launch D3O · POI Joint VPD Air · Leatt 3DF", url: "https://www.99bikes.com.au/search?q=mtb+knee+pads" },
-      { icon: "gloves", name: "Trail gloves", desc: "Fox Ranger · Giro DND · 100% Ridecamp", url: "https://www.99bikes.com.au/search?q=trail+mtb+gloves" },
-    ],
-    clothing: [
-      { icon: "jersey", name: "Trail jersey", desc: "Fox Ranger · Patagonia Dirt Roamer · Endura MT500", url: "https://www.99bikes.com.au/search?q=trail+mtb+jersey" },
-      { icon: "shorts", name: "Baggy shorts", desc: "Fox Ranger · Race Face Indy · 100% Airmatic", url: "https://www.99bikes.com.au/search?q=trail+mtb+shorts" },
-      { icon: "shoes", name: "Trail shoes", desc: "Five Ten Freerider · Shimano ME7 · Giro Jacket II", url: "https://www.99bikes.com.au/search?q=mtb+trail+shoes" },
-    ],
-    tools: [
-      { icon: "tool", name: "Multi-tool", desc: "Topeak Hexus · Crankbrothers M17", url: "https://www.99bikes.com.au/search?q=mtb+multi+tool" },
-      { icon: "hydration", name: "Hydration pack", desc: "Camelbak MULE · Osprey Raptor 14 · Fox Oust 2L", url: "https://www.99bikes.com.au/search?q=mtb+hydration+pack" },
-      { icon: "tubeless", name: "Tubeless repair kit", desc: "Dynaplug Mega Pill · Lezyne Plug Kit", url: "https://www.99bikes.com.au/search?q=tubeless+repair+kit" },
-    ],
-  },
-  jump: {
-    protection: [
-      { icon: "helmet", name: "Half-lid or full-face", desc: "Fox Proframe RS · Bell Super Air R · Troy Lee Stage", url: "https://www.99bikes.com.au/search?q=dirt+jump+helmet" },
-      { icon: "knee", name: "Knee pads", desc: "Fox Launch D3O · Leatt 3DF · 661 Recon", url: "https://www.99bikes.com.au/search?q=mtb+knee+pads" },
-      { icon: "elbow", name: "Elbow pads", desc: "Fox Launch · POI Elbow VPD · 661 Raid", url: "https://www.99bikes.com.au/search?q=mtb+elbow+pads" },
-    ],
-    clothing: [
-      { icon: "jersey", name: "Jersey", desc: "Fox Ranger · Troy Lee Sprint · Fasthouse Alloy", url: "https://www.99bikes.com.au/search?q=mtb+jersey" },
-      { icon: "shorts", name: "Baggy shorts", desc: "Fox Ranger · 100% Airmatic · Race Face Indy", url: "https://www.99bikes.com.au/search?q=mtb+baggy+shorts" },
-      { icon: "gloves", name: "Full-finger gloves", desc: "Fox Ranger · 100% Airmatic · Giro DND", url: "https://www.99bikes.com.au/search?q=mtb+full+finger+gloves" },
-    ],
-    tools: [
-      { icon: "tool", name: "Multi-tool", desc: "Topeak Hexus II · Crankbrothers M10", url: "https://www.99bikes.com.au/search?q=bicycle+multi+tool" },
-      { icon: "pump", name: "Shock pump", desc: "Fox HP · Topeak Shockblock DXG · RockShox HXi", url: "https://www.99bikes.com.au/search?q=shock+pump+mtb" },
-      { icon: "tubeless", name: "Tube + CO₂", desc: "Lezyne CO₂ kit · Genuine Innovations", url: "https://www.99bikes.com.au/search?q=co2+inflator+bike" },
-    ],
-  },
-  crossCountry: {
-    protection: [
-      { icon: "helmet", name: "XC/enduro helmet", desc: "Fox Proframe · Giro Switchblade · Bell Super Air", url: "https://www.99bikes.com.au/search?q=xc+mtb+helmet" },
-      { icon: "gloves", name: "Light gloves", desc: "Fox Ranger Gel · 100% Ridecamp · Giro DND", url: "https://www.99bikes.com.au/search?q=xc+mtb+gloves" },
-      { icon: "eyewear", name: "Eyewear", desc: "Oakley Jawbreaker · 100% Speedcraft · Smith Squad", url: "https://www.99bikes.com.au/search?q=cycling+eyewear" },
-    ],
-    clothing: [
-      { icon: "jersey", name: "XC jersey", desc: "Fox Flexair · Shimano Explorer · Endura MT500", url: "https://www.99bikes.com.au/search?q=xc+mtb+jersey" },
-      { icon: "bib", name: "Bib shorts / liner", desc: "Fox Ranger Liner · Endura Humvee · Race Face Indy", url: "https://www.99bikes.com.au/search?q=mtb+bib+shorts" },
-      { icon: "shoes", name: "XC shoes", desc: "Five Ten Impact · Shimano ME7 · Northwave Escape", url: "https://www.99bikes.com.au/search?q=xc+mtb+shoes" },
-    ],
-    tools: [
-      { icon: "hydration", name: "Hydration pack", desc: "Camelbak Rogue 2.5L · Osprey Katari", url: "https://www.99bikes.com.au/search?q=cycling+hydration+pack" },
-      { icon: "tool", name: "Mini pump + CO₂", desc: "Topeak Road Morph · Lezyne Micro Floor Drive", url: "https://www.99bikes.com.au/search?q=mtb+mini+pump" },
-      { icon: "gps", name: "GPS computer", desc: "Garmin Edge 840 · Wahoo ELEMNT Bolt", url: "https://www.99bikes.com.au/search?q=gps+cycling+computer" },
-    ],
-  },
-  other: {
-    protection: [
-      { icon: "helmet", name: "MTB helmet", desc: "Fox Speedframe · Bell Spark · Giro Manifest", url: "https://www.99bikes.com.au/search?q=mtb+helmet" },
-      { icon: "gloves", name: "Gloves", desc: "Fox Ranger · 100% Ridecamp · Giro DND", url: "https://www.99bikes.com.au/search?q=mtb+gloves" },
-    ],
-    clothing: [
-      { icon: "jersey", name: "MTB jersey", desc: "Fox Ranger · Endura MT500 · Shimano Explorer", url: "https://www.99bikes.com.au/search?q=mtb+jersey" },
-      { icon: "shorts", name: "Trail shorts", desc: "Fox Ranger · Race Face Indy · 100% Airmatic", url: "https://www.99bikes.com.au/search?q=mtb+shorts" },
-    ],
-    tools: [
-      { icon: "tool", name: "Multi-tool", desc: "Crankbrothers M19 · Topeak Alien", url: "https://www.99bikes.com.au/search?q=bicycle+multi+tool" },
-      { icon: "hydration", name: "Hydration pack", desc: "Camelbak MULE · Osprey Raptor", url: "https://www.99bikes.com.au/search?q=hydration+pack+mtb" },
-    ],
-  },
-};
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -400,7 +314,11 @@ export default function ProfilePage() {
     : null;
 
   const displayName = profile.nickname.trim() || "Rider";
-  const gear = GEAR[profile.style] ?? GEAR.trail;
+  const gear = gearForRide(currentCatalogBike, {
+    style: profile.style,
+    isEbike: profile.preferEbike,
+    customSpecs: currentBikeEntry?.type === "custom" ? currentBikeEntry.lookup?.specs : undefined,
+  });
   const gearItems = gear[gearTab];
   const preferEbikeAriaChecked: "true" | "false" = preferEbike ? "true" : "false";
 
@@ -1195,9 +1113,16 @@ export default function ProfilePage() {
           <h2 className="mb-3 px-1 r-subsection-title">
             Gear for your ride
             <span className="ml-2 text-[12px] font-normal text-text-3">
-              {ridingStyleLabels(profile.style)} picks
+              {currentCatalogBike
+                ? `matched to your ${currentCatalogBike.brand} ${currentCatalogBike.model}`
+                : `${ridingStyleLabels(profile.style)} picks`}
             </span>
           </h2>
+          {currentCatalogBike ? (
+            <p className="mb-3 px-1 text-[11px] leading-snug text-text-3">
+              Consumables and service parts are matched to your bike&apos;s own drivetrain, brakes and suspension. Protection scales with how you ride.
+            </p>
+          ) : null}
 
           {/* Gear tabs */}
           <div className="mb-3 flex gap-1 rounded-2xl border border-stroke bg-surface/60 p-1">
