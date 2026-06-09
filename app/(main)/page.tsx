@@ -11,6 +11,7 @@ import MatchBreakdownSheet from "@/app/components/MatchBreakdownSheet";
 import BikeProductImage from "@/app/components/BikeProductImage";
 import HeroRideHook from "@/app/(main)/HeroRideHook";
 import HomeCarouselCard from "@/app/components/HomeCarouselCard";
+import LiveBikeSearch from "@/app/(main)/LiveBikeSearch";
 import { RiderContextBanner, RiderContextPicker } from "@/app/components/RiderSurfaceContext";
 import { householdAddRiderHref } from "@/src/lib/welcome-add-mode";
 import { catalog } from "@/src/data/catalog";
@@ -983,6 +984,7 @@ function HomePageContent() {
       {/* ─── Search + filters ─── */}
       <section id="filter-search-area" className="mx-4 mt-7">
         <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-brand-text">Filter & search</p>
+        <LiveBikeSearch />
         {hydrated && profile && riders.length > 0 ? (
           <div className="r-glass-well mt-2 px-3 py-3 sm:px-4 sm:py-3.5">
             <RiderContextPicker
