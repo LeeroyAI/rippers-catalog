@@ -125,13 +125,15 @@ function HomePageContent() {
     }
   }, [searchParams, clearOpenBikeParam]);
 
-  // Header search (?q=) → apply the catalogue filter and scroll to results.
+  // Header search (?q=) → apply the catalogue filter, run a live web search, scroll to results.
+  const [liveSearchQuery, setLiveSearchQuery] = useState<string | null>(null);
   const incomingQuery = searchParams?.get("q") ?? null;
   useEffect(() => {
     if (!incomingQuery) return;
     // A header search is an unconstrained "find any bike" — clear the profile's
     // auto category/budget so searching a brand (e.g. eBike-only AMFLOW) isn't filtered out.
     updateFilters({ query: incomingQuery, category: null, budgetMax: null });
+    setLiveSearchQuery(incomingQuery);
     const next = new URLSearchParams(searchParams?.toString());
     next.delete("q");
     router.replace(next.toString() ? `/?${next.toString()}` : "/", { scroll: false });
@@ -1126,6 +1128,11 @@ function HomePageContent() {
             )}
           </div>
         </div>
+        {liveSearchQuery ? (
+          <div className="mt-4">
+            <LiveBikeSearch autoQuery={liveSearchQuery} />
+          </div>
+        ) : null}
         {filteredBikes.length === 0 ? (
           <div className="mt-6 rounded-2xl border border-dashed border-stroke bg-surface/80 px-6 py-10 text-center shadow-sm">
             <p className="r-subsection-title">No bikes match those filters</p>
