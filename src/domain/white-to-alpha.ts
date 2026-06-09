@@ -32,6 +32,12 @@ export type WhiteToAlphaOptions = {
   featherRadius?: number;
   /** Only feather kept pixels at least this light (darker bike edges keep full alpha). */
   featherFloor?: number;
+  /**
+   * Also clear border-DISCONNECTED near-white (wheel interiors, frame triangle)
+   * when the subject is predominantly dark — gives a clean cutout without
+   * punching holes in genuinely white/silver bikes. Default true.
+   */
+  clearEnclosedIfDark?: boolean;
 };
 
 export type WhiteToAlphaResult = {
@@ -47,7 +53,9 @@ const DEFAULTS = {
   maxChroma: 32,
   minBorderCoverage: 0.5,
   featherRadius: 2,
-  featherFloor: 140,
+  // Only feather genuinely near-white fringe; light-grey subject edges keep full
+  // alpha so the knockout never erodes white/silver bikes.
+  featherFloor: 175,
   /** Border-coverage gate uses a stricter "clearly light" test than the flood fill. */
   gateThreshold: 224,
 };
@@ -70,6 +78,7 @@ export function whiteToAlpha(
   const minBorderCoverage = options.minBorderCoverage ?? DEFAULTS.minBorderCoverage;
   const featherRadius = options.featherRadius ?? DEFAULTS.featherRadius;
   const featherFloor = options.featherFloor ?? DEFAULTS.featherFloor;
+  const clearEnclosedIfDark = options.clearEnclosedIfDark ?? true;
 
   const n = width * height;
   if (width <= 0 || height <= 0 || data.length < n * 4) {
@@ -152,6 +161,37 @@ export function whiteToAlpha(
 
   if (cleared === 0) {
     return { changed: false, clearedPixels: 0 };
+  }
+
+  // Guarded enclosed-white removal. The border flood above leaves white that the
+  // subject encloses (wheel interiors, frame triangle, AND a white painted panel)
+  // untouched. If the remaining subject is predominantly DARK (a dark bike on
+  // white), those enclosed white regions are background seen through gaps, so
+  // clear them for a clean cutout. If the subject is light (white/silver bike),
+  // skip — we must not punch holes in it.
+  if (clearEnclosedIfDark) {
+    let kept = 0;
+    let dark = 0;
+    for (let p = 0; p < n; p++) {
+      if (visited[p]) continue;
+      const i = p * 4;
+      if (data[i + 3] === 0) continue;
+      kept++;
+      if (minChannel(i) < 110) dark++;
+    }
+    if (kept > 0 && dark / kept >= 0.42) {
+      const enclosedFloor = 240; // only genuinely white gaps, not light-grey bike parts
+      for (let p = 0; p < n; p++) {
+        if (visited[p]) continue;
+        const i = p * 4;
+        if (data[i + 3] === 0) continue;
+        if (minChannel(i) >= enclosedFloor && chroma(i) <= maxChroma) {
+          data[i + 3] = 0;
+          visited[p] = 1; // so the feather pass softens these new edges too
+          cleared++;
+        }
+      }
+    }
   }
 
   // Feather: anti-aliased edge pixels just inside the cut are part bike, part

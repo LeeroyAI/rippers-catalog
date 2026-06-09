@@ -746,10 +746,12 @@ summary:focus-visible {
 
 .r-hero-glow {
   position: absolute;
-  inset: 0;
+  inset: -6% -8%;
   z-index: -1;
   pointer-events: none;
-  background: radial-gradient(ellipse 58% 52% at 50% 54%, rgb(var(--c-brand) / 0.3), transparent 70%);
+  /* Neutral page-bg pocket so the aurora/grid behind the bike is calmed and the
+     transparent wheel/frame gaps read clean (no colour bleed) in both modes. */
+  background: radial-gradient(ellipse 62% 56% at 50% 52%, rgb(var(--c-bg) / 0.92), rgb(var(--c-bg) / 0.55) 45%, transparent 72%);
 }
 
 .r-hero-float { animation: r-hero-float 6.5s ease-in-out infinite; }

@@ -46,23 +46,42 @@ describe("whiteToAlpha", () => {
     expect(alphaAt(data, w, 10, 10)).toBe(255);
   });
 
-  it("does NOT punch holes through white that is enclosed by the subject", () => {
+  it("clears enclosed white when the subject is DARK (clean wheel/frame gaps)", () => {
     const w = 20;
     const h = 20;
-    // A red ring with a white hole in the very centre, on a white background.
+    // A dark ring with a white hole on a white background — the hole is
+    // background seen through a gap, so it should be knocked out for a clean cut.
     const data = makeImage(w, h, (x, y) => {
       const inRing = x >= 5 && x < 15 && y >= 5 && y < 15;
       const inHole = x >= 8 && x < 12 && y >= 8 && y < 12;
-      if (inRing && !inHole) return [210, 40, 40, 255];
+      if (inRing && !inHole) return [25, 25, 28, 255]; // dark subject
       return [255, 255, 255, 255];
     });
 
     whiteToAlpha(data, w, h);
 
-    // Enclosed white hole is NOT connected to the border, so it stays opaque.
+    expect(alphaAt(data, w, 10, 10)).toBe(0); // enclosed white cleared
+    expect(alphaAt(data, w, 0, 0)).toBe(0); // outside cleared
+    expect(alphaAt(data, w, 6, 6)).toBe(255); // dark ring kept
+  });
+
+  it("KEEPS enclosed white when the subject is LIGHT (don't punch white bikes)", () => {
+    const w = 20;
+    const h = 20;
+    // A light-grey ring (not background, not dark) with a white hole on white bg.
+    const data = makeImage(w, h, (x, y) => {
+      const inRing = x >= 5 && x < 15 && y >= 5 && y < 15;
+      const inHole = x >= 8 && x < 12 && y >= 8 && y < 12;
+      if (inRing && !inHole) return [170, 170, 175, 255]; // light subject
+      return [255, 255, 255, 255];
+    });
+
+    whiteToAlpha(data, w, h);
+
+    // Light subject -> guard skips the enclosed-clear, so the hole stays.
     expect(alphaAt(data, w, 10, 10)).toBe(255);
-    // Outside white still cleared.
-    expect(alphaAt(data, w, 0, 0)).toBe(0);
+    expect(alphaAt(data, w, 6, 6)).toBe(255); // light ring kept
+    expect(alphaAt(data, w, 0, 0)).toBe(0); // outside white still cleared
   });
 
   it("leaves a non-white (coloured backdrop) image untouched", () => {

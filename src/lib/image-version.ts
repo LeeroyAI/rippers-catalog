@@ -6,4 +6,4 @@
  * instead of showing a stale cached one. The `v` query param is otherwise
  * ignored by the route.
  */
-export const IMAGE_KNOCKOUT_VERSION = "2";
+export const IMAGE_KNOCKOUT_VERSION = "3";
