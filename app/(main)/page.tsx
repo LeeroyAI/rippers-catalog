@@ -125,6 +125,22 @@ function HomePageContent() {
     }
   }, [searchParams, clearOpenBikeParam]);
 
+  // Header search (?q=) → apply the catalogue filter and scroll to results.
+  const incomingQuery = searchParams?.get("q") ?? null;
+  useEffect(() => {
+    if (!incomingQuery) return;
+    // A header search is an unconstrained "find any bike" — clear the profile's
+    // auto category/budget so searching a brand (e.g. eBike-only AMFLOW) isn't filtered out.
+    updateFilters({ query: incomingQuery, category: null, budgetMax: null });
+    const next = new URLSearchParams(searchParams?.toString());
+    next.delete("q");
+    router.replace(next.toString() ? `/?${next.toString()}` : "/", { scroll: false });
+    requestAnimationFrame(() => {
+      document.getElementById("results")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run when a ?q arrives
+  }, [incomingQuery]);
+
   const currentCatalogBike =
     currentBikeEntry?.type === "catalog" ? resolveCatalogBikeForCurrentRide(currentBikeEntry) : null;
 
@@ -660,6 +676,7 @@ function HomePageContent() {
         {[
           {
             title: "Matched to you",
+            href: "/#results",
             copy: "Every bike ranked for your riding style, budget and height — and for each rider in your family.",
             icon: (
               <>
@@ -671,6 +688,7 @@ function HomePageContent() {
           },
           {
             title: "Real AU prices",
+            href: "/#results",
             copy: "Live pricing across Australian retailers in one place. No more juggling a dozen browser tabs.",
             icon: (
               <>
@@ -681,6 +699,7 @@ function HomePageContent() {
           },
           {
             title: "Trails & rides",
+            href: "/trip",
             copy: "Find trails, tracks and bike shops, and plan multi-stop rides anywhere in Australia.",
             icon: (
               <>
@@ -692,6 +711,7 @@ function HomePageContent() {
           },
           {
             title: "Local riders",
+            href: "/trip",
             copy: "See who's riding nearby, post where you're heading, and link up with locals who know the trails.",
             icon: (
               <>
@@ -703,9 +723,10 @@ function HomePageContent() {
             ),
           },
         ].map((p) => (
-          <div
+          <Link
             key={p.title}
-            className="group rounded-2xl border border-stroke bg-surface px-4 py-4 transition-colors hover:border-brand/40"
+            href={p.href}
+            className="group block rounded-2xl border border-stroke bg-surface px-4 py-4 no-underline transition-colors hover:border-brand/40 active:scale-[0.99]"
           >
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand/10 text-brand-text transition-colors group-hover:bg-brand/15">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -714,7 +735,7 @@ function HomePageContent() {
             </div>
             <p className="mt-3 text-[14px] font-bold tracking-tight text-text">{p.title}</p>
             <p className="mt-1 text-[12px] leading-snug text-text-3">{p.copy}</p>
-          </div>
+          </Link>
         ))}
       </section>
 

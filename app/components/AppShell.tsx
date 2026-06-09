@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { LEGACY_PROFILE_PHOTO_KEY, readRiderPhoto, riderPhotoStorageKey } from "@/src/domain/rider-photo";
 import { RIDER_PHOTO_UPDATED_EVENT } from "@/src/lib/rider-photo-events";
 import { useRiderProfile } from "@/src/state/rider-profile-context";
@@ -97,6 +97,14 @@ const PROFILE_PHOTO_CHANGED = "rippers:profile-photo-changed";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [headerQuery, setHeaderQuery] = useState("");
+
+  function submitHeaderSearch(e: React.FormEvent) {
+    e.preventDefault();
+    const q = headerQuery.trim();
+    router.push(q ? `/?q=${encodeURIComponent(q)}#results` : "/#home-query");
+  }
   const [desktopScrolled, setDesktopScrolled] = useState(false);
   const { profile, riders, activeRiderId } = useRiderProfile();
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
@@ -195,18 +203,29 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             ) : null}
           </div>
 
-          <Link
-            href="/#home-query"
-            scroll={false}
-            title="Jump to search and filters on Home"
-            className="r-desktop-search-chip max-[1099px]:min-w-0 max-[1099px]:max-w-[10.5rem] max-[1099px]:gap-1.5 max-[1099px]:px-2.5 no-underline"
+          <form
+            onSubmit={submitHeaderSearch}
+            role="search"
+            title="Search bikes — brand or model"
+            className="r-desktop-search-chip max-[1099px]:min-w-0 max-[1099px]:max-w-[12rem] max-[1099px]:gap-1.5 max-[1099px]:px-2.5"
           >
-            <span className="text-text/75 max-[1099px]:hidden">Jump to search &amp; filters on Home</span>
-            <span className="hidden max-[1099px]:inline text-[12px] font-semibold text-text/80" aria-hidden>
-              Search
-            </span>
-            <span className="r-desktop-search-chip-cta">Go</span>
-          </Link>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" className="shrink-0 text-text/55" aria-hidden>
+              <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
+              <path d="m21 21-4.35-4.35" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+            <input
+              type="search"
+              value={headerQuery}
+              onChange={(e) => setHeaderQuery(e.target.value)}
+              placeholder="Search bikes — brand, model…"
+              aria-label="Search bikes"
+              autoComplete="off"
+              className="min-w-0 flex-1 bg-transparent text-[13px] text-text placeholder:text-text/55 focus:outline-none"
+            />
+            <button type="submit" className="r-desktop-search-chip-cta">
+              Go
+            </button>
+          </form>
 
           <nav className="r-desktop-links" aria-label="Primary">
             {TABS.map((tab) => {
