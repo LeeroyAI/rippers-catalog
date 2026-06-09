@@ -44,6 +44,14 @@ export function googleMapsSearchUrl(lat: number, lng: number, name: string): str
 }
 
 /**
+ * Strava global heatmap centred on a point — see where people actually ride
+ * around a trail. Hash format is #zoom/lng/lat/colormap/sport.
+ */
+export function stravaHeatmapUrl(lat: number, lng: number, zoom = 14): string {
+  return `https://www.strava.com/maps/global-heatmap#${zoom}/${lng.toFixed(5)}/${lat.toFixed(5)}/hot/ride`;
+}
+
+/**
  * Directions link targeting a destination bike shop.
  * If `origin` is omitted, Google Maps uses the device's current location.
  */
