@@ -190,7 +190,18 @@ type Props = {
   presences?: PublicPresence[];
   currentUserId?: string | null;
   onRemovePresence?: (id: string) => void;
+  /** A trail the user tapped in the list: fly to it + highlight its line. */
+  focusTrail?: { lat: number; lon: number; name: string } | null;
 };
+
+/** Fly to a tapped trail so the rider sees it without leaving the page. */
+function FlyToTrail({ point }: { point: { lat: number; lon: number } }) {
+  const map = useMap();
+  useEffect(() => {
+    map.flyTo([point.lat, point.lon], 15, { duration: 0.7 });
+  }, [map, point.lat, point.lon]);
+  return null;
+}
 
 export default function TripMapInner({
   center,
@@ -204,9 +215,13 @@ export default function TripMapInner({
   presences,
   currentUserId,
   onRemovePresence,
+  focusTrail,
 }: Props) {
   const fitRoute = Boolean(itineraryRoute && itineraryRoute.length >= 2);
   const showMultiItinerary = Boolean(itineraryPins && itineraryPins.length >= 2);
+  const focusedSegments = focusTrail
+    ? trails.filter((t) => t.name === focusTrail.name)
+    : [];
 
   return (
     <MapContainer
@@ -215,7 +230,13 @@ export default function TripMapInner({
       className="trip-leaflet z-0 w-full border-0 shadow-none outline-none ring-0"
       scrollWheelZoom
     >
-      {fitRoute && itineraryRoute ? <FitItineraryRoute route={itineraryRoute} /> : <MapFocus center={center} zoom={zoom} />}
+      {focusTrail ? (
+        <FlyToTrail point={focusTrail} />
+      ) : fitRoute && itineraryRoute ? (
+        <FitItineraryRoute route={itineraryRoute} />
+      ) : (
+        <MapFocus center={center} zoom={zoom} />
+      )}
       {/* CyclOSM: a cycling-focused base map that renders MTB trails, tracks,
           paths and bike routes far more prominently than standard OSM tiles. */}
       <TileLayer
@@ -374,6 +395,16 @@ export default function TripMapInner({
             </div>
           </Popup>
         </Polyline>
+      ))}
+
+      {/* Highlight the tapped trail: bright casing + thick line so it stands out. */}
+      {focusedSegments.map((trail) => (
+        <Polyline
+          key={`focus-${trail.id}`}
+          positions={trail.points as LatLngExpression[]}
+          pathOptions={{ color: "#E5471A", weight: 7, opacity: 1, lineCap: "round", lineJoin: "round" }}
+          interactive={false}
+        />
       ))}
 
       {presences && presences.length > 0 ? (

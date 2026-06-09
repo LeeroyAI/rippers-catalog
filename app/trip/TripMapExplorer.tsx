@@ -9,7 +9,7 @@ import CommunitySignInModal from "@/app/trip/CommunitySignInModal";
 import RideHereSheet from "@/app/trip/RideHereSheet";
 import { useCommunity } from "@/app/trip/useCommunity";
 import { householdAddRiderHref } from "@/src/lib/welcome-add-mode";
-import { groupTrailsForDisplay } from "@/app/trip/groupTrails";
+import { groupTrailsForDisplay, type GroupedTrailRow } from "@/app/trip/groupTrails";
 import type { TripShopPin, TripTrailLine } from "@/app/trip/TripMapInner";
 import {
   appendTripToFile,
@@ -18,7 +18,7 @@ import {
   savedTripsStorageKey,
   type SavedTripPlaceV1,
 } from "@/src/domain/saved-trips";
-import { googleMapsDirectionsUrl, googleMapsSearchUrl, trailforksTrailsMapUrl } from "@/src/domain/map-links";
+import { googleMapsDirectionsUrl, googleMapsSearchUrl, stravaHeatmapUrl, trailforksTrailsMapUrl } from "@/src/domain/map-links";
 import type { BicycleShopServices } from "@/src/domain/shop-profile-fit";
 import { describeShopServicesForRider, profileShopBoost } from "@/src/domain/shop-profile-fit";
 import { ridingStyleLabels } from "@/src/domain/riding-style";
@@ -87,6 +87,7 @@ export default function TripMapExplorer() {
   const [attr, setAttr] = useState("");
   const [resultsOpen, setResultsOpen] = useState(false);
   const [resultsTab, setResultsTab] = useState<"trails" | "shops">("trails");
+  const [focusedTrail, setFocusedTrail] = useState<GroupedTrailRow | null>(null);
   const [loadSummary, setLoadSummary] = useState<{ trails: number; shops: number } | null>(null);
   const [legShops, setLegShops] = useState<LoadLeg>("idle");
   const [legTrails, setLegTrails] = useState<LoadLeg>("idle");
@@ -263,6 +264,7 @@ export default function TripMapExplorer() {
     setNotice(null);
     setLoadSummary(null);
     setResultsOpen(false);
+    setFocusedTrail(null);
     setShops([]);
     setTrails([]);
 
@@ -665,6 +667,11 @@ export default function TripMapExplorer() {
           presences={communityOn ? community.presences : undefined}
           currentUserId={community.user?.uid ?? null}
           onRemovePresence={(id) => void community.deletePresence(id)}
+          focusTrail={
+            focusedTrail
+              ? { lat: focusedTrail.centroidLat, lon: focusedTrail.centroidLon, name: focusedTrail.name }
+              : null
+          }
         />
       </div>
 
@@ -1337,8 +1344,74 @@ export default function TripMapExplorer() {
         </p>
       )}
 
+      {/* Focused trail card — the tapped trail is highlighted on the map; offer the deep links here, on-page */}
+      {focusedTrail && !resultsOpen && (
+        <div className="absolute bottom-[max(1rem,calc(env(safe-area-inset-bottom)+0.75rem))] left-1/2 z-[1150] w-[min(92vw,26rem)] -translate-x-1/2 rounded-2xl border border-brand/40 bg-surface-raised/98 px-4 py-3 shadow-2xl backdrop-blur-md">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-brand-text">Showing on the map</p>
+              <p className="truncate text-[14px] font-bold text-text">{focusedTrail.name}</p>
+              <p className="text-[10px] text-text-3">
+                {focusedTrail.kmFromCenter.toFixed(1)} km from {locationShort ?? "centre"}
+                {focusedTrail.segments > 1 ? ` · ${focusedTrail.segments} segments` : ""}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setFocusedTrail(null)}
+              aria-label="Clear focused trail"
+              className="shrink-0 rounded-full p-1.5 text-text-3 hover:bg-surface"
+            >
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden>
+                <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+              </svg>
+            </button>
+          </div>
+          <div className="mt-2.5 flex flex-wrap gap-1.5">
+            <a
+              href={trailforksTrailsMapUrl(focusedTrail.centroidLat, focusedTrail.centroidLon, {
+                zoom: 15,
+                trailName: focusedTrail.name,
+                locationLabel: locationShort ?? undefined,
+              })}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-full bg-brand px-3 py-1.5 text-[11px] font-bold text-brand-fg no-underline shadow-sm"
+            >
+              Trailforks ↗
+            </a>
+            <a
+              href={stravaHeatmapUrl(focusedTrail.centroidLat, focusedTrail.centroidLon, 15)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-full border border-stroke bg-surface px-3 py-1.5 text-[11px] font-bold text-text no-underline"
+            >
+              Strava ↗
+            </a>
+            <a
+              href={googleMapsSearchUrl(focusedTrail.centroidLat, focusedTrail.centroidLon, focusedTrail.name)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-full border border-stroke bg-surface px-3 py-1.5 text-[11px] font-bold text-text no-underline"
+            >
+              Maps ↗
+            </a>
+            <button
+              type="button"
+              onClick={() => {
+                setFocusedTrail(null);
+                setResultsOpen(true);
+              }}
+              className="ml-auto rounded-full px-3 py-1.5 text-[11px] font-bold text-brand-text"
+            >
+              ← All trails
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Results toggle pill — map-first: tap to open sheet */}
-      {hasResults && !resultsOpen && (
+      {hasResults && !resultsOpen && !focusedTrail && (
         <button type="button" onClick={() => setResultsOpen(true)}
           className="absolute bottom-[max(1rem,calc(env(safe-area-inset-bottom)+0.75rem))] left-1/2 z-[1100] flex max-w-[min(92vw,24rem)] -translate-x-1/2 items-center gap-2 rounded-full border border-stroke bg-surface-raised/97 px-4 py-2.5 text-[13px] font-semibold shadow-lg backdrop-blur-md">
           <span className="h-2 w-2 shrink-0 rounded-full bg-brand" />
@@ -1411,39 +1484,32 @@ export default function TripMapExplorer() {
             {resultsTab === "trails" ? (
               <ul className="divide-y divide-stroke">
                 {groupedTrails.slice(0, 50).map((t) => (
-                  <li key={t.name + t.kmFromCenter} className="flex items-center gap-3 px-4 py-3 hover:bg-surface">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="shrink-0 text-brand-text" aria-hidden>
-                      <path d="M3 18c3-4 5-8 9-8s6 4 9 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                      <path d="M7 18c1-2 2-4 5-4s4 2 5 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity="0.5"/>
-                    </svg>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-[13px] font-semibold text-text">{t.name}</p>
-                      {t.segments > 1 && (
-                        <span className="mt-0.5 inline-block rounded-full bg-surface-raised px-1.5 py-0.5 text-[10px] font-semibold text-text-3">
-                          {t.segments} segments
+                  <li key={t.name + t.kmFromCenter}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFocusedTrail(t);
+                        setResultsOpen(false);
+                      }}
+                      className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-surface"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="shrink-0 text-brand-text" aria-hidden>
+                        <path d="M3 18c3-4 5-8 9-8s6 4 9 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                        <path d="M7 18c1-2 2-4 5-4s4 2 5 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity="0.5" />
+                      </svg>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[13px] font-semibold text-text">{t.name}</span>
+                        <span className="block text-[10px] text-text-3">
+                          {t.segments > 1 ? `${t.segments} segments · ` : ""}Tap to show on the map
                         </span>
-                      )}
-                    </div>
-                    <span className="shrink-0 rounded-full bg-surface-raised px-2 py-0.5 text-[11px] font-semibold tabular-nums text-text-3">
-                      {t.kmFromCenter.toFixed(1)} km
-                    </span>
-                    <div className="flex shrink-0 gap-1.5">
-                      <a
-                        href={trailforksTrailsMapUrl(t.centroidLat, t.centroidLon, {
-                          zoom: 15,
-                          trailName: t.name,
-                          locationLabel: locationShort ?? undefined,
-                        })}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="rounded-full bg-brand/12 px-2.5 py-1 text-[10px] font-bold text-brand-text hover:brightness-95">
-                        Trailforks
-                      </a>
-                      <a href={googleMapsSearchUrl(t.centroidLat, t.centroidLon, t.name)} target="_blank" rel="noopener noreferrer"
-                        className="rounded-full bg-surface-raised px-2.5 py-1 text-[10px] font-bold text-text-2 hover:bg-surface-raised">
-                        Maps
-                      </a>
-                    </div>
+                      </span>
+                      <span className="shrink-0 rounded-full bg-surface-raised px-2 py-0.5 text-[11px] font-semibold tabular-nums text-text-3">
+                        {t.kmFromCenter.toFixed(1)} km
+                      </span>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="shrink-0 text-text-3" aria-hidden>
+                        <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </button>
                   </li>
                 ))}
                 {groupedTrails.length === 0 && (
