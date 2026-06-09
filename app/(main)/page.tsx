@@ -16,6 +16,7 @@ import { householdAddRiderHref } from "@/src/lib/welcome-add-mode";
 import { catalog } from "@/src/data/catalog";
 import { getBestPrice, getDisplayPrice } from "@/src/domain/bike-helpers";
 import { matchBreakdownForBike, matchPercentForBike } from "@/src/domain/match-score";
+import { referenceFromCurrentRide, similarBikes, upgradePicks } from "@/src/domain/similar-bikes";
 import { ridingStyleLabels } from "@/src/domain/riding-style";
 import { suggestedBikeCategory } from "@/src/domain/rider-profile";
 import type { Bike, FilterState } from "@/src/domain/types";
@@ -282,6 +283,20 @@ function HomePageContent() {
   }, [homeListBikes, profile]);
 
   const carouselItems = rankedCarousel.slice(0, 6);
+
+  // Current-ride-driven recommendations: bikes like yours + sensible upgrades.
+  const rideRef = useMemo(
+    () => referenceFromCurrentRide(currentBikeEntry ?? null, profile ?? null),
+    [currentBikeEntry, profile]
+  );
+  const similarToRide = useMemo(
+    () => (rideRef ? similarBikes(rideRef, catalog, 8) : []),
+    [rideRef]
+  );
+  const upgradesFromRide = useMemo(
+    () => (rideRef ? upgradePicks(rideRef, catalog, 6) : []),
+    [rideRef]
+  );
 
   /** Prefer this rider's researched catalogue bike, else their custom bike, else only then a carousel top pick. */
   const heroBikeDisplay = useMemo(() => {
@@ -897,6 +912,51 @@ function HomePageContent() {
           </p>
         </div>
       </details>
+
+      {/* ─── Because you ride a X: current-ride recommendations ─── */}
+      {hydrated && rideRef ? (
+        <section className="px-4 pt-7" aria-label="Recommendations based on your current ride">
+          <div className="flex items-baseline justify-between gap-2">
+            <p className="text-[13px] font-bold uppercase tracking-[0.14em] text-text">
+              Because you ride a <span className="text-brand-text">{rideRef.label}</span>
+            </p>
+          </div>
+
+          <p className="mt-3 text-[12px] font-semibold text-text-2">Bikes like yours</p>
+          <div className="r-carousel-scroll mt-2 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 pl-1 pr-1 pt-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {similarToRide.map(({ bike, score }) => (
+              <HomeCarouselCard key={`sim-${bike.id}`} bike={bike} matchPct={score} onMatchClick={setMatchBike} />
+            ))}
+          </div>
+
+          {upgradesFromRide.length > 0 ? (
+            <>
+              <p className="mt-4 text-[12px] font-semibold text-text-2">
+                Upgrades from yours{" "}
+                <span className="font-normal text-text-3">— same style, more bike, within reach</span>
+              </p>
+              <div className="r-carousel-scroll mt-2 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 pl-1 pr-1 pt-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                {upgradesFromRide.map(({ bike, score }) => (
+                  <HomeCarouselCard key={`up-${bike.id}`} bike={bike} matchPct={score} onMatchClick={setMatchBike} />
+                ))}
+              </div>
+            </>
+          ) : null}
+        </section>
+      ) : hydrated && profile ? (
+        <section className="mx-4 mt-7 rounded-2xl border border-dashed border-brand/40 bg-brand/5 px-4 py-4" aria-label="Add your current ride">
+          <p className="text-[13px] font-bold text-text">Add your current ride</p>
+          <p className="mt-1 text-[12px] leading-snug text-text-3">
+            Tell us what you ride now and we&apos;ll show you bikes like it, plus sensible upgrades within reach.
+          </p>
+          <Link
+            href="/profile#profile-ride"
+            className="mt-2.5 inline-flex items-center gap-1.5 rounded-full bg-brand px-3.5 py-1.5 text-[12px] font-bold text-brand-fg no-underline shadow-[0_4px_12px_rgba(229,71,26,0.3)]"
+          >
+            Add my bike →
+          </Link>
+        </section>
+      ) : null}
 
       {/* ─── Top picks carousel ─── */}
       <section className="px-4 pt-7">
