@@ -261,13 +261,15 @@ export default function RiderProfileForm({
       </label>
 
       {includeOptionalCurrentBike ? (
-        <details className="min-w-0 rounded-xl border border-stroke bg-surface px-3 py-2 shadow-sm open:shadow-md">
-          <summary className="cursor-pointer list-none py-2 text-[13px] font-semibold text-text marker:content-none [&::-webkit-details-marker]:hidden">
-            Current bike <span className="font-normal text-text-3">(optional)</span>
-          </summary>
-          <div className="space-y-3 border-t border-stroke pb-3 pt-3">
-            <p className="text-[11px] leading-relaxed text-text-3">
-              Add what they ride today — we&apos;ll do a live search to pull specs and an image.
+        <div className="min-w-0 rounded-xl border border-brand/35 bg-brand/5 px-3 py-3 shadow-sm">
+          <p className="text-[13px] font-bold text-text">
+            What do you ride now? <span className="font-normal text-text-3">(optional)</span>
+          </p>
+          <div className="space-y-3 pt-2">
+            <p className="text-[11px] leading-relaxed text-text-2">
+              Add your current bike and we&apos;ll instantly show you{" "}
+              <span className="font-semibold text-text">bikes like it</span> plus sensible upgrades. A live
+              search pulls specs and a photo.
             </p>
             <div className="grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-3">
               <div className="min-w-0 sm:col-span-1">
@@ -321,7 +323,7 @@ export default function RiderProfileForm({
               </div>
             </div>
           </div>
-        </details>
+        </div>
       ) : null}
 
       {showSizingHint ? (

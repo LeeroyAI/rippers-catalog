@@ -98,11 +98,23 @@ export function referenceFromCurrentRide(
   if (resolved) return referenceFromBike(resolved);
   if (entry?.type === "custom") {
     const label = `${entry.brand} ${entry.name}`.trim() || "your bike";
-    const isEbike = Boolean(profile?.preferEbike);
-    const discipline = profile
-      ? normaliseDiscipline(suggestedBikeCategory(profile), isEbike)
-      : "trail";
-    return { label, discipline, travelMm: null, wheel: null, isEbike, priceAud: null };
+    const specs = entry.lookup?.specs;
+    const isEbike =
+      /e-?bike|emtb/i.test(specs?.category ?? "") || Boolean(profile?.preferEbike);
+    // Prefer the looked-up specs (real bike), fall back to the rider's style.
+    const discipline = specs?.category
+      ? normaliseDiscipline(specs.category, isEbike)
+      : profile
+        ? normaliseDiscipline(suggestedBikeCategory(profile), isEbike)
+        : "trail";
+    return {
+      label,
+      discipline,
+      travelMm: parseTravelMm(specs?.travel),
+      wheel: specs?.wheel ?? null,
+      isEbike,
+      priceAud: null,
+    };
   }
   return null;
 }
