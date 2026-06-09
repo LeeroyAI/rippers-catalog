@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useLayoutEffect, useMemo, useState } from "react";
 
+import HeroRideHook from "@/app/(main)/HeroRideHook";
 import RippersBackupImporter from "@/app/components/RippersBackupImporter";
 import { safeInternalNextPath } from "@/src/lib/safe-next-path";
 import {
@@ -108,24 +109,21 @@ export default function WelcomePage() {
               />
             </div>
             <div className="min-w-0 flex-1 text-center sm:text-left">
-              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand-text">What is Rippers?</p>
-              <h1 className="mt-2 text-[1.5rem] font-semibold leading-tight tracking-tight text-text sm:text-[1.75rem] lg:text-[2rem] xl:text-[2.25rem] 2xl:text-[2.4rem]">
-                The Australian MTB workspace for research, trips, and everyone who rides with you.
+              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand-text">Ride with Rippers</p>
+              <h1 className="mt-2 text-[2rem] font-black leading-[1.05] tracking-tight text-text sm:text-[2.4rem] lg:text-[2.8rem]">
+                Your bike. Your trails. <span className="text-brand-text">Your crew.</span>
               </h1>
-              <p className="mt-4 max-w-none text-[15px] leading-relaxed text-text-3 sm:text-[16px] lg:text-[17px] lg:leading-relaxed">
-                Rippers is <strong className="font-semibold text-text">dynamic research and planning</strong>{" "}
-                for riders who buy from Australian shops, ride real trails, and often line up bikes for a partner or
-                juniors too. Market and trail context keep moving; your profile steers match scores, sizing hints, trip
-                stops, and shortlists so the app stays useful week to week. Data stays on{" "}
-                <strong className="font-semibold text-text">this device</strong> unless you move it — use{" "}
-                <strong className="font-semibold text-text">Export / Import</strong> (below or in Profile)
-                to continue on another phone or tablet. <strong className="font-semibold text-text">You</strong>{" "}
-                stay in control, with no account wall.
+              <p className="mt-3 max-w-prose text-[15px] leading-relaxed text-text-2 sm:text-[16px]">
+                Find the right MTB at the best Australian price, plan where to ride it, and link up with riders near you.
+                One place, no account wall.
               </p>
 
-              <div className="mt-8 border-t border-stroke/80 pt-6">
+              {/* The hook: tap how you ride, see an instant matched bike before signing up. */}
+              <HeroRideHook onSeeMatches={() => router.push(welcomeSetupHref(queryKey, "solo"))} />
+
+              <div className="mt-7 border-t border-stroke/80 pt-6">
                 <p className="mb-3 text-center text-[12px] font-medium uppercase tracking-wide text-text-3 sm:text-left">
-                  Start in one tap
+                  Make it yours — save your match, build your profile
                 </p>
                 <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
                   <Link
