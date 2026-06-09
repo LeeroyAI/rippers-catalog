@@ -483,9 +483,36 @@ export default function TripMapExplorer() {
     locateMe({ auto: false });
   }
 
+  /** Header "Trails" search (?q=) → live geocode the place and load its trails/shops. */
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const tripQuery = new URLSearchParams(window.location.search).get("q");
+    if (!tripQuery) return;
+    autoLocateTriedRef.current = true; // an explicit place beats auto-geolocation
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch(`/api/geocode?q=${encodeURIComponent(tripQuery)}`);
+        const json = (await res.json()) as { results?: GeocodeHit[] };
+        const hit = json.results?.[0];
+        if (!cancelled && hit) pickHit(hit);
+      } catch {
+        /* ignore — user can search manually */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount for ?q
+  }, []);
+
   /** On first visit, locate the rider and zoom to their area so trails/shops load straight away. */
   useEffect(() => {
     if (autoLocateTriedRef.current) return;
+    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("q")) {
+      autoLocateTriedRef.current = true; // a trail search is taking over
+      return;
+    }
     autoLocateTriedRef.current = true;
     if (itineraryRef.current.length > 0) return; // already focused (e.g. navigated back)
     if (typeof navigator === "undefined" || !navigator.geolocation) return;

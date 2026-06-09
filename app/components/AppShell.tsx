@@ -99,11 +99,16 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [headerQuery, setHeaderQuery] = useState("");
+  const [searchMode, setSearchMode] = useState<"bikes" | "trails">("bikes");
 
   function submitHeaderSearch(e: React.FormEvent) {
     e.preventDefault();
     const q = headerQuery.trim();
-    router.push(q ? `/?q=${encodeURIComponent(q)}#results` : "/#home-query");
+    if (searchMode === "trails") {
+      router.push(q ? `/trip?q=${encodeURIComponent(q)}` : "/trip");
+    } else {
+      router.push(q ? `/?q=${encodeURIComponent(q)}#results` : "/#home-query");
+    }
   }
   const [desktopScrolled, setDesktopScrolled] = useState(false);
   const { profile, riders, activeRiderId } = useRiderProfile();
@@ -206,19 +211,31 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           <form
             onSubmit={submitHeaderSearch}
             role="search"
-            title="Search bikes — brand or model"
-            className="r-desktop-search-chip max-[1099px]:min-w-0 max-[1099px]:max-w-[12rem] max-[1099px]:gap-1.5 max-[1099px]:px-2.5"
+            title={searchMode === "trails" ? "Search a town or trail (live)" : "Search any bike (live web search)"}
+            className="r-desktop-search-chip max-[1099px]:min-w-0 max-[1099px]:max-w-[16rem] max-[1099px]:gap-1.5 max-[1099px]:px-2"
           >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" className="shrink-0 text-text/55" aria-hidden>
-              <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
-              <path d="m21 21-4.35-4.35" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            </svg>
+            <div className="flex shrink-0 rounded-full bg-surface p-0.5 ring-1 ring-stroke" role="tablist" aria-label="Search type">
+              {(["bikes", "trails"] as const).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  role="tab"
+                  aria-selected={searchMode === m}
+                  onClick={() => setSearchMode(m)}
+                  className={`rounded-full px-2.5 py-1 text-[11px] font-bold capitalize transition-colors ${
+                    searchMode === m ? "bg-brand text-brand-fg" : "text-text-3 hover:text-text"
+                  }`}
+                >
+                  {m}
+                </button>
+              ))}
+            </div>
             <input
               type="search"
               value={headerQuery}
               onChange={(e) => setHeaderQuery(e.target.value)}
-              placeholder="Search bikes — brand, model…"
-              aria-label="Search bikes"
+              placeholder={searchMode === "trails" ? "Town or trail head…" : "Any bike — brand, model…"}
+              aria-label={searchMode === "trails" ? "Search trails" : "Search bikes"}
               autoComplete="off"
               className="min-w-0 flex-1 bg-transparent text-[13px] text-text placeholder:text-text/55 focus:outline-none"
             />
