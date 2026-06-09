@@ -3,11 +3,12 @@
 import { useMemo, useState } from "react";
 
 import BikeProductImage from "@/app/components/BikeProductImage";
+import ShareMatchModal, { type MatchCardData } from "@/app/(main)/ShareMatchModal";
 import { catalog } from "@/src/data/catalog";
 import { getBestPrice } from "@/src/domain/bike-helpers";
 import { matchPercentForBike } from "@/src/domain/match-score";
 import type { RiderProfileV1 } from "@/src/domain/rider-profile";
-import type { RidingStyle } from "@/src/domain/riding-style";
+import { ridingStyleLabels, type RidingStyle } from "@/src/domain/riding-style";
 
 /**
  * The hero "magic moment": tap how you ride and instantly see your top-matched
@@ -60,8 +61,22 @@ export default function HeroRideHook({
   onSeeMatches: (style: RidingStyle) => void;
 }) {
   const [style, setStyle] = useState<RidingStyle | null>(null);
+  const [shareOpen, setShareOpen] = useState(false);
   const match = useMemo(() => (style ? topMatchFor(style) : null), [style]);
   const price = match ? getBestPrice(match.bike) : null;
+
+  const cardData: MatchCardData | null =
+    match && style
+      ? {
+          bikeId: match.bike.id,
+          brand: match.bike.brand,
+          model: match.bike.model,
+          pct: match.pct,
+          styleLabel: ridingStyleLabels(style),
+          meta: [match.bike.category, match.bike.travel, match.bike.wheel].filter(Boolean).join(" · "),
+          price: price != null ? AUD.format(price) : null,
+        }
+      : null;
 
   return (
     <div className="r-hero-rise-4 mt-6 max-w-[30rem]">
@@ -121,13 +136,28 @@ export default function HeroRideHook({
                 </>
               ) : null}
             </p>
-            <button
-              type="button"
-              onClick={() => onSeeMatches(style as RidingStyle)}
-              className="mt-1.5 text-[12px] font-bold text-brand-text hover:underline"
-            >
-              See all your matches →
-            </button>
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+              <button
+                type="button"
+                onClick={() => onSeeMatches(style as RidingStyle)}
+                className="text-[12px] font-bold text-brand-text hover:underline"
+              >
+                See all your matches →
+              </button>
+              <button
+                type="button"
+                onClick={() => setShareOpen(true)}
+                className="inline-flex items-center gap-1 text-[12px] font-bold text-text-2 hover:text-text"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden>
+                  <circle cx="18" cy="5" r="2.6" stroke="currentColor" strokeWidth="1.8" />
+                  <circle cx="6" cy="12" r="2.6" stroke="currentColor" strokeWidth="1.8" />
+                  <circle cx="18" cy="19" r="2.6" stroke="currentColor" strokeWidth="1.8" />
+                  <path d="m8.3 10.7 7.4-4.3M8.3 13.3l7.4 4.3" stroke="currentColor" strokeWidth="1.8" />
+                </svg>
+                Share my match
+              </button>
+            </div>
           </div>
         </div>
       ) : (
@@ -135,6 +165,10 @@ export default function HeroRideHook({
           Tap your style for an instant matched pick — no signup needed.
         </p>
       )}
+
+      {shareOpen && cardData ? (
+        <ShareMatchModal data={cardData} onClose={() => setShareOpen(false)} />
+      ) : null}
     </div>
   );
 }
