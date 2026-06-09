@@ -30,6 +30,8 @@ export type OverpassTrailRow = {
   centroidLat: number;
   centroidLon: number;
   kmFromCenter: number;
+  /** Technical difficulty on a 0-6 scale (from OSM mtb:scale / imba), null if untagged. */
+  difficulty?: number | null;
 };
 
 const UA =
@@ -145,6 +147,21 @@ function buildTrailsQuery(bbox: OverpassBbox): string {
 );
 out geom tags;
 `;
+}
+
+/** Parse OSM technical-difficulty tags to a 0-6 scale, null when untagged. */
+function parseTrailDifficulty(tags: Record<string, string>): number | null {
+  const scale = tags["mtb:scale"]?.trim();
+  if (scale) {
+    const m = scale.match(/^(\d)/);
+    if (m) return Math.min(6, Math.max(0, Number(m[1])));
+  }
+  const imba = tags["mtb:scale:imba"]?.trim();
+  if (imba) {
+    const m = imba.match(/^(\d)/);
+    if (m) return Math.min(6, Math.round(Number(m[1]) * 1.5)); // imba 0-4 -> ~0-6
+  }
+  return null;
 }
 
 function trailDisplayName(tags: Record<string, string>): string {
@@ -303,6 +320,7 @@ function parseTrails(elements: OverpassElement[], bbox: OverpassBbox): OverpassT
       centroidLat: cLat,
       centroidLon: cLng,
       kmFromCenter: haversineKm(centerLat, centerLon, cLat, cLng),
+      difficulty: parseTrailDifficulty(tags),
     });
   }
   const trailById = new Map<string, OverpassTrailRow>();

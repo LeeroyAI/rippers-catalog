@@ -45,6 +45,8 @@ export type TripTrailLine = {
   centroidLat: number;
   centroidLon: number;
   kmFromCenter: number;
+  /** OSM technical difficulty 0-6 (mtb:scale), null if untagged. */
+  difficulty?: number | null;
 };
 
 function MapFocus({ center, zoom }: { center: [number, number]; zoom: number }) {
