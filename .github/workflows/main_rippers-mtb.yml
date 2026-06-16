@@ -1,6 +1,6 @@
 # Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
 
-name: Build and deploy Node.js app to Azure Web App - rippers-mtb
+name: Build and deploy Node.js app to Azure Web App - rippers-mtb-au
 
 on:
   # Deploy only after the CI workflow (typecheck + tests + build + lint) passes
@@ -16,7 +16,7 @@ on:
 # container out from under each other ("Deployment has been stopped due to SCM
 # container restart"). Queue, never cancel mid-deploy.
 concurrency:
-  group: azure-deploy-rippers-mtb
+  group: azure-deploy-rippers-mtb-au
   cancel-in-progress: false
 
 jobs:
@@ -89,11 +89,11 @@ jobs:
         run: |
           # The zip is already built. Tell Kudu NOT to build (no npm install /
           # next build on the B1 box), and start the Next standalone server.
-          az webapp config appsettings set -g rippers-rg -n rippers-mtb \
+          az webapp config appsettings set -g rippers-rg -n rippers-mtb-au \
             --settings SCM_DO_BUILD_DURING_DEPLOYMENT=false ENABLE_ORYX_BUILD=false 1>/dev/null
-          az webapp config appsettings delete -g rippers-rg -n rippers-mtb \
+          az webapp config appsettings delete -g rippers-rg -n rippers-mtb-au \
             --setting-names WEBSITES_PORT 1>/dev/null 2>&1 || true
-          az webapp config set -g rippers-rg -n rippers-mtb \
+          az webapp config set -g rippers-rg -n rippers-mtb-au \
             --startup-file "node server.js" --linux-fx-version "NODE|22-lts" 1>/dev/null
 
       - name: Stop the app so --clean can fully wipe wwwroot
@@ -103,7 +103,7 @@ jobs:
           # stale files survive. A stale node_modules.tar.gz is fatal: the
           # appsvc Node image extracts it over the real node_modules on boot,
           # so `node server.js` exits 1. Stop first => nothing locked => clean.
-          az webapp stop -g rippers-rg -n rippers-mtb 1>/dev/null
+          az webapp stop -g rippers-rg -n rippers-mtb-au 1>/dev/null
           sleep 5
 
       - name: Deploy (clean) to Azure Web App
@@ -113,7 +113,7 @@ jobs:
           # waiting for the STOPPED site to start (it never will until the next
           # step), so bound it with `timeout` and tolerate the non-zero exit.
           # The next step confirms the deployment actually reached status 4.
-          timeout 240 az webapp deploy -g rippers-rg -n rippers-mtb \
+          timeout 240 az webapp deploy -g rippers-rg -n rippers-mtb-au \
             --src-path app.zip --type zip --clean true --restart false \
             --track-status false 1>/dev/null 2>&1 || true
 
@@ -121,7 +121,7 @@ jobs:
         run: |
           for i in $(seq 1 24); do
             st=$(az rest --method GET \
-              --url "https://rippers-mtb.scm.azurewebsites.net/api/deployments?\$top=1" \
+              --url "https://rippers-mtb-au.scm.azurewebsites.net/api/deployments?\$top=1" \
               --resource "https://management.azure.com" \
               --query "[0].status" -o tsv 2>/dev/null || echo "")
             echo "deployment status: ${st:-?} (4=success, 3=failed)"
@@ -132,7 +132,7 @@ jobs:
           echo "timed out waiting for deployment to finish"; exit 1
 
       - name: Start the app
-        run: az webapp start -g rippers-rg -n rippers-mtb 1>/dev/null
+        run: az webapp start -g rippers-rg -n rippers-mtb-au 1>/dev/null
 
       - name: Verify the live site is serving the new build
         run: |
@@ -141,7 +141,7 @@ jobs:
           for i in $(seq 1 18); do
             sleep 15
             code=$(curl -s -o /tmp/body.html -w '%{http_code}' --max-time 20 \
-              "https://rippers-mtb.azurewebsites.net/" -H "Cookie: rippers_onboarded=1" -L || true)
+              "https://rippers-mtb-au.azurewebsites.net/" -H "Cookie: rippers_onboarded=1" -L || true)
             if [ "$code" = "200" ] && grep -q "Rippers App" /tmp/body.html; then
               echo "SUCCESS: live site is up (HTTP 200, app shell served)."; exit 0
             fi
@@ -152,7 +152,7 @@ jobs:
       - name: Show container log (on failure)
         if: failure()
         run: |
-          az webapp log download -g rippers-rg -n rippers-mtb --log-file /tmp/logs.zip 1>/dev/null 2>&1 || true
+          az webapp log download -g rippers-rg -n rippers-mtb-au --log-file /tmp/logs.zip 1>/dev/null 2>&1 || true
           mkdir -p /tmp/logs && unzip -o /tmp/logs.zip -d /tmp/logs 1>/dev/null 2>&1 || true
           echo "===== CONTAINER LOG (last 120 lines) ====="
           ( find /tmp/logs -name '*.log' -exec cat {} + 2>/dev/null ) | tail -120 || echo "(no logs retrieved)"
